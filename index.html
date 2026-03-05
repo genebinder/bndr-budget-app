@@ -25,7 +25,7 @@
     body {
       font-family: -apple-system, 'SF Pro Text', system-ui, sans-serif;
       background: var(--bg); color: var(--text);
-      padding-top: calc(var(--hdr-h) + env(safe-area-inset-top, 0px));
+      padding-top: calc(var(--hdr-h) + 42px + env(safe-area-inset-top, 0px));
       padding-bottom: calc(var(--tab-h) + env(safe-area-inset-bottom, 0px));
       -webkit-font-smoothing: antialiased;
       overflow-x: hidden;
@@ -338,6 +338,35 @@
     .section-gap { height: 16px; }
     .text-center { text-align: center; }
     .hidden { display: none !important; }
+
+    /* ── Project Selector Bar ── */
+    .project-bar {
+      position: fixed; top: calc(var(--hdr-h) + env(safe-area-inset-top, 0px));
+      left: 0; right: 0; z-index: 99;
+      background: #f8f9f7; border-bottom: 1px solid var(--border);
+      padding: 6px 12px; display: flex; align-items: center; gap: 8px;
+      height: 42px;
+    }
+    .project-bar select {
+      flex: 1; border: 1.5px solid var(--border); border-radius: 8px;
+      padding: 6px 10px; font-size: 14px; font-family: inherit;
+      color: var(--text); background: #fff; outline: none;
+      -webkit-appearance: none; appearance: none;
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%23888' stroke-width='2'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");
+      background-repeat: no-repeat; background-position: right 10px center;
+      padding-right: 28px; min-width: 0;
+      text-overflow: ellipsis; white-space: nowrap; overflow: hidden;
+    }
+    .project-bar select:focus { border-color: var(--green); }
+    .pb-btn {
+      border: none; border-radius: 8px; padding: 6px 10px;
+      font-size: .68rem; font-weight: 700; cursor: pointer;
+      font-family: inherit; white-space: nowrap; -webkit-appearance: none;
+    }
+    .pb-new { background: var(--green); color: #fff; }
+    .pb-new:active { background: var(--green-dark); }
+    .pb-del { background: var(--red-light); color: var(--red-text); }
+    .pb-del:active { background: #fde8e8; }
   </style>
 </head>
 <body>
@@ -356,6 +385,13 @@
     <div class="hdr-sub">Scope &amp; Budget Tracker</div>
   </div>
 </header>
+
+<!-- ══════ Project Selector ══════ -->
+<div class="project-bar no-print">
+  <select id="project-selector"></select>
+  <button class="pb-btn pb-new" id="btn-new-project">+ New</button>
+  <button class="pb-btn pb-del" id="btn-del-project">🗑</button>
+</div>
 
 <!-- ══════ Tab: Project ══════ -->
 <div id="tab-project" class="tab-panel active">
@@ -861,21 +897,144 @@ function getTotalPaid() {
 function findCat(id) { for (var i = 0; i < D.categories.length; i++) if (D.categories[i].id === id) return D.categories[i]; return null; }
 
 /* ═══════════════════════════════════════════
-   AUTO-SAVE (localStorage)
+   MULTI-PROJECT STORAGE
    ═══════════════════════════════════════════ */
 var saveTimer;
+var currentProjectId = null;
+
+// Project index: [{id, name, created, lastModified}]
+function getProjectIndex() {
+  try {
+    var raw = localStorage.getItem('bndr-projects-index');
+    if (raw) { var arr = JSON.parse(raw); if (Array.isArray(arr)) return arr; }
+  } catch(e) {}
+  return [];
+}
+function saveProjectIndex(index) {
+  try { localStorage.setItem('bndr-projects-index', JSON.stringify(index)); } catch(e) {}
+}
+
 function scheduleSave() { clearTimeout(saveTimer); saveTimer = setTimeout(saveState, 400); }
 function saveState() {
   syncProjectFields();
-  try { localStorage.setItem('bndr-budget-data', JSON.stringify(D)); } catch(e) {}
-}
-function loadState() {
+  if (!currentProjectId) return;
   try {
-    var raw = localStorage.getItem('bndr-budget-data');
-    if (raw) { var loaded = JSON.parse(raw); if (loaded && loaded.project) { D = loaded; return true; } }
+    localStorage.setItem('bndr-project-' + currentProjectId, JSON.stringify(D));
+    // Update index name/lastModified
+    var index = getProjectIndex();
+    for (var i = 0; i < index.length; i++) {
+      if (index[i].id === currentProjectId) {
+        index[i].name = D.project.address || 'Untitled Project';
+        index[i].lastModified = new Date().toISOString();
+        break;
+      }
+    }
+    saveProjectIndex(index);
+    updateProjectSelector();
+  } catch(e) {}
+}
+
+function loadProject(projectId) {
+  try {
+    var raw = localStorage.getItem('bndr-project-' + projectId);
+    if (raw) { var loaded = JSON.parse(raw); if (loaded && loaded.project) { D = loaded; currentProjectId = projectId; return true; } }
   } catch(e) {}
   return false;
 }
+
+function createNewProject() {
+  var id = 'p' + Date.now() + Math.random().toString(36).substr(2, 4);
+  currentProjectId = id;
+  // Reset D to fresh defaults
+  D.project = { address:'', date:todayStr(), contractor:'', pm:'PIETTRO BRAMBILLA', lockbox:'', startDate:'', endDate:'', bonusAmount:0, bonusDate:'', notes:'' };
+  D.categories = defaultCategories();
+  D.payments = [];
+  D.scope = initDefaultScope();
+  D.materials = {};
+  D.deliveredMats = DEFAULT_DELIVERED_MATS.slice();
+  D.customFixedRules = [];
+  D.customFeeRules = [];
+  D.nextCatId = D.categories.length ? D.categories[D.categories.length - 1].id + 1 : 1;
+  D.nextItemId = 100;
+  D.nextPayId = 1;
+  // Add to index
+  var index = getProjectIndex();
+  index.unshift({ id: id, name: 'Untitled Project', created: new Date().toISOString(), lastModified: new Date().toISOString() });
+  saveProjectIndex(index);
+  // Save to its own slot
+  try { localStorage.setItem('bndr-project-' + id, JSON.stringify(D)); } catch(e) {}
+  return id;
+}
+
+function deleteProject(projectId) {
+  var index = getProjectIndex();
+  index = index.filter(function(p) { return p.id !== projectId; });
+  saveProjectIndex(index);
+  try { localStorage.removeItem('bndr-project-' + projectId); } catch(e) {}
+  return index;
+}
+
+function switchToProject(projectId) {
+  // Save current first
+  if (currentProjectId) { syncProjectFields(); try { localStorage.setItem('bndr-project-' + currentProjectId, JSON.stringify(D)); } catch(e) {} }
+  if (!loadProject(projectId)) return false;
+  ensureFields();
+  populateProjectFields();
+  renderBudget();
+  renderScope();
+  renderPayments();
+  updateProjectSelector();
+  return true;
+}
+
+function updateProjectSelector() {
+  var sel = document.getElementById('project-selector');
+  var index = getProjectIndex();
+  var prevVal = sel.value;
+  sel.innerHTML = '';
+  for (var i = 0; i < index.length; i++) {
+    var opt = document.createElement('option');
+    opt.value = index[i].id;
+    opt.textContent = index[i].name || 'Untitled Project';
+    if (index[i].id === currentProjectId) opt.selected = true;
+    sel.appendChild(opt);
+  }
+}
+
+function ensureFields() {
+  if (!D.scope || Object.keys(D.scope).length === 0) D.scope = initDefaultScope();
+  if (!D.materials) D.materials = {};
+  if (!D.deliveredMats) D.deliveredMats = DEFAULT_DELIVERED_MATS.slice();
+  if (!D.customFixedRules) D.customFixedRules = [];
+  if (!D.customFeeRules) D.customFeeRules = [];
+  for (var i = 0; i < D.categories.length; i++) {
+    if (D.categories[i].contractor === undefined) D.categories[i].contractor = '';
+    if (D.categories[i].phone === undefined) D.categories[i].phone = '';
+  }
+}
+
+// Migrate old single-project data to multi-project format
+function migrateOldData() {
+  try {
+    var raw = localStorage.getItem('bndr-budget-data');
+    if (raw) {
+      var loaded = JSON.parse(raw);
+      if (loaded && loaded.project) {
+        var id = 'p' + Date.now() + Math.random().toString(36).substr(2, 4);
+        var name = loaded.project.address || 'Untitled Project';
+        localStorage.setItem('bndr-project-' + id, raw);
+        var index = [{ id: id, name: name, created: new Date().toISOString(), lastModified: new Date().toISOString() }];
+        saveProjectIndex(index);
+        localStorage.removeItem('bndr-budget-data');
+        return id;
+      }
+    }
+  } catch(e) {}
+  return null;
+}
+
+// Legacy compat
+function loadState() { return false; }
 function syncProjectFields() {
   D.project.address = document.getElementById('f-address').value;
   D.project.date = document.getElementById('f-date').value;
@@ -900,6 +1059,45 @@ function populateProjectFields() {
   document.getElementById('f-bonus-date').value = D.project.bonusDate || '';
   document.getElementById('f-notes').value = D.project.notes || '';
 }
+
+/* ═══════════════════════════════════════════
+   PROJECT SELECTOR EVENTS
+   ═══════════════════════════════════════════ */
+document.getElementById('project-selector').addEventListener('change', function() {
+  var newId = this.value;
+  if (newId && newId !== currentProjectId) {
+    switchToProject(newId);
+  }
+});
+
+document.getElementById('btn-new-project').addEventListener('click', function() {
+  // Save current project first
+  if (currentProjectId) { syncProjectFields(); try { localStorage.setItem('bndr-project-' + currentProjectId, JSON.stringify(D)); } catch(e) {} }
+  var id = createNewProject();
+  ensureFields();
+  populateProjectFields();
+  renderBudget();
+  renderScope();
+  renderPayments();
+  updateProjectSelector();
+  switchTab('tab-project');
+});
+
+document.getElementById('btn-del-project').addEventListener('click', function() {
+  var index = getProjectIndex();
+  if (index.length <= 1) {
+    alert('You must have at least one project.');
+    return;
+  }
+  var name = D.project.address || 'Untitled Project';
+  if (!confirm('Delete "' + name + '"? This cannot be undone.')) return;
+  var remaining = deleteProject(currentProjectId);
+  currentProjectId = null;
+  // Switch to the first remaining project
+  if (remaining.length > 0) {
+    switchToProject(remaining[0].id);
+  }
+});
 
 /* ═══════════════════════════════════════════
    TAB SWITCHING
@@ -2020,27 +2218,25 @@ if ('serviceWorker' in navigator) {
 (function() {
   generateAppIcon();
 
-  if (!loadState()) {
-    // Fresh start — set defaults
-    D.categories = defaultCategories();
-    D.project.date = todayStr();
-    D.scope = initDefaultScope();
-    D.materials = {};
-    D.deliveredMats = DEFAULT_DELIVERED_MATS.slice();
+  // Check for old single-project data and migrate
+  var migratedId = migrateOldData();
+
+  var index = getProjectIndex();
+
+  if (migratedId) {
+    // Load the migrated project
+    loadProject(migratedId);
+  } else if (index.length > 0) {
+    // Load the first (most recent) project
+    loadProject(index[0].id);
+  } else {
+    // No projects at all — create a fresh one
+    createNewProject();
   }
-  // Ensure scope/materials/deliveredMats exist for older saved states
-  if (!D.scope || Object.keys(D.scope).length === 0) D.scope = initDefaultScope();
-  if (!D.materials) D.materials = {};
-  if (!D.deliveredMats) D.deliveredMats = DEFAULT_DELIVERED_MATS.slice();
-  // Ensure custom rules exist for older saved states
-  if (!D.customFixedRules) D.customFixedRules = [];
-  if (!D.customFeeRules) D.customFeeRules = [];
-  // Ensure contractor/phone fields exist on categories for older saved states
-  for (var i = 0; i < D.categories.length; i++) {
-    if (D.categories[i].contractor === undefined) D.categories[i].contractor = '';
-    if (D.categories[i].phone === undefined) D.categories[i].phone = '';
-  }
+
+  ensureFields();
   populateProjectFields();
+  updateProjectSelector();
   renderBudget();
 })();
 </script>

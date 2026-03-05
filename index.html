@@ -172,6 +172,14 @@
       -webkit-appearance: none;
     }
     .li-field input:focus { border-color: var(--green); }
+    .li-field .markup-row { display: flex; gap: 4px; margin-top: 3px; }
+    .markup-btn {
+      border: none; background: var(--amber-light); color: #92400e;
+      font-size: .58rem; font-weight: 700; padding: 3px 7px;
+      border-radius: 5px; cursor: pointer; font-family: inherit;
+      white-space: nowrap; -webkit-appearance: none;
+    }
+    .markup-btn:active { background: #fde68a; }
     .li-var {
       font-size: .72rem; font-weight: 700; min-width: 56px; text-align: right;
       white-space: nowrap; padding-top: 16px;
@@ -982,8 +990,8 @@ function renderBudgetCategories() {
           '<input class="li-desc" type="text" value="' + escAttr(item.desc) + '" placeholder="Item description..." data-field="desc">' +
           '<button class="li-del no-print" title="Remove">&times;</button>' +
           '<div class="li-amounts">' +
-            '<div class="li-field"><label>Estimated</label><input type="text" inputmode="decimal" value="' + (item.estimated ? fmt(item.estimated) : '') + '" data-field="estimated" placeholder="$0"></div>' +
-            '<div class="li-field"><label>Actual</label><input type="text" inputmode="decimal" value="' + (item.actual ? fmt(item.actual) : '') + '" data-field="actual" placeholder="$0"></div>' +
+            '<div class="li-field"><label>Estimated</label><input type="text" inputmode="decimal" value="' + (item.estimated ? fmt(item.estimated) : '') + '" data-field="estimated" placeholder="$0"><div class="markup-row"><button class="markup-btn" data-action="markup" data-field="estimated" data-item-id="' + item.id + '">+ 15%</button></div></div>' +
+            '<div class="li-field"><label>Actual</label><input type="text" inputmode="decimal" value="' + (item.actual ? fmt(item.actual) : '') + '" data-field="actual" placeholder="$0"><div class="markup-row"><button class="markup-btn" data-action="markup" data-field="actual" data-item-id="' + item.id + '">+ 15%</button></div></div>' +
             '<div class="li-var ' + iVarClass + '">' + iVarText + '</div>' +
           '</div>' +
         '</div>';
@@ -1042,6 +1050,30 @@ document.getElementById('tab-budget').addEventListener('click', function(e) {
       cat.items.push({ id: D.nextItemId++, desc: '', estimated: 0, actual: 0 });
       cat.collapsed = false;
       renderBudget(); scheduleSave();
+    }
+    return;
+  }
+
+  // Markup +15%
+  if (target.getAttribute('data-action') === 'markup') {
+    var itemId = parseInt(target.getAttribute('data-item-id'));
+    var field = target.getAttribute('data-field');
+    var catCard = target.closest('.cat-card');
+    if (catCard) {
+      var catId = parseInt(catCard.getAttribute('data-cat-id'));
+      var cat = findCat(catId);
+      if (cat) {
+        for (var mi = 0; mi < cat.items.length; mi++) {
+          if (cat.items[mi].id === itemId) {
+            var currentVal = cat.items[mi][field] || 0;
+            if (currentVal > 0) {
+              cat.items[mi][field] = Math.round(currentVal * 1.15 * 100) / 100;
+              renderBudget(); scheduleSave();
+            }
+            break;
+          }
+        }
+      }
     }
     return;
   }

@@ -1,5 +1,5 @@
 // BNDR Budget — Service Worker for offline caching
-var CACHE_NAME = 'bndr-budget-v2';
+var CACHE_NAME = 'bndr-budget-v3';
 var ASSETS = ['./', './index.html', './manifest.json'];
 
 // Install: cache core assets

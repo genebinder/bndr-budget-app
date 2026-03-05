@@ -59,12 +59,12 @@
     .tab-btn {
       flex: 1; display: flex; flex-direction: column; align-items: center;
       justify-content: center; gap: 2px; border: none; background: none;
-      color: var(--muted); font-size: .62rem; font-weight: 600; cursor: pointer;
+      color: var(--muted); font-size: .58rem; font-weight: 600; cursor: pointer;
       font-family: inherit; padding: 4px 0; transition: color .15s;
       -webkit-appearance: none;
     }
     .tab-btn.active { color: var(--green); }
-    .tab-btn svg { width: 22px; height: 22px; }
+    .tab-btn svg { width: 20px; height: 20px; }
     .tab-btn.active svg { stroke: var(--green); }
 
     /* ── Tab Panels ── */
@@ -132,6 +132,23 @@
     .cat-chevron.open { transform: rotate(180deg); }
     .cat-body { padding: 0 14px 14px; display: none; }
     .cat-body.open { display: block; }
+
+    /* ── Contractor Info (inside category) ── */
+    .cat-contractor {
+      display: grid; grid-template-columns: 1fr 1fr; gap: 8px;
+      padding: 10px 0 12px; margin-bottom: 10px;
+      border-bottom: 1px solid var(--border);
+    }
+    .cat-contractor .cc-field label {
+      font-size: .6rem; font-weight: 600; color: var(--muted); margin-bottom: 2px; display: block;
+    }
+    .cat-contractor .cc-field input {
+      width: 100%; border: 1.5px solid var(--border); border-radius: 6px;
+      padding: 7px 8px; font-size: 14px; font-family: inherit;
+      background: #fafbfa; outline: none; color: var(--text);
+      -webkit-appearance: none;
+    }
+    .cat-contractor .cc-field input:focus { border-color: var(--green); }
 
     /* ── Line Items ── */
     .li-row {
@@ -216,12 +233,92 @@
     /* ── Add-payment form ── */
     .add-form { background: var(--green-bg); border-radius: var(--radius); padding: 16px; margin-bottom: 10px; }
 
+    /* ── Scope Tab ── */
+    .scope-section { margin-bottom: 12px; }
+    .scope-section-title {
+      font-size: .82rem; font-weight: 800; text-transform: uppercase;
+      letter-spacing: 1.5px; color: var(--green); margin-bottom: 8px;
+      padding-bottom: 6px; border-bottom: 2px solid var(--green-light);
+      display: flex; align-items: center; gap: 8px;
+    }
+    .scope-section-title .scope-count {
+      font-size: .62rem; background: var(--green-light); color: var(--green);
+      padding: 2px 8px; border-radius: 10px; font-weight: 700;
+    }
+    .scope-cat { margin-bottom: 8px; }
+    .scope-cat-hdr {
+      font-size: .78rem; font-weight: 700; color: var(--dark);
+      padding: 6px 0; cursor: pointer; user-select: none;
+      display: flex; align-items: center; gap: 6px;
+    }
+    .scope-cat-hdr .sc-chev { font-size: .6rem; color: var(--muted); transition: transform .2s; }
+    .scope-cat-hdr .sc-chev.open { transform: rotate(180deg); }
+    .scope-cat-items { padding-left: 4px; }
+    .scope-cat-items.collapsed { display: none; }
+    .scope-item {
+      display: flex; align-items: flex-start; gap: 8px; padding: 5px 4px;
+      border-radius: 6px;
+    }
+    .scope-item:active { background: var(--green-bg); }
+    .scope-item input[type=checkbox] {
+      margin-top: 3px; width: 18px; height: 18px; cursor: pointer;
+      accent-color: var(--green); flex-shrink: 0;
+    }
+    .scope-item .si-text { flex: 1; font-size: .82rem; line-height: 1.5; }
+    .scope-item .si-text.excluded { text-decoration: line-through; color: var(--muted); }
+    .scope-item .si-del {
+      width: 24px; height: 24px; border: none; background: none;
+      color: var(--red); font-size: 1rem; cursor: pointer; flex-shrink: 0;
+      padding: 0; line-height: 1;
+    }
+    .scope-add-row { display: flex; gap: 8px; margin-top: 6px; }
+    .scope-add-row input {
+      flex: 1; border: 1.5px dashed var(--border); border-radius: 6px;
+      padding: 6px 8px; font-size: .82rem; font-family: inherit;
+      background: #fafbfa; outline: none; color: var(--text);
+      -webkit-appearance: none;
+    }
+    .scope-add-row input:focus { border-color: var(--green); }
+    .scope-add-btn {
+      padding: 6px 12px; border: 1.5px dashed var(--green); background: var(--green-light);
+      color: var(--green); border-radius: 6px; cursor: pointer; font-size: .75rem;
+      font-weight: 700; white-space: nowrap; font-family: inherit;
+      -webkit-appearance: none;
+    }
+    .scope-add-btn:active { background: #d4ddd0; }
+
+    /* ── Materials rows ── */
+    .mat-row-item {
+      display: grid; grid-template-columns: 100px 1fr; gap: 6px; align-items: center;
+      padding: 4px 0;
+    }
+    .mat-row-item label { font-size: .72rem; font-weight: 600; color: var(--muted); }
+    .mat-row-item input {
+      width: 100%; border: 1.5px solid var(--border); border-radius: 6px;
+      padding: 7px 8px; font-size: 14px; font-family: inherit;
+      background: #fafbfa; outline: none; color: var(--text);
+      -webkit-appearance: none;
+    }
+    .mat-row-item input:focus { border-color: var(--green); }
+    .mat-sub-title {
+      font-size: .68rem; font-weight: 700; color: var(--muted);
+      text-transform: uppercase; letter-spacing: .04em; margin-top: 10px; margin-bottom: 4px;
+    }
+
+    /* ── Rules ── */
+    .rule-item {
+      font-size: .78rem; line-height: 1.5; padding: 6px 10px;
+      border-left: 3px solid var(--green); margin-bottom: 4px;
+      background: var(--green-bg); border-radius: 0 6px 6px 0;
+    }
+    .rule-item.fee { border-left-color: var(--red); background: var(--red-light); }
+
     /* ── Print styles ── */
     @media print {
       body { padding: 0; background: #fff; }
       .app-header, .tab-bar, .no-print { display: none !important; }
       .tab-panel { display: block !important; padding: 0; }
-      #tab-project, #tab-budget, #tab-payments { display: none !important; }
+      #tab-project, #tab-budget, #tab-payments, #tab-scope { display: none !important; }
       #tab-export { display: block !important; }
       .card { box-shadow: none; break-inside: avoid; }
       .print-page { display: block !important; }
@@ -299,6 +396,30 @@
   <button class="btn btn-outline mt no-print" id="btnAddCat">+ Add Category</button>
 </div>
 
+<!-- ══════ Tab: Scope ══════ -->
+<div id="tab-scope" class="tab-panel">
+  <div class="card" style="margin-bottom:8px;">
+    <div style="font-size:.78rem;color:var(--muted);">Check/uncheck items to include or exclude from the final scope. Add custom items with the + button.</div>
+  </div>
+  <div id="scope-container"></div>
+  <div class="section-gap"></div>
+  <div class="card">
+    <div class="card-title">Materials &amp; Colors</div>
+    <div id="materials-container"></div>
+  </div>
+  <div class="section-gap"></div>
+  <div class="card">
+    <div class="card-title">Delivered Materials (Not Home Depot)</div>
+    <div id="delivered-mats"></div>
+    <button class="btn btn-outline btn-sm mt no-print" id="btnAddDeliveredMat">+ Add Material</button>
+  </div>
+  <div class="section-gap"></div>
+  <div class="card">
+    <div class="card-title">Pre-Construction &amp; General Conditions</div>
+    <div id="rules-container"></div>
+  </div>
+</div>
+
 <!-- ══════ Tab: Payments ══════ -->
 <div id="tab-payments" class="tab-panel">
   <div id="pay-summary"></div>
@@ -349,6 +470,10 @@
     <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M16 8v8M12 11v5M8 14v2M4 4h16a1 1 0 011 1v14a1 1 0 01-1 1H4a1 1 0 01-1-1V5a1 1 0 011-1z"/></svg>
     Budget
   </button>
+  <button class="tab-btn" data-tab="tab-scope">
+    <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M9 11l3 3L22 4M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11"/></svg>
+    Scope
+  </button>
   <button class="tab-btn" data-tab="tab-payments">
     <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M12 1v22M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6"/></svg>
     Payments
@@ -371,6 +496,9 @@ var D = {
   },
   categories: [],
   payments: [],
+  scope: {},
+  materials: {},
+  deliveredMats: [],
   nextCatId: 1,
   nextItemId: 1,
   nextPayId: 1
@@ -398,13 +526,230 @@ function defaultCategories() {
   ];
   var result = [];
   for (var c = 0; c < cats.length; c++) {
-    var cat = { id: D.nextCatId++, name: cats[c].name, collapsed: true, items: [] };
+    var cat = { id: D.nextCatId++, name: cats[c].name, collapsed: true, contractor: '', phone: '', items: [] };
     for (var i = 0; i < cats[c].items.length; i++) {
       cat.items.push({ id: D.nextItemId++, desc: cats[c].items[i], estimated: 0, actual: 0 });
     }
     result.push(cat);
   }
   return result;
+}
+
+/* ═══════════════════════════════════════════
+   SCOPE OF WORK — DEFAULT DATA
+   ═══════════════════════════════════════════ */
+var DEFAULT_SCOPE = {
+  "EXTERIOR": {
+    "Landscaping": [
+      "LANDSCAPING CUT BACK ANY TREE LIMBS TOUCHING HOUSE, ANY HOUSE STRUCTURE OR THAT ARE BROKEN AND HANGING",
+      "REMOVE ALL OVERGROWN WEEDS, BUSHES, LEAVES, BROKEN BRANCHES, YARD DEBRIS",
+      "WEED EAT EDGES AND TRIM LANDSCAPING BUSHES OR REMOVE IF NECESSARY",
+      "CUT GRASS WHEN NEEDED",
+      "SPRAY GRASS KILLER ON ALL WEEDS",
+      "INSTALL 30 BAGS OF MULCH AND SMALL SHRUBS AS NEEDED"
+    ],
+    "Windows": [
+      "CHECK EVERY WINDOW FOR FUNCTION",
+      "REMOVE TRIM AND PROVIDE SIZES FOR ANY THAT NEED REPLACEMENT"
+    ],
+    "Siding and Trim": [
+      "REPAIR AND REPLACE ANY MISSING SIDING, WOOD ROT, CAULK AND PAINT",
+      "POWER WASH THE ENTIRE HOUSE AND ADJOINING STRUCTURES",
+      "INSTALL NEW HOUSE NUMBERS AND MAILBOX",
+      "INSTALL WINDOW WELL PLASTIC COVERS AND CLEAN OUT WINDOW WELLS",
+      "ALL WOOD ROT MUST BE REPLACED"
+    ],
+    "Gutters & Down Spouts": [
+      "CLEAN GUTTERS USING POWERWASHER",
+      "CLEAN OFF ANY DEBRIS FROM ROOF",
+      "ADD FULL FLEX EXTENSIONS TO ALL DOWNSPOUTS",
+      "REPLACE DAMAGED OR BROKEN SECTIONS OF GUTTERS OR DOWNSPOUTS",
+      "FULL GUTTER REPLACEMENT NOT INCLUDED IN THIS SCOPE OF WORK"
+    ],
+    "Driveway": [
+      "PATCH ANY SMALL AREAS THAT ARE CRUMBLING. MAX 1'x 1'"
+    ],
+    "Garage": [
+      "REPAIR OR REPLACE ALL SEALS AND ENSURE PROPER FUNCTION",
+      "ADD ADDITIONAL BASIC LIGHT BULB RECEPTACLES FOR EXTRA LIGHT"
+    ],
+    "Entry": [
+      "REPLACE FRONT DOOR"
+    ],
+    "Lighting": [
+      "REPLACE ALL EXISTING EXTERIOR LIGHTS"
+    ],
+    "Roof": [
+      "INSPECT AND REPORT ISSUES"
+    ],
+    "Deck": [
+      "ADD SMALL PORCH AREA ON FRONT OR BACK - TBD"
+    ]
+  },
+  "INTERIOR": {
+    "Paint": [
+      "PAINT ALL WALLS TRIM AND DOORS TO SPECIFIED COLORS INCLUDING BASEMENT AND GARAGE",
+      "PAINT/REPLACE VENTS TO MATCH FLOORS (IF APPLICABLE)"
+    ],
+    "Trim & Drywall": [
+      "REPAIR OR REPLACE ANY NECESSARY DRYWALL",
+      "REPLACE/REPAIR TRIM AS NEEDED AROUND DOORS, FLOORS, WINDOWS, CABINETS, INCLUDING QUARTER ROUND, ETC.",
+      "ANY TRIM THAT IS PAINTED, NEEDS TO BE SANDED BEFORE PAINT",
+      "ANY ROTTED WOOD EXPOSED BEHIND WALLS NEEDS TO BE REPLACED"
+    ],
+    "Doors and Hardware": [
+      "REPLACE ALL DOOR HANDLES, LOCKS, DOOR STOPS",
+      "REPLACE ALL HINGES AND CABINET HARDWARE",
+      "REPLACE FAUCETS TO MATCH COLOR FINISHES",
+      "REPLACE ALL BATHROOM HARDWARE",
+      "REPAIR OR REPLACE DOORS IF NECESSARY",
+      "REPAIR FENCE IF NECESSARY",
+      "ADD WOOD WIRE RAILINGS WHERE SPECIFIED AS CODE REQUIRES"
+    ],
+    "Flooring & Tile": [
+      "INSPECT, LEVEL AND REPAIR SUBFLOOR AS NEEDED"
+    ],
+    "Bathroom (Main)": [
+      "GUT THE BATHROOM",
+      "TILE SHOWER/BATH SURROUND, PAN FLOOR SHOWER",
+      "CHECK FOR LEAKS AND UPDATE PLUMBING TO PEX AND PVC",
+      "INSTALL NEW SHOWER VALVE",
+      "INSTALL VANITY, TOILET, HARDWARE, ETC",
+      "REFER TO DEMO SECTION ABOUT TUB REPLACEMENT OR NOT",
+      "INSTALL NEW FAN IF LOUD OR MISSING"
+    ],
+    "Additional Bathroom": [
+      "ADD ADDITIONAL BATHROOM WITH SPECS AS MAIN BATHROOM"
+    ],
+    "Kitchen": [
+      "INSTALL NEW CABINETS",
+      "INSTALL NEW BACKSPLASH",
+      "INSTALL PROPER FILLERS FOR CABINETS",
+      "INSTALL NEW APPLIANCES AND CHECK FOR FUNCTION",
+      "INSTALL HANGING LIGHT FIXTURE IN DINING ROOM",
+      "REPLACE LIGHT IN KITCHEN AND ADD 4 RECESSED LIGHTS"
+    ],
+    "Living Room": [
+      "INSTALL 6-8 RECESSED FLAT LIGHTS",
+      "PLANK FLOORING",
+      "REPLACE FAN WITH NEW FAN (IF APPLICABLE)"
+    ],
+    "Electrical": [
+      "CHANGE ALL BULB CEILING LIGHTS WITH BULBS TO FLAT PANEL LED LIGHTS (3000K COLOR), UNLESS OTHER FIXTURE IS PROVIDED",
+      "CHANGE ALL OUTLETS AND SWITCHES (IF NOT UPDATED)",
+      "CHANGE ALL COVERS (IF NOT UPDATED)",
+      "REWIRE THE OUTLETS TO MEET CODE",
+      "PANEL REPLACEMENTS/RELOCATION WILL BE ADDRESSED SEPARATELY BY LICENSED PROFESSIONAL (IF APPLICABLE)",
+      "INSTALL SMOKE DETECTORS / CARBON MONOXIDE DETECTORS",
+      "CHANGE ALL LIGHT FIXTURES TO SPECIFICATIONS UNLESS INSTRUCTED OTHERWISE"
+    ],
+    "Plumbing": [
+      "CHANGE ALL EXPOSED PLUMBING TO PEX AND PVC",
+      "INSPECT FOR LEAKS AND BACKUPS",
+      "ADD NEW PLUMBING FOR NEW BATH",
+      "ADD NEW HOOKUPS FOR LAUNDRY",
+      "REPLACE WATER HEATER IF NECESSARY"
+    ],
+    "HVAC": [
+      "GENERAL CLEANING AND INSPECTION",
+      "REINFORCE ANY LOOSE DUCTS",
+      "REPLACE OR REPAIR ANY VENT COVERS"
+    ]
+  },
+  "DEMO": {
+    "Demo Phase": [
+      "REMOVE ALL DEBRIS FROM THE PROPERTY",
+      "REMOVE ALL STRUCTURES IN THE BACK YARD",
+      "CUT DOWN ALL THE LITTLE TREES IN BACKYARD",
+      "REMOVE THE FRONT DECKING RAMPS",
+      "REMOVE THE INTERIOR WALLS WITH THE HALLWAY CLOSET",
+      "TEMPORARY SUPPORT WALLS WILL NEED TO BE PUT UP WHERE LOAD BEARING WALLS ARE BEING DEMOED",
+      "REMOVE ALL OLD FLOORING",
+      "GUT THE BATHROOMS EXCEPT FOR ONE TUB",
+      "REMOVE, REFRAME, CLOSE UP TWO DOORS IN THE BACK",
+      "REMOVE LITTLE SHED IN THE FRONT BY FRONT DOOR",
+      "REPLACE FRONT DOOR",
+      "LEVEL OUT THE TRUCKER CABIN IN BACKYARD",
+      "DEMO OUT DRYWALL AND CEILINGS",
+      "DEMO OUT AROUND CHIMNEY",
+      "REMOVE OLD LIGHT FIXTURES",
+      "REMOVE ALL TRASH FROM AROUND THE PROPERTY"
+    ]
+  }
+};
+
+var FIXED_RULES = [
+  "CONTRACTOR RESPONSIBLE FOR ALL MATERIALS PICKUPS. DELIVERIES WILL BE SCHEDULED IF POSSIBLE.",
+  "ONE PHONE ORDER APPROVED PER DAY. EVERYTHING ELSE CONTRACTOR PAYS FOR AND SUBMITS EXPENSE REPORT.",
+  "ALL MATERIALS AND PAINT WILL BE PURCHASED AT HOME DEPOT USING PHONE ORDERS UNLESS OTHERWISE DISCUSSED.",
+  "ANY EXTRA MATERIALS THAT ARE UNUSED WILL BE RETURNED TO HOME DEPOT BY CONTRACTOR.",
+  "REMAINING MATERIALS WILL BE MOVED BACK TO WAREHOUSE OR THE NEXT JOBSITE BY CONTRACTOR.",
+  "ANY ITEMS THAT ARE STOCKED IN INVENTORY AT WAREHOUSE MUST BE USED BEFORE NEW PURCHASE.",
+  "ONLY CONSUMABLE ITEMS ALLOWED. ANY TOOLS OR OTHER MATERIALS NOT CONSIDERED CONSUMABLE WILL BE DEDUCTED FROM PAYMENT.",
+  "ANY SPECIALTY TOOLS OR AUTHORIZED NON-CONSUMABLE ITEMS MUST BE RETURNED TO WAREHOUSE AFTER USE.",
+  "ALL WORK MUST MEET LOCAL CODE STANDARDS.",
+  "ANYTHING LEFT OFF THE SCOPE OF WORK LIST REQUIRED TO MEET CODE = ASSUME IT IS PART OF OVERALL SCOPE.",
+  "CONTRACTOR WILL PROVIDE FOLLOW UP REPAIRS ON ANY ISSUES RELATED TO THE SCOPE FOR 3 MONTHS.",
+  "DUMPSTER(S) WILL BE PROVIDED, SERVICED, AND REMOVED BY PROJECT MANAGER.",
+  "REWORK FOR ERRORS OR OMISSIONS IS THE RESPONSIBILITY OF CONTRACTOR."
+];
+
+var FEE_RULES = [
+  "Outside must remain clean and all outside trash will be thrown away and materials put away inside.",
+  "Secure property daily (lock-up, temporary doors/windows if needed).",
+  "Any disposal of paint or other liquids must be in a sealed bag.",
+  "All windows will be covered with dark paper until job is complete. All doors with glass will be boarded up over the glass.",
+  "All open vents will be covered with paper and tape, all plumbing openings will be taped to prevent things from falling in.",
+  "Job site will be cleaned daily and everything picked up and organized. Trash will be thrown away and floors will be swept."
+];
+
+var DEFAULT_DELIVERED_MATS = [
+  'DOOR HANDLES','FAUCETS','SHOWER HARDWARE','DOORSTOPS','SHOWER VALVES',
+  'BATHROOM HARDWARE','RAILING HARDWARE','LVL BEAMS','CEDAR POSTS','BATHTUB DRAIN',
+  'LIGHT FIXTURES','FRONT DOOR LOCKS','CABINET HANDLES','SMOKE DETECTORS','HOUSE NUMBERS',
+  'MIRRORS','ANYTHING DECORATIVE'
+];
+
+var MATERIAL_FIELDS = [
+  { section: 'Paint & Finishes', fields: [
+    { key:'intPaint', label:'Interior Paint' }, { key:'walls', label:'Walls' },
+    { key:'trim', label:'Trim' }, { key:'ceilings', label:'Ceilings' },
+    { key:'doors', label:'Doors' }, { key:'cabinets', label:'Cabinets' },
+    { key:'extPaint', label:'Exterior Paint' }, { key:'houseColor', label:'House Color' },
+    { key:'garageDoor', label:'Garage Door' }, { key:'frontDoor', label:'Front Door' },
+    { key:'windows', label:'Windows' }, { key:'trimExt', label:'Trim (ext)' },
+    { key:'soffits', label:'Soffits' }, { key:'gutters', label:'Gutters' }
+  ]},
+  { section: 'Flooring & Surfaces', fields: [
+    { key:'basementFloor', label:'Basement Floor' }, { key:'basementCeil', label:'Basement Ceiling' },
+    { key:'basementWalls', label:'Basement Walls' }, { key:'garageWalls', label:'Garage Walls' },
+    { key:'garageFloor', label:'Garage Floor' }
+  ]},
+  { section: 'Kitchen Tile', fields: [
+    { key:'kitFloor', label:'Floor' }, { key:'kitBack', label:'Backsplash' }, { key:'kitGrout', label:'Grout' }
+  ]},
+  { section: 'Bathroom 1 Tile', fields: [
+    { key:'bath1Floor', label:'Floor' }, { key:'bath1Shower', label:'Shower' },
+    { key:'bath1Wall', label:'Wall' }, { key:'bath1Grout', label:'Grout' }
+  ]},
+  { section: 'Bathroom 2 Tile', fields: [
+    { key:'bath2Floor', label:'Floor' }, { key:'bath2Shower', label:'Shower' },
+    { key:'bath2Wall', label:'Wall' }, { key:'bath2Grout', label:'Grout' }
+  ]}
+];
+
+function initDefaultScope() {
+  var scope = {};
+  for (var section in DEFAULT_SCOPE) {
+    scope[section] = {};
+    for (var cat in DEFAULT_SCOPE[section]) {
+      scope[section][cat] = [];
+      for (var i = 0; i < DEFAULT_SCOPE[section][cat].length; i++) {
+        scope[section][cat].push({ text: DEFAULT_SCOPE[section][cat][i], included: true, custom: false });
+      }
+    }
+  }
+  return scope;
 }
 
 /* ═══════════════════════════════════════════
@@ -555,6 +900,7 @@ function switchTab(tabId) {
   document.getElementById(tabId).classList.add('active');
   document.querySelector('[data-tab="' + tabId + '"]').classList.add('active');
   if (tabId === 'tab-budget') renderBudget();
+  if (tabId === 'tab-scope') renderScope();
   if (tabId === 'tab-payments') renderPayments();
   if (tabId === 'tab-export') renderExportPreview();
   window.scrollTo(0, 0);
@@ -613,7 +959,14 @@ function renderBudgetCategories() {
     div.className = 'cat-card';
     div.setAttribute('data-cat-id', cat.id);
 
-    var bodyHTML = '';
+    // Contractor info row
+    var contractorHTML =
+      '<div class="cat-contractor">' +
+        '<div class="cc-field"><label>Contractor</label><input type="text" value="' + escAttr(cat.contractor || '') + '" data-cat-field="contractor" placeholder="Contractor name"></div>' +
+        '<div class="cc-field"><label>Phone</label><input type="tel" value="' + escAttr(cat.phone || '') + '" data-cat-field="phone" placeholder="(555) 555-5555"></div>' +
+      '</div>';
+
+    var bodyHTML = contractorHTML;
     for (var i = 0; i < cat.items.length; i++) {
       var item = cat.items[i];
       var iVar = item.estimated - item.actual;
@@ -634,6 +987,13 @@ function renderBudgetCategories() {
         '</div>';
     }
 
+    // Contractor info summary in header
+    var contractorSummary = '';
+    if (cat.contractor) {
+      contractorSummary = '<div style="width:100%;font-size:.68rem;color:var(--muted);margin-top:1px;">' +
+        esc(cat.contractor) + (cat.phone ? ' &bull; ' + esc(cat.phone) : '') + '</div>';
+    }
+
     div.innerHTML =
       '<div class="cat-header" data-cat-id="' + cat.id + '">' +
         '<span class="cat-name">' + esc(cat.name) + '</span>' +
@@ -644,6 +1004,7 @@ function renderBudgetCategories() {
           '<span>Act: $' + fmt(catAct) + '</span>' +
           '<span class="' + varClass + '">' + varText + '</span>' +
         '</div>' +
+        contractorSummary +
       '</div>' +
       '<div class="cat-body ' + (isOpen ? 'open' : '') + '">' +
         bodyHTML +
@@ -713,15 +1074,22 @@ document.getElementById('tab-budget').addEventListener('click', function(e) {
 /* ── Budget input handling (event delegation) ── */
 document.getElementById('tab-budget').addEventListener('input', function(e) {
   var target = e.target;
-  var row = target.closest('.li-row');
   var catCard = target.closest('.cat-card');
-  if (!row || !catCard) return;
-
-  var itemId = parseInt(row.getAttribute('data-item-id'));
+  if (!catCard) return;
   var catId = parseInt(catCard.getAttribute('data-cat-id'));
   var cat = findCat(catId);
   if (!cat) return;
 
+  // Handle contractor/phone fields
+  var catField = target.getAttribute('data-cat-field');
+  if (catField === 'contractor') { cat.contractor = target.value; scheduleSave(); return; }
+  if (catField === 'phone') { cat.phone = target.value; scheduleSave(); return; }
+
+  // Handle line item fields
+  var row = target.closest('.li-row');
+  if (!row) return;
+
+  var itemId = parseInt(row.getAttribute('data-item-id'));
   var item = null;
   for (var i = 0; i < cat.items.length; i++) {
     if (cat.items[i].id === itemId) { item = cat.items[i]; break; }
@@ -778,10 +1146,271 @@ document.getElementById('btnAddCat').addEventListener('click', function() {
   var name = prompt('Category name:');
   if (!name || !name.trim()) return;
   D.categories.push({
-    id: D.nextCatId++, name: name.trim(), collapsed: false,
+    id: D.nextCatId++, name: name.trim(), collapsed: false, contractor: '', phone: '',
     items: [{ id: D.nextItemId++, desc: '', estimated: 0, actual: 0 }]
   });
   renderBudget(); scheduleSave();
+});
+
+/* ═══════════════════════════════════════════
+   RENDER: SCOPE TAB
+   ═══════════════════════════════════════════ */
+function renderScope() {
+  renderScopeItems();
+  renderMaterials();
+  renderDeliveredMats();
+  renderRules();
+}
+
+function renderScopeItems() {
+  var container = document.getElementById('scope-container');
+  container.innerHTML = '';
+
+  for (var section in D.scope) {
+    var cats = D.scope[section];
+    var totalItems = 0, includedItems = 0;
+    for (var cat in cats) {
+      totalItems += cats[cat].length;
+      for (var i = 0; i < cats[cat].length; i++) {
+        if (cats[cat][i].included) includedItems++;
+      }
+    }
+
+    var sectionIcon = section === 'EXTERIOR' ? '🏡' : section === 'INTERIOR' ? '🏠' : '🔨';
+
+    var sDiv = document.createElement('div');
+    sDiv.className = 'card scope-section';
+    var html = '<div class="scope-section-title">' + sectionIcon + ' ' + section +
+      ' <span class="scope-count">' + includedItems + '/' + totalItems + '</span></div>';
+
+    for (var cat in cats) {
+      var items = cats[cat];
+      var catIncluded = 0;
+      for (var i = 0; i < items.length; i++) { if (items[i].included) catIncluded++; }
+
+      html += '<div class="scope-cat">' +
+        '<div class="scope-cat-hdr" data-scope-section="' + escAttr(section) + '" data-scope-cat="' + escAttr(cat) + '">' +
+          '<span class="sc-chev">&#9660;</span> ' +
+          '<span style="flex:1;font-size:.78rem;">' + esc(cat) + '</span>' +
+          '<span class="cat-badge">' + catIncluded + '/' + items.length + '</span>' +
+        '</div>' +
+        '<div class="scope-cat-items">';
+
+      for (var i = 0; i < items.length; i++) {
+        var item = items[i];
+        html += '<div class="scope-item" data-scope-section="' + escAttr(section) + '" data-scope-cat="' + escAttr(cat) + '" data-scope-idx="' + i + '">' +
+          '<input type="checkbox" ' + (item.included ? 'checked' : '') + ' data-action="scope-toggle">' +
+          '<span class="si-text ' + (item.included ? '' : 'excluded') + '">' + esc(item.text) + '</span>' +
+          (item.custom ? '<button class="si-del no-print" data-action="scope-del">&times;</button>' : '') +
+        '</div>';
+      }
+
+      // Add item row
+      html += '<div class="scope-add-row">' +
+        '<input type="text" placeholder="Add item to ' + escAttr(cat) + '..." data-scope-section="' + escAttr(section) + '" data-scope-cat="' + escAttr(cat) + '" data-action="scope-add-input">' +
+        '<button class="scope-add-btn" data-scope-section="' + escAttr(section) + '" data-scope-cat="' + escAttr(cat) + '" data-action="scope-add">+ Add</button>' +
+      '</div>';
+
+      html += '</div></div>';
+    }
+
+    // Add new category to section
+    html += '<div class="scope-add-row" style="margin-top:8px;">' +
+      '<input type="text" placeholder="New category name..." data-scope-section="' + escAttr(section) + '" data-action="scope-addcat-input">' +
+      '<button class="scope-add-btn" data-scope-section="' + escAttr(section) + '" data-action="scope-addcat">+ Category</button>' +
+    '</div>';
+
+    sDiv.innerHTML = html;
+    container.appendChild(sDiv);
+  }
+}
+
+function renderMaterials() {
+  var container = document.getElementById('materials-container');
+  var html = '';
+  if (!D.materials) D.materials = {};
+
+  for (var s = 0; s < MATERIAL_FIELDS.length; s++) {
+    var sec = MATERIAL_FIELDS[s];
+    html += '<div class="mat-sub-title">' + sec.section + '</div>';
+    for (var f = 0; f < sec.fields.length; f++) {
+      var fld = sec.fields[f];
+      html += '<div class="mat-row-item">' +
+        '<label>' + fld.label + '</label>' +
+        '<input type="text" value="' + escAttr(D.materials[fld.key] || '') + '" data-mat-key="' + fld.key + '" placeholder="...">' +
+      '</div>';
+    }
+  }
+  container.innerHTML = html;
+}
+
+function renderDeliveredMats() {
+  var container = document.getElementById('delivered-mats');
+  var html = '';
+  if (!D.deliveredMats) D.deliveredMats = [];
+
+  for (var i = 0; i < D.deliveredMats.length; i++) {
+    html += '<div style="display:flex;gap:8px;align-items:center;margin-bottom:4px;">' +
+      '<input type="text" value="' + escAttr(D.deliveredMats[i]) + '" data-dm-idx="' + i + '" style="flex:1;border:1.5px solid var(--border);border-radius:6px;padding:7px 8px;font-size:14px;font-family:inherit;background:#fafbfa;outline:none;-webkit-appearance:none;">' +
+      '<button class="si-del no-print" data-action="dm-del" data-dm-idx="' + i + '" style="width:24px;height:24px;border:none;background:none;color:var(--red);font-size:1rem;cursor:pointer;">&times;</button>' +
+    '</div>';
+  }
+  container.innerHTML = html;
+}
+
+function renderRules() {
+  var container = document.getElementById('rules-container');
+  var html = '';
+  for (var i = 0; i < FIXED_RULES.length; i++) {
+    html += '<div class="rule-item">' + (i + 1) + '. ' + esc(FIXED_RULES[i]) + '</div>';
+  }
+  html += '<div style="font-weight:700;font-size:.78rem;color:var(--red);margin:10px 0 6px;">Violations of any of the following rules will be charged $100 fee PER EVENT:</div>';
+  for (var i = 0; i < FEE_RULES.length; i++) {
+    html += '<div class="rule-item fee">' + esc(FEE_RULES[i]) + '</div>';
+  }
+  container.innerHTML = html;
+}
+
+/* ── Scope event delegation ── */
+document.getElementById('tab-scope').addEventListener('click', function(e) {
+  var target = e.target;
+  var action = target.getAttribute('data-action');
+
+  // Toggle scope item
+  if (action === 'scope-toggle') {
+    var itemDiv = target.closest('.scope-item');
+    if (itemDiv) {
+      var sec = itemDiv.getAttribute('data-scope-section');
+      var cat = itemDiv.getAttribute('data-scope-cat');
+      var idx = parseInt(itemDiv.getAttribute('data-scope-idx'));
+      if (D.scope[sec] && D.scope[sec][cat] && D.scope[sec][cat][idx]) {
+        D.scope[sec][cat][idx].included = !D.scope[sec][cat][idx].included;
+        renderScopeItems(); scheduleSave();
+      }
+    }
+    return;
+  }
+
+  // Delete scope item
+  if (action === 'scope-del') {
+    var itemDiv = target.closest('.scope-item');
+    if (itemDiv) {
+      var sec = itemDiv.getAttribute('data-scope-section');
+      var cat = itemDiv.getAttribute('data-scope-cat');
+      var idx = parseInt(itemDiv.getAttribute('data-scope-idx'));
+      if (D.scope[sec] && D.scope[sec][cat]) {
+        D.scope[sec][cat].splice(idx, 1);
+        renderScopeItems(); scheduleSave();
+      }
+    }
+    return;
+  }
+
+  // Add scope item
+  if (action === 'scope-add') {
+    var sec = target.getAttribute('data-scope-section');
+    var cat = target.getAttribute('data-scope-cat');
+    var input = target.previousElementSibling;
+    if (input && input.value.trim()) {
+      if (!D.scope[sec]) D.scope[sec] = {};
+      if (!D.scope[sec][cat]) D.scope[sec][cat] = [];
+      D.scope[sec][cat].push({ text: input.value.trim().toUpperCase(), included: true, custom: true });
+      input.value = '';
+      renderScopeItems(); scheduleSave();
+    }
+    return;
+  }
+
+  // Add scope category
+  if (action === 'scope-addcat') {
+    var sec = target.getAttribute('data-scope-section');
+    var input = target.previousElementSibling;
+    if (input && input.value.trim()) {
+      if (!D.scope[sec]) D.scope[sec] = {};
+      D.scope[sec][input.value.trim()] = [];
+      input.value = '';
+      renderScopeItems(); scheduleSave();
+    }
+    return;
+  }
+
+  // Toggle scope category collapse
+  var catHdr = target.closest('.scope-cat-hdr');
+  if (catHdr) {
+    var itemsDiv = catHdr.nextElementSibling;
+    if (itemsDiv) {
+      itemsDiv.classList.toggle('collapsed');
+      var chev = catHdr.querySelector('.sc-chev');
+      if (chev) chev.classList.toggle('open');
+    }
+    return;
+  }
+
+  // Delete delivered material
+  if (action === 'dm-del') {
+    var idx = parseInt(target.getAttribute('data-dm-idx'));
+    D.deliveredMats.splice(idx, 1);
+    renderDeliveredMats(); scheduleSave();
+    return;
+  }
+});
+
+/* ── Scope add item via Enter key ── */
+document.getElementById('tab-scope').addEventListener('keydown', function(e) {
+  if (e.key !== 'Enter') return;
+  var target = e.target;
+
+  // Add scope item on enter
+  var action = target.getAttribute('data-action');
+  if (action === 'scope-add-input') {
+    var sec = target.getAttribute('data-scope-section');
+    var cat = target.getAttribute('data-scope-cat');
+    if (target.value.trim()) {
+      if (!D.scope[sec]) D.scope[sec] = {};
+      if (!D.scope[sec][cat]) D.scope[sec][cat] = [];
+      D.scope[sec][cat].push({ text: target.value.trim().toUpperCase(), included: true, custom: true });
+      target.value = '';
+      renderScopeItems(); scheduleSave();
+    }
+    return;
+  }
+
+  // Add category on enter
+  if (action === 'scope-addcat-input') {
+    var sec = target.getAttribute('data-scope-section');
+    if (target.value.trim()) {
+      if (!D.scope[sec]) D.scope[sec] = {};
+      D.scope[sec][target.value.trim()] = [];
+      target.value = '';
+      renderScopeItems(); scheduleSave();
+    }
+    return;
+  }
+});
+
+/* ── Materials input handling ── */
+document.getElementById('materials-container').addEventListener('input', function(e) {
+  var key = e.target.getAttribute('data-mat-key');
+  if (key) {
+    if (!D.materials) D.materials = {};
+    D.materials[key] = e.target.value;
+    scheduleSave();
+  }
+});
+
+/* ── Delivered materials input handling ── */
+document.getElementById('delivered-mats').addEventListener('input', function(e) {
+  var idx = e.target.getAttribute('data-dm-idx');
+  if (idx !== null && idx !== undefined) {
+    D.deliveredMats[parseInt(idx)] = e.target.value;
+    scheduleSave();
+  }
+});
+
+/* ── Add delivered material ── */
+document.getElementById('btnAddDeliveredMat').addEventListener('click', function() {
+  D.deliveredMats.push('');
+  renderDeliveredMats(); scheduleSave();
 });
 
 /* ═══════════════════════════════════════════
@@ -949,6 +1578,7 @@ function renderExportPreview() {
   html += '<table style="width:100%;border-collapse:collapse;font-size:.78rem;margin-bottom:14px;">' +
     '<thead><tr style="background:var(--green);color:#fff;">' +
     '<th style="padding:6px 8px;text-align:left;">Item</th>' +
+    '<th style="padding:6px 8px;text-align:left;width:120px;">Contractor</th>' +
     '<th style="padding:6px 8px;text-align:right;width:80px;">Estimated</th>' +
     '<th style="padding:6px 8px;text-align:right;width:80px;">Actual</th>' +
     '</tr></thead><tbody>';
@@ -959,23 +1589,90 @@ function renderExportPreview() {
     for (var i = 0; i < cat.items.length; i++) {
       if (cat.items[i].desc || cat.items[i].estimated || cat.items[i].actual) { hasItems = true; break; }
     }
-    if (!hasItems) continue;
+    if (!hasItems && !cat.contractor) continue;
 
-    html += '<tr style="background:var(--green-light);"><td colspan="3" style="padding:6px 8px;font-weight:700;">' + esc(cat.name) + '</td></tr>';
+    var contractorInfo = cat.contractor ? esc(cat.contractor) + (cat.phone ? '<br>' + esc(cat.phone) : '') : '';
+    html += '<tr style="background:var(--green-light);"><td style="padding:6px 8px;font-weight:700;">' + esc(cat.name) + '</td>' +
+      '<td style="padding:6px 8px;font-size:.72rem;">' + contractorInfo + '</td>' +
+      '<td style="padding:6px 8px;text-align:right;font-weight:700;">$' + fmt(getCatEstimated(cat)) + '</td>' +
+      '<td style="padding:6px 8px;text-align:right;font-weight:700;">$' + fmt(getCatActual(cat)) + '</td></tr>';
+
     for (var i = 0; i < cat.items.length; i++) {
       var item = cat.items[i];
       if (!item.desc && !item.estimated && !item.actual) continue;
-      html += '<tr><td style="padding:4px 8px 4px 20px;">' + esc(item.desc) + '</td>' +
+      html += '<tr><td style="padding:4px 8px 4px 20px;" colspan="2">' + esc(item.desc) + '</td>' +
         '<td style="padding:4px 8px;text-align:right;">$' + fmt(item.estimated) + '</td>' +
         '<td style="padding:4px 8px;text-align:right;">$' + fmt(item.actual) + '</td></tr>';
     }
   }
 
   html += '<tr style="border-top:2px solid var(--green);font-weight:700;">' +
-    '<td style="padding:6px 8px;">TOTAL</td>' +
+    '<td style="padding:6px 8px;" colspan="2">TOTAL</td>' +
     '<td style="padding:6px 8px;text-align:right;">$' + fmt(totalEst) + '</td>' +
     '<td style="padding:6px 8px;text-align:right;">$' + fmt(totalAct) + '</td></tr>';
   html += '</tbody></table>';
+
+  // Scope items
+  if (D.scope) {
+    for (var section in D.scope) {
+      var cats = D.scope[section];
+      var hasIncluded = false;
+      for (var cat in cats) {
+        for (var i = 0; i < cats[cat].length; i++) {
+          if (cats[cat][i].included) { hasIncluded = true; break; }
+        }
+        if (hasIncluded) break;
+      }
+      if (!hasIncluded) continue;
+
+      html += '<div style="font-weight:800;font-size:.82rem;letter-spacing:1px;margin:14px 0 6px;color:var(--green);">' + esc(section) + '</div>';
+      for (var cat in cats) {
+        var included = [];
+        for (var i = 0; i < cats[cat].length; i++) {
+          if (cats[cat][i].included) included.push(cats[cat][i]);
+        }
+        if (included.length === 0) continue;
+        html += '<div style="font-weight:700;font-size:.78rem;margin:6px 0 2px;">' + esc(cat) + '</div><ul style="padding-left:18px;margin-bottom:4px;">';
+        for (var i = 0; i < included.length; i++) {
+          html += '<li style="font-size:.75rem;line-height:1.5;">' + esc(included[i].text) + '</li>';
+        }
+        html += '</ul>';
+      }
+    }
+  }
+
+  // Materials
+  if (D.materials) {
+    var hasMats = false;
+    for (var k in D.materials) { if (D.materials[k]) { hasMats = true; break; } }
+    if (hasMats) {
+      html += '<div style="font-weight:800;font-size:.82rem;letter-spacing:1px;margin:14px 0 6px;color:var(--green);">MATERIALS & COLORS</div>';
+      html += '<div style="display:grid;grid-template-columns:1fr 1fr;gap:2px 16px;font-size:.75rem;">';
+      for (var s = 0; s < MATERIAL_FIELDS.length; s++) {
+        for (var f = 0; f < MATERIAL_FIELDS[s].fields.length; f++) {
+          var fld = MATERIAL_FIELDS[s].fields[f];
+          if (D.materials[fld.key]) {
+            html += '<div><strong>' + fld.label + ':</strong> ' + esc(D.materials[fld.key]) + '</div>';
+          }
+        }
+      }
+      html += '</div>';
+    }
+  }
+
+  // Rules
+  html += '<div style="font-weight:800;font-size:.82rem;letter-spacing:1px;margin:14px 0 6px;color:var(--green);">PRE-CONSTRUCTION & GENERAL CONDITIONS</div>';
+  html += '<ol style="padding-left:18px;font-size:.72rem;line-height:1.6;margin-bottom:8px;">';
+  for (var i = 0; i < FIXED_RULES.length; i++) {
+    html += '<li>' + esc(FIXED_RULES[i]) + '</li>';
+  }
+  html += '</ol>';
+  html += '<div style="font-weight:700;font-size:.72rem;color:var(--red);margin-bottom:4px;">$100 fee PER EVENT for violations:</div>';
+  html += '<ul style="padding-left:18px;font-size:.72rem;line-height:1.6;margin-bottom:14px;">';
+  for (var i = 0; i < FEE_RULES.length; i++) {
+    html += '<li>' + esc(FEE_RULES[i]) + '</li>';
+  }
+  html += '</ul>';
 
   // Payment summary
   if (D.payments.length > 0) {
@@ -993,9 +1690,15 @@ function renderExportPreview() {
     html += '</tbody></table>';
   }
 
+  // Signature lines
+  html += '<div style="display:flex;gap:30px;margin-top:30px;">' +
+    '<div style="flex:1;border-top:1px solid #000;padding-top:4px;font-size:.72rem;color:#666;">Contractor Signature &nbsp;&nbsp;&nbsp;&nbsp; Date</div>' +
+    '<div style="flex:1;border-top:1px solid #000;padding-top:4px;font-size:.72rem;color:#666;">Project Manager Signature &nbsp;&nbsp;&nbsp;&nbsp; Date</div>' +
+  '</div>';
+
   // Notes
   if (p.notes) {
-    html += '<div style="font-weight:700;font-size:.82rem;margin-bottom:4px;">Notes</div>' +
+    html += '<div style="font-weight:700;font-size:.82rem;margin:14px 0 4px;">Notes</div>' +
       '<div style="font-size:.78rem;color:var(--muted);white-space:pre-wrap;">' + esc(p.notes) + '</div>';
   }
 
@@ -1026,12 +1729,34 @@ document.getElementById('btnShare').addEventListener('click', function() {
     var cat = D.categories[c];
     var ce = getCatEstimated(cat);
     if (ce === 0 && getCatActual(cat) === 0) continue;
-    text += '  ' + cat.name + ': $' + fmt(ce) + ' est / $' + fmt(getCatActual(cat)) + ' actual\n';
+    text += '  ' + cat.name;
+    if (cat.contractor) text += ' (' + cat.contractor + (cat.phone ? ' ' + cat.phone : '') + ')';
+    text += ': $' + fmt(ce) + ' est / $' + fmt(getCatActual(cat)) + ' actual\n';
   }
 
   text += '\nTotal Estimated: $' + fmt(getTotalEstimated()) + '\n';
   text += 'Total Actual: $' + fmt(getTotalActual()) + '\n';
   text += 'Total Paid: $' + fmt(getTotalPaid()) + '\n';
+
+  // Scope items
+  if (D.scope) {
+    text += '\nSCOPE OF WORK\n';
+    for (var section in D.scope) {
+      var cats = D.scope[section];
+      var hasItems = false;
+      for (var cat in cats) { for (var i = 0; i < cats[cat].length; i++) { if (cats[cat][i].included) { hasItems = true; break; } } if (hasItems) break; }
+      if (!hasItems) continue;
+      text += '\n' + section + '\n';
+      for (var cat in cats) {
+        var included = [];
+        for (var i = 0; i < cats[cat].length; i++) { if (cats[cat][i].included) included.push(cats[cat][i].text); }
+        if (included.length === 0) continue;
+        text += '  ' + cat + ':\n';
+        for (var i = 0; i < included.length; i++) { text += '    - ' + included[i] + '\n'; }
+      }
+    }
+  }
+
   if (p.notes) text += '\nNotes: ' + p.notes + '\n';
   text += '\n— BNDR Capital | (913) 219-8906';
 
@@ -1069,6 +1794,9 @@ document.getElementById('btnImportJSON').addEventListener('change', function(e) 
       var loaded = JSON.parse(ev.target.result);
       if (loaded && loaded.project && loaded.categories) {
         D = loaded;
+        if (!D.scope) D.scope = initDefaultScope();
+        if (!D.materials) D.materials = {};
+        if (!D.deliveredMats) D.deliveredMats = [];
         populateProjectFields();
         renderBudget(); renderPayments();
         saveState();
@@ -1103,6 +1831,9 @@ document.getElementById('btnDownloadHTML').addEventListener('click', function() 
     '(function(){\n' +
     '  var saved = ' + stateJSON + ';\n' +
     '  if (saved && saved.project) { D = saved; }\n' +
+    '  if (!D.scope) D.scope = initDefaultScope();\n' +
+    '  if (!D.materials) D.materials = {};\n' +
+    '  if (!D.deliveredMats) D.deliveredMats = [];\n' +
     '  populateProjectFields();\n' +
     '  renderBudget();\n' +
     '})();\n';
@@ -1164,6 +1895,18 @@ if ('serviceWorker' in navigator) {
     // Fresh start — set defaults
     D.categories = defaultCategories();
     D.project.date = todayStr();
+    D.scope = initDefaultScope();
+    D.materials = {};
+    D.deliveredMats = DEFAULT_DELIVERED_MATS.slice();
+  }
+  // Ensure scope/materials/deliveredMats exist for older saved states
+  if (!D.scope || Object.keys(D.scope).length === 0) D.scope = initDefaultScope();
+  if (!D.materials) D.materials = {};
+  if (!D.deliveredMats) D.deliveredMats = DEFAULT_DELIVERED_MATS.slice();
+  // Ensure contractor/phone fields exist on categories for older saved states
+  for (var i = 0; i < D.categories.length; i++) {
+    if (D.categories[i].contractor === undefined) D.categories[i].contractor = '';
+    if (D.categories[i].phone === undefined) D.categories[i].phone = '';
   }
   populateProjectFields();
   renderBudget();

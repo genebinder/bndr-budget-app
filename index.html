@@ -1793,6 +1793,7 @@ function renderPayList() {
           '<span class="pay-date">' + esc(p.date) + '</span>' +
           '<span class="pay-amount">$' + fmt(p.amount || 0) + '</span>' +
         '</div>' +
+        (p.contractor ? '<div class="pay-contractor" style="font-size:.72rem;font-weight:700;color:var(--green);margin-top:2px;">' + esc(p.contractor) + '</div>' : '') +
         '<div class="pay-desc">' + esc(p.category || '') + (p.desc ? ' — ' + esc(p.desc) : '') + '</div>' +
         '<div class="pay-bal ' + balClass + '">Balance: $' + fmt(Math.abs(runningBal)) + (isNeg ? ' over' : '') + '</div>' +
       '</div>';
@@ -1803,6 +1804,22 @@ function renderPayList() {
 function renderPayForm() {
   var wrap = document.getElementById('pay-form-wrap');
   if (!showPayForm) { wrap.innerHTML = ''; return; }
+
+  // Build contractor dropdown from budget categories
+  var contractors = [];
+  var seen = {};
+  for (var c = 0; c < D.categories.length; c++) {
+    var cName = (D.categories[c].contractor || '').trim();
+    if (cName && !seen[cName.toLowerCase()]) {
+      contractors.push(cName);
+      seen[cName.toLowerCase()] = true;
+    }
+  }
+  var contractorOptions = '<option value="">Select contractor...</option>';
+  for (var ci = 0; ci < contractors.length; ci++) {
+    contractorOptions += '<option value="' + escAttr(contractors[ci]) + '">' + esc(contractors[ci]) + '</option>';
+  }
+  contractorOptions += '<option value="__other__">Other...</option>';
 
   var catOptions = '<option value="">Select category...</option>';
   for (var c = 0; c < D.categories.length; c++) {
@@ -1818,6 +1835,8 @@ function renderPayForm() {
         '<div class="fg"><label>Date</label><input type="text" id="pf-date" value="' + todayStr() + '"></div>' +
         '<div class="fg"><label>Amount ($)</label><input type="text" id="pf-amount" inputmode="decimal" placeholder="0"></div>' +
       '</div>' +
+      '<div class="fg"><label>Contractor</label><select id="pf-contractor">' + contractorOptions + '</select></div>' +
+      '<div class="fg hidden" id="pf-contractor-other-wrap"><label>Contractor Name</label><input type="text" id="pf-contractor-other" placeholder="Enter contractor name..."></div>' +
       '<div class="fg"><label>Category</label><select id="pf-category">' + catOptions + '</select></div>' +
       '<div class="fg"><label>Description</label><input type="text" id="pf-desc" placeholder="Payment description..."></div>' +
       '<div class="btn-row mt">' +
@@ -1826,12 +1845,28 @@ function renderPayForm() {
       '</div>' +
     '</div>';
 
+  // Show/hide custom contractor input when "Other..." is selected
+  document.getElementById('pf-contractor').addEventListener('change', function() {
+    var otherWrap = document.getElementById('pf-contractor-other-wrap');
+    if (this.value === '__other__') {
+      otherWrap.classList.remove('hidden');
+      document.getElementById('pf-contractor-other').focus();
+    } else {
+      otherWrap.classList.add('hidden');
+    }
+  });
+
   document.getElementById('pf-save').addEventListener('click', function() {
     var amount = parseMoney(document.getElementById('pf-amount').value);
     if (amount <= 0) { alert('Enter a payment amount.'); return; }
+    var contractorVal = document.getElementById('pf-contractor').value;
+    var contractor = contractorVal === '__other__'
+      ? (document.getElementById('pf-contractor-other').value || '').trim()
+      : (contractorVal || '');
     D.payments.push({
       id: D.nextPayId++,
       date: document.getElementById('pf-date').value || todayStr(),
+      contractor: contractor,
       category: document.getElementById('pf-category').value || '',
       desc: document.getElementById('pf-desc').value || '',
       amount: amount
@@ -2005,14 +2040,15 @@ function renderExportPreview() {
   if (D.payments.length > 0) {
     html += '<div style="font-weight:700;font-size:.82rem;margin-bottom:6px;">Payments</div>' +
       '<table style="width:100%;border-collapse:collapse;font-size:.78rem;margin-bottom:14px;">' +
-      '<thead><tr style="background:#eee;"><th style="padding:4px 8px;text-align:left;">Date</th><th style="padding:4px 8px;text-align:left;">Description</th><th style="padding:4px 8px;text-align:right;">Amount</th></tr></thead><tbody>';
+      '<thead><tr style="background:#eee;"><th style="padding:4px 8px;text-align:left;">Date</th><th style="padding:4px 8px;text-align:left;">Contractor</th><th style="padding:4px 8px;text-align:left;">Description</th><th style="padding:4px 8px;text-align:right;">Amount</th></tr></thead><tbody>';
     for (var i = 0; i < D.payments.length; i++) {
       var pay = D.payments[i];
-      html += '<tr><td style="padding:4px 8px;">' + esc(pay.date) + '</td><td style="padding:4px 8px;">' +
-        esc(pay.category) + (pay.desc ? ' - ' + esc(pay.desc) : '') + '</td>' +
+      html += '<tr><td style="padding:4px 8px;">' + esc(pay.date) + '</td>' +
+        '<td style="padding:4px 8px;">' + esc(pay.contractor || '') + '</td>' +
+        '<td style="padding:4px 8px;">' + esc(pay.category) + (pay.desc ? ' - ' + esc(pay.desc) : '') + '</td>' +
         '<td style="padding:4px 8px;text-align:right;">$' + fmt(pay.amount) + '</td></tr>';
     }
-    html += '<tr style="border-top:1px solid #ccc;font-weight:700;"><td colspan="2" style="padding:4px 8px;">Total Paid</td>' +
+    html += '<tr style="border-top:1px solid #ccc;font-weight:700;"><td colspan="3" style="padding:4px 8px;">Total Paid</td>' +
       '<td style="padding:4px 8px;text-align:right;">$' + fmt(totalPaid) + '</td></tr>';
     html += '</tbody></table>';
   }

@@ -1,5 +1,5 @@
 // BNDR Budget — Service Worker for offline caching
-var CACHE_NAME = 'bndr-budget-v8';
+var CACHE_NAME = 'bndr-budget-v9';
 var ASSETS = ['./', './index.html', './manifest.json'];
 
 // Install: cache core assets
@@ -12,7 +12,7 @@ self.addEventListener('install', function(event) {
   self.skipWaiting();
 });
 
-// Activate: clean old caches
+// Activate: clean ALL old caches
 self.addEventListener('activate', function(event) {
   event.waitUntil(
     caches.keys().then(function(names) {
@@ -25,23 +25,19 @@ self.addEventListener('activate', function(event) {
   self.clients.claim();
 });
 
-// Fetch: serve from cache, fall back to network
+// Fetch: NETWORK FIRST, fall back to cache (ensures latest version)
 self.addEventListener('fetch', function(event) {
   event.respondWith(
-    caches.match(event.request).then(function(cached) {
-      if (cached) {
-        // Return cached version but also update cache in background
-        var fetchPromise = fetch(event.request).then(function(networkResponse) {
-          if (networkResponse && networkResponse.status === 200) {
-            caches.open(CACHE_NAME).then(function(cache) {
-              cache.put(event.request, networkResponse.clone());
-            });
-          }
-          return networkResponse;
-        }).catch(function() {});
-        return cached;
+    fetch(event.request).then(function(networkResponse) {
+      if (networkResponse && networkResponse.status === 200) {
+        var responseClone = networkResponse.clone();
+        caches.open(CACHE_NAME).then(function(cache) {
+          cache.put(event.request, responseClone);
+        });
       }
-      return fetch(event.request);
+      return networkResponse;
+    }).catch(function() {
+      return caches.match(event.request);
     })
   );
 });

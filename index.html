@@ -1,0 +1,1173 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <title>BNDR Budget</title>
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="BNDR Budget">
+  <meta name="theme-color" content="#2D2D2D">
+  <meta name="description" content="BNDR Capital — Scope of Work & Budget Tracker">
+  <link rel="manifest" href="manifest.json">
+  <link rel="apple-touch-icon" id="appIcon" href="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPj/HwADBwIAMCbHYQAAAABJRU5ErkJggg==">
+  <style>
+    :root {
+      --green: #6B7A59; --green-dark: #5a6a4a; --green-light: #e8ede4; --green-bg: #f4f6f2;
+      --dark: #2D2D2D; --text: #222; --muted: #888; --light-text: #aaa;
+      --border: #e0e0e0; --card: #fff; --bg: #f1f5f0;
+      --red: #dc2626; --red-light: #fef2f2; --red-text: #b91c1c;
+      --blue: #2563eb; --blue-light: #eff6ff;
+      --amber: #f59e0b; --amber-light: #fffbeb;
+      --radius: 12px; --tab-h: 56px; --hdr-h: 52px;
+    }
+    * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+    body {
+      font-family: -apple-system, 'SF Pro Text', system-ui, sans-serif;
+      background: var(--bg); color: var(--text);
+      padding-top: calc(var(--hdr-h) + env(safe-area-inset-top, 0px));
+      padding-bottom: calc(var(--tab-h) + env(safe-area-inset-bottom, 0px));
+      -webkit-font-smoothing: antialiased;
+      overflow-x: hidden;
+    }
+
+    /* ── Header ── */
+    .app-header {
+      position: fixed; top: 0; left: 0; right: 0; z-index: 100;
+      background: var(--dark); color: #fff;
+      padding: env(safe-area-inset-top, 0px) 16px 0;
+      height: calc(var(--hdr-h) + env(safe-area-inset-top, 0px));
+      display: flex; align-items: center; gap: 10px;
+    }
+    .app-header svg { width: 28px; height: 31px; flex-shrink: 0; }
+    .app-header .hdr-title { font-size: .95rem; font-weight: 800; letter-spacing: 3px; }
+    .app-header .hdr-sub { font-size: .6rem; color: var(--light-text); letter-spacing: 1px; }
+    .hdr-right { margin-left: auto; display: flex; gap: 8px; }
+    .hdr-btn {
+      background: rgba(255,255,255,.12); border: none; color: #fff;
+      border-radius: 8px; padding: 6px 10px; font-size: .7rem; font-weight: 600;
+      cursor: pointer; font-family: inherit;
+    }
+
+    /* ── Tab Bar ── */
+    .tab-bar {
+      position: fixed; bottom: 0; left: 0; right: 0; z-index: 100;
+      background: var(--card); border-top: 1px solid var(--border);
+      display: flex; height: calc(var(--tab-h) + env(safe-area-inset-bottom, 0px));
+      padding-bottom: env(safe-area-inset-bottom, 0px);
+    }
+    .tab-btn {
+      flex: 1; display: flex; flex-direction: column; align-items: center;
+      justify-content: center; gap: 2px; border: none; background: none;
+      color: var(--muted); font-size: .62rem; font-weight: 600; cursor: pointer;
+      font-family: inherit; padding: 4px 0; transition: color .15s;
+      -webkit-appearance: none;
+    }
+    .tab-btn.active { color: var(--green); }
+    .tab-btn svg { width: 22px; height: 22px; }
+    .tab-btn.active svg { stroke: var(--green); }
+
+    /* ── Tab Panels ── */
+    .tab-panel { display: none; padding: 12px; min-height: 60vh; }
+    .tab-panel.active { display: block; }
+
+    /* ── Cards ── */
+    .card {
+      background: var(--card); border-radius: var(--radius);
+      padding: 16px; margin-bottom: 10px;
+      box-shadow: 0 1px 3px rgba(0,0,0,.06);
+    }
+    .card-title {
+      font-size: .72rem; font-weight: 700; color: var(--green);
+      text-transform: uppercase; letter-spacing: 1px; margin-bottom: 10px;
+    }
+
+    /* ── Summary Cards ── */
+    .summary-card {
+      background: linear-gradient(135deg, var(--dark) 0%, #3a3a3a 100%);
+      color: #fff; border-radius: var(--radius); padding: 18px;
+      margin-bottom: 12px;
+    }
+    .summary-row { display: flex; justify-content: space-between; align-items: center; padding: 3px 0; }
+    .summary-label { font-size: .78rem; color: rgba(255,255,255,.7); }
+    .summary-value { font-size: .88rem; font-weight: 700; }
+    .summary-big { font-size: 1.1rem; font-weight: 900; }
+    .summary-divider { border-top: 1px solid rgba(255,255,255,.15); margin: 8px 0; }
+    .positive { color: #4ade80; }
+    .negative { color: #f87171; }
+
+    /* ── Progress Bar ── */
+    .progress-wrap { background: rgba(255,255,255,.15); border-radius: 6px; height: 8px; margin-top: 8px; overflow: hidden; }
+    .progress-fill { height: 100%; border-radius: 6px; transition: width .3s; background: var(--green); }
+
+    /* ── Form fields ── */
+    .fg { margin-bottom: 10px; }
+    .fg label { font-size: .72rem; font-weight: 600; color: var(--muted); display: block; margin-bottom: 3px; }
+    .fg input, .fg textarea, .fg select {
+      width: 100%; border: 1.5px solid var(--border); border-radius: 8px;
+      padding: 10px 12px; font-size: 16px; font-family: inherit;
+      color: var(--text); background: #fafbfa; outline: none;
+      -webkit-appearance: none; appearance: none;
+    }
+    .fg input:focus, .fg textarea:focus, .fg select:focus { border-color: var(--green); background: #fff; }
+    .fg textarea { min-height: 60px; resize: vertical; }
+    .row2 { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+    .row3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; }
+
+    /* ── Category Accordion ── */
+    .cat-card { background: var(--card); border-radius: var(--radius); margin-bottom: 8px; box-shadow: 0 1px 3px rgba(0,0,0,.06); overflow: hidden; }
+    .cat-header {
+      padding: 14px 16px; cursor: pointer; display: flex; flex-wrap: wrap;
+      align-items: center; gap: 6px; user-select: none;
+    }
+    .cat-header:active { background: var(--green-bg); }
+    .cat-name { font-size: .88rem; font-weight: 700; color: var(--text); flex: 1; min-width: 120px; }
+    .cat-badge {
+      font-size: .62rem; font-weight: 700; background: var(--green-light);
+      color: var(--green); padding: 2px 8px; border-radius: 10px;
+    }
+    .cat-totals { width: 100%; display: flex; gap: 6px; font-size: .72rem; color: var(--muted); margin-top: 2px; }
+    .cat-totals span { white-space: nowrap; }
+    .cat-chevron { font-size: .7rem; color: var(--muted); transition: transform .2s; margin-left: 4px; }
+    .cat-chevron.open { transform: rotate(180deg); }
+    .cat-body { padding: 0 14px 14px; display: none; }
+    .cat-body.open { display: block; }
+
+    /* ── Line Items ── */
+    .li-row {
+      padding: 10px 0; border-bottom: 1px solid var(--border);
+      position: relative;
+    }
+    .li-row:last-of-type { border-bottom: none; }
+    .li-desc {
+      width: 100%; border: none; font-size: .84rem; font-weight: 600;
+      color: var(--text); background: none; outline: none; padding: 0 28px 6px 0;
+      font-family: inherit;
+    }
+    .li-desc::placeholder { color: var(--light-text); font-weight: 400; }
+    .li-amounts { display: flex; gap: 8px; align-items: center; }
+    .li-field { flex: 1; }
+    .li-field label { font-size: .6rem; font-weight: 600; color: var(--muted); margin-bottom: 2px; display: block; }
+    .li-field input {
+      width: 100%; border: 1.5px solid var(--border); border-radius: 6px;
+      padding: 7px 8px; font-size: 14px; font-family: inherit;
+      background: #fafbfa; outline: none; color: var(--text);
+      -webkit-appearance: none;
+    }
+    .li-field input:focus { border-color: var(--green); }
+    .li-var {
+      font-size: .72rem; font-weight: 700; min-width: 56px; text-align: right;
+      white-space: nowrap; padding-top: 16px;
+    }
+    .li-del {
+      position: absolute; top: 8px; right: 0; width: 24px; height: 24px;
+      border: none; background: none; color: var(--red); font-size: 1.1rem;
+      cursor: pointer; padding: 0; line-height: 1;
+    }
+
+    /* ── Buttons ── */
+    .btn {
+      display: block; width: 100%; padding: 13px 16px; border: none;
+      border-radius: 10px; font-size: .85rem; font-weight: 700;
+      cursor: pointer; font-family: inherit; text-align: center;
+      -webkit-appearance: none;
+    }
+    .btn-green { background: var(--green); color: #fff; }
+    .btn-green:active { background: var(--green-dark); }
+    .btn-outline { background: var(--green-light); color: var(--dark); }
+    .btn-outline:active { background: #d4ddd0; }
+    .btn-blue { background: var(--blue); color: #fff; }
+    .btn-blue:active { background: #1d4ed8; }
+    .btn-red { background: var(--red-light); color: var(--red-text); }
+    .btn-red:active { background: #fde8e8; }
+    .btn-sm { padding: 8px 14px; font-size: .78rem; width: auto; display: inline-block; }
+    .btn-row { display: flex; gap: 8px; }
+    .mt { margin-top: 10px; }
+
+    /* ── Payment entries ── */
+    .pay-entry {
+      background: var(--card); border-radius: var(--radius); padding: 14px 16px;
+      margin-bottom: 8px; box-shadow: 0 1px 3px rgba(0,0,0,.06);
+      position: relative;
+    }
+    .pay-top { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 4px; }
+    .pay-date { font-size: .78rem; color: var(--muted); font-weight: 600; }
+    .pay-amount { font-size: .95rem; font-weight: 800; color: var(--text); }
+    .pay-desc { font-size: .82rem; color: var(--text); }
+    .pay-bal { font-size: .72rem; font-weight: 600; margin-top: 4px; }
+    .pay-del {
+      position: absolute; top: 10px; right: 10px; background: none;
+      border: none; color: var(--red); font-size: .72rem; cursor: pointer;
+      padding: 4px 6px; font-family: inherit;
+    }
+
+    /* ── Export buttons ── */
+    .export-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+    .export-btn {
+      display: flex; flex-direction: column; align-items: center; gap: 6px;
+      padding: 20px 12px; background: var(--card); border: 1.5px solid var(--border);
+      border-radius: var(--radius); cursor: pointer; font-family: inherit;
+      -webkit-appearance: none;
+    }
+    .export-btn:active { background: var(--green-bg); border-color: var(--green); }
+    .export-btn svg { width: 28px; height: 28px; stroke: var(--green); }
+    .export-btn span { font-size: .75rem; font-weight: 700; color: var(--text); }
+
+    /* ── Add-payment form ── */
+    .add-form { background: var(--green-bg); border-radius: var(--radius); padding: 16px; margin-bottom: 10px; }
+
+    /* ── Print styles ── */
+    @media print {
+      body { padding: 0; background: #fff; }
+      .app-header, .tab-bar, .no-print { display: none !important; }
+      .tab-panel { display: block !important; padding: 0; }
+      #tab-project, #tab-budget, #tab-payments { display: none !important; }
+      #tab-export { display: block !important; }
+      .card { box-shadow: none; break-inside: avoid; }
+      .print-page { display: block !important; }
+    }
+    .print-page { display: none; }
+
+    /* ── Misc ── */
+    .empty-msg { text-align: center; padding: 30px 20px; color: var(--muted); font-size: .85rem; }
+    .section-gap { height: 16px; }
+    .text-center { text-align: center; }
+    .hidden { display: none !important; }
+  </style>
+</head>
+<body>
+
+<!-- ══════ Header ══════ -->
+<header class="app-header">
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 220">
+    <rect x="0" y="0" width="20" height="220" fill="#fff"/>
+    <rect x="18" y="0" width="88" height="20" fill="#fff"/>
+    <path d="M106,0 C150,0 190,16 190,50 C190,84 150,100 106,100 L106,80 C140,80 170,68 170,50 C170,32 140,20 106,20 Z" fill="#fff"/>
+    <path d="M100,92 L20,182 L44,182 L100,118 L156,182 L180,182 Z" fill="#6B7A59"/>
+    <rect x="18" y="200" width="164" height="20" fill="#fff"/>
+  </svg>
+  <div>
+    <div class="hdr-title">BNDR BUDGET</div>
+    <div class="hdr-sub">Scope &amp; Budget Tracker</div>
+  </div>
+</header>
+
+<!-- ══════ Tab: Project ══════ -->
+<div id="tab-project" class="tab-panel active">
+  <div class="card">
+    <div class="card-title">Project Info</div>
+    <div class="fg"><label>Property Address</label><input type="text" id="f-address" placeholder="123 Main St, City, ST"></div>
+    <div class="row2">
+      <div class="fg"><label>Date</label><input type="text" id="f-date" placeholder="3/5/2026"></div>
+      <div class="fg"><label>Contractor</label><input type="text" id="f-contractor" placeholder="Name"></div>
+    </div>
+    <div class="row2">
+      <div class="fg"><label>Project Manager</label><input type="text" id="f-pm" value="PIETTRO BRAMBILLA"></div>
+      <div class="fg"><label>Lock Box / Code</label><input type="text" id="f-lockbox" placeholder="Code"></div>
+    </div>
+    <div class="row2">
+      <div class="fg"><label>Start Date</label><input type="text" id="f-start" placeholder="TBD"></div>
+      <div class="fg"><label>Completion Date</label><input type="text" id="f-end" placeholder="TBD"></div>
+    </div>
+  </div>
+  <div class="card">
+    <div class="card-title">Bonus</div>
+    <div class="row2">
+      <div class="fg"><label>Bonus Amount ($)</label><input type="text" id="f-bonus" inputmode="decimal" placeholder="0"></div>
+      <div class="fg"><label>Completion Date</label><input type="text" id="f-bonus-date" placeholder="On or before..."></div>
+    </div>
+  </div>
+  <div class="card">
+    <div class="card-title">Notes</div>
+    <div class="fg"><textarea id="f-notes" placeholder="Payment terms, special conditions, materials notes..."></textarea></div>
+  </div>
+  <div class="card">
+    <div class="card-title">Company Info</div>
+    <div class="fg" style="font-size:.82rem;color:var(--muted);line-height:1.6;">
+      BNDR Capital<br>
+      9229 Ward Pkwy, Ste 380<br>
+      Kansas City, MO 64114<br>
+      (913) 219-8906
+    </div>
+  </div>
+</div>
+
+<!-- ══════ Tab: Budget ══════ -->
+<div id="tab-budget" class="tab-panel">
+  <div id="budget-summary"></div>
+  <div id="budget-cats"></div>
+  <button class="btn btn-outline mt no-print" id="btnAddCat">+ Add Category</button>
+</div>
+
+<!-- ══════ Tab: Payments ══════ -->
+<div id="tab-payments" class="tab-panel">
+  <div id="pay-summary"></div>
+  <button class="btn btn-green mt no-print" id="btnAddPay" style="margin-bottom:12px;">+ Add Payment</button>
+  <div id="pay-form-wrap"></div>
+  <div id="pay-list"></div>
+</div>
+
+<!-- ══════ Tab: Export ══════ -->
+<div id="tab-export" class="tab-panel">
+  <div class="card">
+    <div class="card-title">Export & Share</div>
+    <div class="export-grid">
+      <button class="export-btn" id="btnPrint">
+        <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M6 9V2h12v7M6 18H4a2 2 0 01-2-2v-5a2 2 0 012-2h16a2 2 0 012 2v5a2 2 0 01-2 2h-2M6 14h12v8H6z"/></svg>
+        <span>Print / PDF</span>
+      </button>
+      <button class="export-btn" id="btnShare">
+        <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M4 12v8a2 2 0 002 2h12a2 2 0 002-2v-8M16 6l-4-4-4 4M12 2v13"/></svg>
+        <span>Share / Text</span>
+      </button>
+      <button class="export-btn" id="btnDownloadHTML">
+        <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M7 10l5 5 5-5M12 15V3"/></svg>
+        <span>Download HTML</span>
+      </button>
+      <button class="export-btn" id="btnExportJSON">
+        <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+        <span>Export JSON</span>
+      </button>
+    </div>
+    <div style="margin-top:12px;">
+      <label class="btn btn-outline" style="cursor:pointer;">
+        Import JSON
+        <input type="file" id="btnImportJSON" accept=".json" style="display:none;">
+      </label>
+    </div>
+  </div>
+  <div id="export-preview"></div>
+</div>
+
+<!-- ══════ Tab Bar ══════ -->
+<nav class="tab-bar">
+  <button class="tab-btn active" data-tab="tab-project">
+    <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/></svg>
+    Project
+  </button>
+  <button class="tab-btn" data-tab="tab-budget">
+    <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M16 8v8M12 11v5M8 14v2M4 4h16a1 1 0 011 1v14a1 1 0 01-1 1H4a1 1 0 01-1-1V5a1 1 0 011-1z"/></svg>
+    Budget
+  </button>
+  <button class="tab-btn" data-tab="tab-payments">
+    <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M12 1v22M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6"/></svg>
+    Payments
+  </button>
+  <button class="tab-btn" data-tab="tab-export">
+    <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
+    Export
+  </button>
+</nav>
+
+<script>
+/* ═══════════════════════════════════════════
+   DATA MODEL & DEFAULTS
+   ═══════════════════════════════════════════ */
+var D = {
+  project: {
+    address:'', date:'', contractor:'', pm:'PIETTRO BRAMBILLA',
+    lockbox:'', startDate:'', endDate:'',
+    bonusAmount:0, bonusDate:'', notes:''
+  },
+  categories: [],
+  payments: [],
+  nextCatId: 1,
+  nextItemId: 1,
+  nextPayId: 1
+};
+
+function defaultCategories() {
+  var cats = [
+    { name:'Demo & Cleanup', items:['Interior demolition','Trash removal & hauling','Site cleanup'] },
+    { name:'Structural / Framing', items:['Framing repairs','Subfloor repair','Foundation work'] },
+    { name:'Roofing', items:['Roof inspection & repair','New roof (if needed)'] },
+    { name:'Siding & Exterior', items:['Siding repair/replacement','Power washing','Wood rot repair'] },
+    { name:'Windows & Doors', items:['Window replacement','Door replacement','Door hardware & locks'] },
+    { name:'Plumbing', items:['Rough-in plumbing','Fixture installation','Water heater','Sewer & drain work'] },
+    { name:'Electrical', items:['Rough-in electrical','Panel upgrade','Fixtures, outlets & switches','Smoke & CO detectors'] },
+    { name:'HVAC', items:['HVAC inspection & repair','Ductwork','Thermostat'] },
+    { name:'Drywall', items:['Drywall install & repair','Mud, tape & texture'] },
+    { name:'Paint', items:['Interior paint','Exterior paint'] },
+    { name:'Flooring & Tile', items:['Flooring installation','Tile work'] },
+    { name:'Kitchen', items:['Cabinets','Countertops','Backsplash','Appliances'] },
+    { name:'Bathrooms', items:['Bathroom 1 remodel','Bathroom 2 remodel','Vanity & fixtures','Tile & shower'] },
+    { name:'Trim & Finish', items:['Trim installation','Baseboard','Crown molding'] },
+    { name:'Landscaping & Concrete', items:['Landscaping','Driveway / sidewalk','Fencing'] },
+    { name:'Permits & Fees', items:['Building permits','Inspection fees'] },
+    { name:'General / Other', items:['Miscellaneous'] }
+  ];
+  var result = [];
+  for (var c = 0; c < cats.length; c++) {
+    var cat = { id: D.nextCatId++, name: cats[c].name, collapsed: true, items: [] };
+    for (var i = 0; i < cats[c].items.length; i++) {
+      cat.items.push({ id: D.nextItemId++, desc: cats[c].items[i], estimated: 0, actual: 0 });
+    }
+    result.push(cat);
+  }
+  return result;
+}
+
+/* ═══════════════════════════════════════════
+   SPANISH TRANSLATION DICTIONARY
+   ═══════════════════════════════════════════ */
+var T = {};
+T['demolition']='demolicion'; T['demo']='demolicion'; T['site cleanup']='limpieza del sitio'; T['cleanup']='limpieza';
+T['trash removal']='remocion de basura'; T['debris removal']='remocion de escombros'; T['hauling']='acarreo';
+T['framing']='enmarcado/estructura'; T['wood rot repair']='reparacion de madera podrida'; T['wood rot']='madera podrida';
+T['structural repair']='reparacion estructural'; T['foundation']='cimentacion'; T['foundation repair']='reparacion de cimentacion';
+T['subfloor']='subpiso'; T['subfloor repair']='reparacion de subpiso';
+T['roofing']='techado'; T['roof repair']='reparacion de techo'; T['new roof']='techo nuevo'; T['gutters']='canaletas';
+T['siding']='revestimiento'; T['siding repair']='reparacion de revestimiento'; T['soffit']='sofito'; T['fascia']='fascia';
+T['exterior paint']='pintura exterior'; T['exterior painting']='pintura exterior'; T['deck']='terraza';
+T['porch']='porche'; T['fence']='cerca'; T['fencing']='cercado'; T['concrete']='concreto';
+T['driveway']='entrada de auto'; T['sidewalk']='acera'; T['landscaping']='jardineria';
+T['plumbing']='plomeria'; T['plumbing rough-in']='plomeria en bruto'; T['plumbing finish']='acabado de plomeria';
+T['water heater']='calentador de agua'; T['faucet']='grifo'; T['toilet']='inodoro';
+T['shower']='ducha'; T['bathtub']='banera'; T['sink']='lavabo';
+T['electrical']='electrico'; T['electrical rough-in']='electrico en bruto'; T['electrical finish']='acabado electrico';
+T['panel upgrade']='actualizacion de panel'; T['wiring']='cableado'; T['outlets']='enchufes';
+T['light fixtures']='lamparas/luminarias'; T['lighting']='iluminacion'; T['switches']='interruptores';
+T['smoke detectors']='detectores de humo'; T['ceiling fan']='ventilador de techo';
+T['hvac']='climatizacion (HVAC)'; T['furnace']='calefaccion'; T['ductwork']='conductos'; T['thermostat']='termostato';
+T['drywall']='panel de yeso'; T['drywall install']='instalacion de panel de yeso'; T['drywall repair']='reparacion de panel de yeso';
+T['texture']='textura'; T['mud and tape']='emplaste y cinta';
+T['interior paint']='pintura interior'; T['paint']='pintura'; T['painting']='pintura';
+T['trim']='molduras'; T['baseboard']='zocalo'; T['crown molding']='moldura de corona';
+T['door']='puerta'; T['doors']='puertas'; T['window']='ventana'; T['windows']='ventanas';
+T['flooring']='pisos'; T['tile']='azulejo'; T['tile install']='instalacion de azulejo'; T['tile work']='trabajo de azulejo';
+T['hardwood']='madera dura'; T['lvp']='piso vinilico (LVP)'; T['carpet']='alfombra'; T['laminate']='laminado';
+T['kitchen']='cocina'; T['kitchen remodel']='remodelacion de cocina'; T['cabinets']='gabinetes';
+T['countertop']='encimera'; T['countertops']='encimeras'; T['backsplash']='salpicadero';
+T['bathroom']='bano'; T['bathroom remodel']='remodelacion de bano'; T['vanity']='tocador';
+T['insulation']='aislamiento'; T['waterproofing']='impermeabilizacion'; T['caulking']='calafateo';
+T['garage door']='puerta de garaje'; T['appliances']='electrodomesticos'; T['staircase']='escalera';
+T['permits']='permisos'; T['inspection']='inspeccion';
+T['install']='instalar'; T['repair']='reparar'; T['replace']='reemplazar'; T['remove']='remover';
+T['build']='construir'; T['finish']='acabar'; T['sand']='lijar'; T['seal']='sellar'; T['patch']='parchar';
+T['remodel']='remodelar'; T['upgrade']='actualizar'; T['rough-in']='en bruto';
+T['all materials included']='todos los materiales incluidos'; T['labor only']='solo mano de obra';
+T['materials and labor']='materiales y mano de obra';
+T['as needed']='segun sea necesario'; T['to code']='segun codigo';
+T['complete renovation']='renovacion completa'; T['whole house']='toda la casa';
+T['upstairs']='planta alta'; T['downstairs']='planta baja'; T['basement']='sotano';
+T['garage']='garaje'; T['bedroom']='dormitorio'; T['living room']='sala';
+T['hallway']='pasillo'; T['closet']='armario'; T['and']='y'; T['the']='el'; T['all']='todos';
+T['new']='nuevo'; T['complete']='completo'; T['entire']='entero';
+var translations = T;
+
+function translateText(text) {
+  var lower = text.toLowerCase().trim();
+  if (translations[lower]) { var t = translations[lower]; return t.charAt(0).toUpperCase() + t.slice(1); }
+  var words = lower.split(/\s+/);
+  var result = [];
+  var i = 0;
+  while (i < words.length) {
+    var matched = false;
+    for (var len = Math.min(words.length - i, 5); len > 0; len--) {
+      var phrase = words.slice(i, i + len).join(' ');
+      if (translations[phrase]) { result.push(translations[phrase]); i += len; matched = true; break; }
+    }
+    if (!matched) { result.push(words[i]); i++; }
+  }
+  var out = result.join(' ');
+  return out.length > 0 ? out.charAt(0).toUpperCase() + out.slice(1) : out;
+}
+
+/* ═══════════════════════════════════════════
+   UTILITY FUNCTIONS
+   ═══════════════════════════════════════════ */
+function fmt(n) { return (typeof n === 'number' && !isNaN(n)) ? n.toLocaleString() : '0'; }
+function parseMoney(s) { return parseFloat(String(s).replace(/[^0-9.\-]/g, '')) || 0; }
+function todayStr() { var d = new Date(); return (d.getMonth()+1) + '/' + d.getDate() + '/' + d.getFullYear(); }
+
+function getTotalEstimated() {
+  var t = 0;
+  for (var c = 0; c < D.categories.length; c++)
+    for (var i = 0; i < D.categories[c].items.length; i++)
+      t += (D.categories[c].items[i].estimated || 0);
+  return t;
+}
+function getTotalActual() {
+  var t = 0;
+  for (var c = 0; c < D.categories.length; c++)
+    for (var i = 0; i < D.categories[c].items.length; i++)
+      t += (D.categories[c].items[i].actual || 0);
+  return t;
+}
+function getCatEstimated(cat) {
+  var t = 0; for (var i = 0; i < cat.items.length; i++) t += (cat.items[i].estimated || 0); return t;
+}
+function getCatActual(cat) {
+  var t = 0; for (var i = 0; i < cat.items.length; i++) t += (cat.items[i].actual || 0); return t;
+}
+function getTotalPaid() {
+  var t = 0; for (var i = 0; i < D.payments.length; i++) t += (D.payments[i].amount || 0); return t;
+}
+function findCat(id) { for (var i = 0; i < D.categories.length; i++) if (D.categories[i].id === id) return D.categories[i]; return null; }
+
+/* ═══════════════════════════════════════════
+   AUTO-SAVE (localStorage)
+   ═══════════════════════════════════════════ */
+var saveTimer;
+function scheduleSave() { clearTimeout(saveTimer); saveTimer = setTimeout(saveState, 400); }
+function saveState() {
+  syncProjectFields();
+  try { localStorage.setItem('bndr-budget-data', JSON.stringify(D)); } catch(e) {}
+}
+function loadState() {
+  try {
+    var raw = localStorage.getItem('bndr-budget-data');
+    if (raw) { var loaded = JSON.parse(raw); if (loaded && loaded.project) { D = loaded; return true; } }
+  } catch(e) {}
+  return false;
+}
+function syncProjectFields() {
+  D.project.address = document.getElementById('f-address').value;
+  D.project.date = document.getElementById('f-date').value;
+  D.project.contractor = document.getElementById('f-contractor').value;
+  D.project.pm = document.getElementById('f-pm').value;
+  D.project.lockbox = document.getElementById('f-lockbox').value;
+  D.project.startDate = document.getElementById('f-start').value;
+  D.project.endDate = document.getElementById('f-end').value;
+  D.project.bonusAmount = parseMoney(document.getElementById('f-bonus').value);
+  D.project.bonusDate = document.getElementById('f-bonus-date').value;
+  D.project.notes = document.getElementById('f-notes').value;
+}
+function populateProjectFields() {
+  document.getElementById('f-address').value = D.project.address || '';
+  document.getElementById('f-date').value = D.project.date || '';
+  document.getElementById('f-contractor').value = D.project.contractor || '';
+  document.getElementById('f-pm').value = D.project.pm || 'PIETTRO BRAMBILLA';
+  document.getElementById('f-lockbox').value = D.project.lockbox || '';
+  document.getElementById('f-start').value = D.project.startDate || '';
+  document.getElementById('f-end').value = D.project.endDate || '';
+  document.getElementById('f-bonus').value = D.project.bonusAmount ? fmt(D.project.bonusAmount) : '';
+  document.getElementById('f-bonus-date').value = D.project.bonusDate || '';
+  document.getElementById('f-notes').value = D.project.notes || '';
+}
+
+/* ═══════════════════════════════════════════
+   TAB SWITCHING
+   ═══════════════════════════════════════════ */
+function switchTab(tabId) {
+  document.querySelectorAll('.tab-panel').forEach(function(p) { p.classList.remove('active'); });
+  document.querySelectorAll('.tab-btn').forEach(function(b) { b.classList.remove('active'); });
+  document.getElementById(tabId).classList.add('active');
+  document.querySelector('[data-tab="' + tabId + '"]').classList.add('active');
+  if (tabId === 'tab-budget') renderBudget();
+  if (tabId === 'tab-payments') renderPayments();
+  if (tabId === 'tab-export') renderExportPreview();
+  window.scrollTo(0, 0);
+}
+
+document.querySelector('.tab-bar').addEventListener('click', function(e) {
+  var btn = e.target.closest('.tab-btn');
+  if (btn) {
+    syncProjectFields(); scheduleSave();
+    switchTab(btn.getAttribute('data-tab'));
+  }
+});
+
+/* ═══════════════════════════════════════════
+   RENDER: BUDGET TAB
+   ═══════════════════════════════════════════ */
+function renderBudget() {
+  renderBudgetSummary();
+  renderBudgetCategories();
+}
+
+function renderBudgetSummary() {
+  var totalEst = getTotalEstimated();
+  var totalAct = getTotalActual();
+  var variance = totalEst - totalAct;
+  var pct = totalEst > 0 ? Math.min(Math.round((totalAct / totalEst) * 100), 999) : 0;
+  var varClass = variance >= 0 ? 'positive' : 'negative';
+  var varSign = variance >= 0 ? '-$' : '+$';
+  var varLabel = variance >= 0 ? 'Under budget' : 'Over budget';
+
+  document.getElementById('budget-summary').innerHTML =
+    '<div class="summary-card">' +
+      '<div class="summary-row"><span class="summary-label">Total Estimated</span><span class="summary-value">$' + fmt(totalEst) + '</span></div>' +
+      '<div class="summary-row"><span class="summary-label">Total Actual</span><span class="summary-value">$' + fmt(totalAct) + '</span></div>' +
+      '<div class="summary-divider"></div>' +
+      '<div class="summary-row"><span class="summary-label">' + varLabel + '</span><span class="summary-value ' + varClass + '">' + varSign + fmt(Math.abs(variance)) + '</span></div>' +
+      '<div class="progress-wrap"><div class="progress-fill" style="width:' + Math.min(pct, 100) + '%;' + (pct > 100 ? 'background:#f87171;' : '') + '"></div></div>' +
+      '<div style="text-align:right;font-size:.65rem;color:rgba(255,255,255,.5);margin-top:3px;">' + pct + '% of budget used</div>' +
+    '</div>';
+}
+
+function renderBudgetCategories() {
+  var wrap = document.getElementById('budget-cats');
+  wrap.innerHTML = '';
+
+  for (var c = 0; c < D.categories.length; c++) {
+    var cat = D.categories[c];
+    var catEst = getCatEstimated(cat);
+    var catAct = getCatActual(cat);
+    var catVar = catEst - catAct;
+    var varClass = catVar >= 0 ? 'positive' : 'negative';
+    var varText = (catVar >= 0 ? '-' : '+') + '$' + fmt(Math.abs(catVar));
+    var isOpen = !cat.collapsed;
+
+    var div = document.createElement('div');
+    div.className = 'cat-card';
+    div.setAttribute('data-cat-id', cat.id);
+
+    var bodyHTML = '';
+    for (var i = 0; i < cat.items.length; i++) {
+      var item = cat.items[i];
+      var iVar = item.estimated - item.actual;
+      var iVarClass = iVar >= 0 ? 'positive' : 'negative';
+      var iVarText = item.estimated > 0 || item.actual > 0
+        ? ((iVar >= 0 ? '-' : '+') + '$' + fmt(Math.abs(iVar)))
+        : '';
+
+      bodyHTML +=
+        '<div class="li-row" data-item-id="' + item.id + '">' +
+          '<input class="li-desc" type="text" value="' + escAttr(item.desc) + '" placeholder="Item description..." data-field="desc">' +
+          '<button class="li-del no-print" title="Remove">&times;</button>' +
+          '<div class="li-amounts">' +
+            '<div class="li-field"><label>Estimated</label><input type="text" inputmode="decimal" value="' + (item.estimated ? fmt(item.estimated) : '') + '" data-field="estimated" placeholder="$0"></div>' +
+            '<div class="li-field"><label>Actual</label><input type="text" inputmode="decimal" value="' + (item.actual ? fmt(item.actual) : '') + '" data-field="actual" placeholder="$0"></div>' +
+            '<div class="li-var ' + iVarClass + '">' + iVarText + '</div>' +
+          '</div>' +
+        '</div>';
+    }
+
+    div.innerHTML =
+      '<div class="cat-header" data-cat-id="' + cat.id + '">' +
+        '<span class="cat-name">' + esc(cat.name) + '</span>' +
+        '<span class="cat-badge">' + cat.items.length + '</span>' +
+        '<span class="cat-chevron ' + (isOpen ? 'open' : '') + '">&#9660;</span>' +
+        '<div class="cat-totals">' +
+          '<span>Est: $' + fmt(catEst) + '</span>' +
+          '<span>Act: $' + fmt(catAct) + '</span>' +
+          '<span class="' + varClass + '">' + varText + '</span>' +
+        '</div>' +
+      '</div>' +
+      '<div class="cat-body ' + (isOpen ? 'open' : '') + '">' +
+        bodyHTML +
+        '<button class="btn btn-outline btn-sm mt no-print" data-action="add-item" data-cat-id="' + cat.id + '">+ Add Item</button>' +
+        '<button class="btn btn-red btn-sm mt no-print" style="margin-left:8px;" data-action="del-cat" data-cat-id="' + cat.id + '">Remove Category</button>' +
+      '</div>';
+
+    wrap.appendChild(div);
+  }
+}
+
+function escAttr(s) { return String(s || '').replace(/"/g, '&quot;').replace(/</g, '&lt;'); }
+function esc(s) { return String(s || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;'); }
+
+/* ── Budget event delegation ── */
+document.getElementById('tab-budget').addEventListener('click', function(e) {
+  var target = e.target;
+
+  // Toggle category
+  var header = target.closest('.cat-header');
+  if (header && !target.closest('button')) {
+    var catId = parseInt(header.getAttribute('data-cat-id'));
+    var cat = findCat(catId);
+    if (cat) { cat.collapsed = !cat.collapsed; renderBudgetCategories(); scheduleSave(); }
+    return;
+  }
+
+  // Add item
+  if (target.getAttribute('data-action') === 'add-item') {
+    var catId = parseInt(target.getAttribute('data-cat-id'));
+    var cat = findCat(catId);
+    if (cat) {
+      cat.items.push({ id: D.nextItemId++, desc: '', estimated: 0, actual: 0 });
+      cat.collapsed = false;
+      renderBudget(); scheduleSave();
+    }
+    return;
+  }
+
+  // Delete item
+  if (target.classList.contains('li-del')) {
+    var row = target.closest('.li-row');
+    var catCard = target.closest('.cat-card');
+    if (row && catCard) {
+      var itemId = parseInt(row.getAttribute('data-item-id'));
+      var catId = parseInt(catCard.getAttribute('data-cat-id'));
+      var cat = findCat(catId);
+      if (cat) {
+        cat.items = cat.items.filter(function(it) { return it.id !== itemId; });
+        renderBudget(); scheduleSave();
+      }
+    }
+    return;
+  }
+
+  // Delete category
+  if (target.getAttribute('data-action') === 'del-cat') {
+    var catId = parseInt(target.getAttribute('data-cat-id'));
+    if (confirm('Remove this entire category?')) {
+      D.categories = D.categories.filter(function(c) { return c.id !== catId; });
+      renderBudget(); scheduleSave();
+    }
+    return;
+  }
+});
+
+/* ── Budget input handling (event delegation) ── */
+document.getElementById('tab-budget').addEventListener('input', function(e) {
+  var target = e.target;
+  var row = target.closest('.li-row');
+  var catCard = target.closest('.cat-card');
+  if (!row || !catCard) return;
+
+  var itemId = parseInt(row.getAttribute('data-item-id'));
+  var catId = parseInt(catCard.getAttribute('data-cat-id'));
+  var cat = findCat(catId);
+  if (!cat) return;
+
+  var item = null;
+  for (var i = 0; i < cat.items.length; i++) {
+    if (cat.items[i].id === itemId) { item = cat.items[i]; break; }
+  }
+  if (!item) return;
+
+  var field = target.getAttribute('data-field');
+  if (field === 'desc') { item.desc = target.value; }
+  if (field === 'estimated') { item.estimated = parseMoney(target.value); }
+  if (field === 'actual') { item.actual = parseMoney(target.value); }
+
+  scheduleSave();
+
+  // Update variance display for this item
+  if (field === 'estimated' || field === 'actual') {
+    var iVar = item.estimated - item.actual;
+    var varEl = row.querySelector('.li-var');
+    if (varEl && (item.estimated > 0 || item.actual > 0)) {
+      varEl.className = 'li-var ' + (iVar >= 0 ? 'positive' : 'negative');
+      varEl.textContent = (iVar >= 0 ? '-' : '+') + '$' + fmt(Math.abs(iVar));
+    }
+    renderBudgetSummary();
+    // Update category header totals
+    var catHeader = catCard.querySelector('.cat-totals');
+    if (catHeader) {
+      var ce = getCatEstimated(cat), ca = getCatActual(cat), cv = ce - ca;
+      catHeader.innerHTML =
+        '<span>Est: $' + fmt(ce) + '</span>' +
+        '<span>Act: $' + fmt(ca) + '</span>' +
+        '<span class="' + (cv >= 0 ? 'positive' : 'negative') + '">' + (cv >= 0 ? '-' : '+') + '$' + fmt(Math.abs(cv)) + '</span>';
+    }
+  }
+});
+
+/* ── Format money fields on blur ── */
+document.getElementById('tab-budget').addEventListener('blur', function(e) {
+  var target = e.target;
+  if (target.getAttribute('data-field') === 'estimated' || target.getAttribute('data-field') === 'actual') {
+    var n = parseMoney(target.value);
+    target.value = n > 0 ? fmt(n) : '';
+  }
+}, true);
+
+document.getElementById('tab-budget').addEventListener('focus', function(e) {
+  var target = e.target;
+  if (target.getAttribute('data-field') === 'estimated' || target.getAttribute('data-field') === 'actual') {
+    var n = parseMoney(target.value);
+    target.value = n > 0 ? n : '';
+  }
+}, true);
+
+/* ── Add Category ── */
+document.getElementById('btnAddCat').addEventListener('click', function() {
+  var name = prompt('Category name:');
+  if (!name || !name.trim()) return;
+  D.categories.push({
+    id: D.nextCatId++, name: name.trim(), collapsed: false,
+    items: [{ id: D.nextItemId++, desc: '', estimated: 0, actual: 0 }]
+  });
+  renderBudget(); scheduleSave();
+});
+
+/* ═══════════════════════════════════════════
+   RENDER: PAYMENTS TAB
+   ═══════════════════════════════════════════ */
+var showPayForm = false;
+var editingPayId = null;
+
+function renderPayments() {
+  renderPaySummary();
+  renderPayList();
+}
+
+function renderPaySummary() {
+  var totalEst = getTotalEstimated();
+  var totalPaid = getTotalPaid();
+  var bonus = D.project.bonusAmount || 0;
+  var remaining = totalEst + bonus - totalPaid;
+  var isOver = remaining < 0;
+
+  var html =
+    '<div class="summary-card">' +
+      '<div class="summary-row"><span class="summary-label">Contract Total (Estimated)</span><span class="summary-value">$' + fmt(totalEst) + '</span></div>' +
+      '<div class="summary-row"><span class="summary-label">Total Paid</span><span class="summary-value">$' + fmt(totalPaid) + '</span></div>';
+
+  if (bonus > 0) {
+    html += '<div class="summary-row"><span class="summary-label">Bonus' +
+      (D.project.bonusDate ? ' — on or before ' + esc(D.project.bonusDate) : '') +
+      '</span><span class="summary-value">$' + fmt(bonus) + '</span></div>';
+  }
+
+  html += '<div class="summary-divider"></div>' +
+    '<div class="summary-row"><span class="summary-label">' + (isOver ? 'Overpaid' : 'Remaining Balance') + '</span>' +
+    '<span class="summary-big ' + (isOver ? 'negative' : 'positive') + '">$' + fmt(Math.abs(remaining)) + (isOver ? ' over' : '') + '</span></div>' +
+    '</div>';
+
+  document.getElementById('pay-summary').innerHTML = html;
+}
+
+function renderPayList() {
+  var wrap = document.getElementById('pay-list');
+  if (D.payments.length === 0) {
+    wrap.innerHTML = '<div class="empty-msg">No payments yet. Tap + Add Payment to start tracking.</div>';
+    return;
+  }
+
+  var totalEst = getTotalEstimated();
+  var bonus = D.project.bonusAmount || 0;
+  var grandTotal = totalEst + bonus;
+  var runningBal = grandTotal;
+  var html = '';
+
+  for (var i = 0; i < D.payments.length; i++) {
+    var p = D.payments[i];
+    runningBal -= (p.amount || 0);
+    var isNeg = runningBal < 0;
+    var balClass = isNeg ? 'negative' : '';
+
+    html +=
+      '<div class="pay-entry" data-pay-id="' + p.id + '">' +
+        '<button class="pay-del no-print" data-pay-id="' + p.id + '">&times;</button>' +
+        '<div class="pay-top">' +
+          '<span class="pay-date">' + esc(p.date) + '</span>' +
+          '<span class="pay-amount">$' + fmt(p.amount || 0) + '</span>' +
+        '</div>' +
+        '<div class="pay-desc">' + esc(p.category || '') + (p.desc ? ' — ' + esc(p.desc) : '') + '</div>' +
+        '<div class="pay-bal ' + balClass + '">Balance: $' + fmt(Math.abs(runningBal)) + (isNeg ? ' over' : '') + '</div>' +
+      '</div>';
+  }
+  wrap.innerHTML = html;
+}
+
+function renderPayForm() {
+  var wrap = document.getElementById('pay-form-wrap');
+  if (!showPayForm) { wrap.innerHTML = ''; return; }
+
+  var catOptions = '<option value="">Select category...</option>';
+  for (var c = 0; c < D.categories.length; c++) {
+    catOptions += '<option value="' + escAttr(D.categories[c].name) + '">' + esc(D.categories[c].name) + '</option>';
+  }
+  catOptions += '<option value="__bonus__">Bonus</option>';
+  catOptions += '<option value="__other__">Other</option>';
+
+  wrap.innerHTML =
+    '<div class="add-form">' +
+      '<div class="card-title" style="color:var(--dark);">New Payment</div>' +
+      '<div class="row2">' +
+        '<div class="fg"><label>Date</label><input type="text" id="pf-date" value="' + todayStr() + '"></div>' +
+        '<div class="fg"><label>Amount ($)</label><input type="text" id="pf-amount" inputmode="decimal" placeholder="0"></div>' +
+      '</div>' +
+      '<div class="fg"><label>Category</label><select id="pf-category">' + catOptions + '</select></div>' +
+      '<div class="fg"><label>Description</label><input type="text" id="pf-desc" placeholder="Payment description..."></div>' +
+      '<div class="btn-row mt">' +
+        '<button class="btn btn-green btn-sm" id="pf-save">Save Payment</button>' +
+        '<button class="btn btn-outline btn-sm" id="pf-cancel">Cancel</button>' +
+      '</div>' +
+    '</div>';
+
+  document.getElementById('pf-save').addEventListener('click', function() {
+    var amount = parseMoney(document.getElementById('pf-amount').value);
+    if (amount <= 0) { alert('Enter a payment amount.'); return; }
+    D.payments.push({
+      id: D.nextPayId++,
+      date: document.getElementById('pf-date').value || todayStr(),
+      category: document.getElementById('pf-category').value || '',
+      desc: document.getElementById('pf-desc').value || '',
+      amount: amount
+    });
+    showPayForm = false;
+    renderPayments(); renderPayForm(); scheduleSave();
+  });
+
+  document.getElementById('pf-cancel').addEventListener('click', function() {
+    showPayForm = false; renderPayForm();
+  });
+
+  document.getElementById('pf-amount').focus();
+}
+
+document.getElementById('btnAddPay').addEventListener('click', function() {
+  showPayForm = true;
+  renderPayForm();
+});
+
+document.getElementById('pay-list').addEventListener('click', function(e) {
+  if (e.target.classList.contains('pay-del')) {
+    var payId = parseInt(e.target.getAttribute('data-pay-id'));
+    if (confirm('Delete this payment?')) {
+      D.payments = D.payments.filter(function(p) { return p.id !== payId; });
+      renderPayments(); scheduleSave();
+    }
+  }
+});
+
+/* ═══════════════════════════════════════════
+   RENDER: EXPORT / PREVIEW
+   ═══════════════════════════════════════════ */
+function renderExportPreview() {
+  syncProjectFields();
+  var p = D.project;
+  var totalEst = getTotalEstimated();
+  var totalAct = getTotalActual();
+  var totalPaid = getTotalPaid();
+  var bonus = p.bonusAmount || 0;
+
+  var html = '<div class="card" style="margin-top:12px;">' +
+    '<div class="card-title">Document Preview</div>' +
+    '<div style="border-bottom:2px solid var(--green);padding-bottom:10px;margin-bottom:12px;">' +
+      '<div style="font-size:1.1rem;font-weight:900;letter-spacing:4px;color:var(--dark);">BNDR CAPITAL</div>' +
+      '<div style="font-size:.65rem;color:var(--muted);">9229 Ward Pkwy, Ste 380 | Kansas City, MO 64114 | (913) 219-8906</div>' +
+    '</div>' +
+    '<div style="text-align:center;font-weight:800;font-size:.95rem;letter-spacing:2px;margin-bottom:12px;color:var(--dark);">SCOPE OF WORK &amp; BUDGET</div>';
+
+  // Project info
+  html += '<div style="display:grid;grid-template-columns:1fr 1fr;gap:4px 16px;font-size:.78rem;margin-bottom:14px;">' +
+    '<div><strong>Property:</strong> ' + esc(p.address) + '</div>' +
+    '<div><strong>Date:</strong> ' + esc(p.date) + '</div>' +
+    '<div><strong>Contractor:</strong> ' + esc(p.contractor) + '</div>' +
+    '<div><strong>PM:</strong> ' + esc(p.pm) + '</div>' +
+    '<div><strong>Start:</strong> ' + esc(p.startDate) + '</div>' +
+    '<div><strong>Completion:</strong> ' + esc(p.endDate) + '</div>' +
+  '</div>';
+
+  // Budget by category
+  html += '<table style="width:100%;border-collapse:collapse;font-size:.78rem;margin-bottom:14px;">' +
+    '<thead><tr style="background:var(--green);color:#fff;">' +
+    '<th style="padding:6px 8px;text-align:left;">Item</th>' +
+    '<th style="padding:6px 8px;text-align:right;width:80px;">Estimated</th>' +
+    '<th style="padding:6px 8px;text-align:right;width:80px;">Actual</th>' +
+    '</tr></thead><tbody>';
+
+  for (var c = 0; c < D.categories.length; c++) {
+    var cat = D.categories[c];
+    var hasItems = false;
+    for (var i = 0; i < cat.items.length; i++) {
+      if (cat.items[i].desc || cat.items[i].estimated || cat.items[i].actual) { hasItems = true; break; }
+    }
+    if (!hasItems) continue;
+
+    html += '<tr style="background:var(--green-light);"><td colspan="3" style="padding:6px 8px;font-weight:700;">' + esc(cat.name) + '</td></tr>';
+    for (var i = 0; i < cat.items.length; i++) {
+      var item = cat.items[i];
+      if (!item.desc && !item.estimated && !item.actual) continue;
+      html += '<tr><td style="padding:4px 8px 4px 20px;">' + esc(item.desc) + '</td>' +
+        '<td style="padding:4px 8px;text-align:right;">$' + fmt(item.estimated) + '</td>' +
+        '<td style="padding:4px 8px;text-align:right;">$' + fmt(item.actual) + '</td></tr>';
+    }
+  }
+
+  html += '<tr style="border-top:2px solid var(--green);font-weight:700;">' +
+    '<td style="padding:6px 8px;">TOTAL</td>' +
+    '<td style="padding:6px 8px;text-align:right;">$' + fmt(totalEst) + '</td>' +
+    '<td style="padding:6px 8px;text-align:right;">$' + fmt(totalAct) + '</td></tr>';
+  html += '</tbody></table>';
+
+  // Payment summary
+  if (D.payments.length > 0) {
+    html += '<div style="font-weight:700;font-size:.82rem;margin-bottom:6px;">Payments</div>' +
+      '<table style="width:100%;border-collapse:collapse;font-size:.78rem;margin-bottom:14px;">' +
+      '<thead><tr style="background:#eee;"><th style="padding:4px 8px;text-align:left;">Date</th><th style="padding:4px 8px;text-align:left;">Description</th><th style="padding:4px 8px;text-align:right;">Amount</th></tr></thead><tbody>';
+    for (var i = 0; i < D.payments.length; i++) {
+      var pay = D.payments[i];
+      html += '<tr><td style="padding:4px 8px;">' + esc(pay.date) + '</td><td style="padding:4px 8px;">' +
+        esc(pay.category) + (pay.desc ? ' - ' + esc(pay.desc) : '') + '</td>' +
+        '<td style="padding:4px 8px;text-align:right;">$' + fmt(pay.amount) + '</td></tr>';
+    }
+    html += '<tr style="border-top:1px solid #ccc;font-weight:700;"><td colspan="2" style="padding:4px 8px;">Total Paid</td>' +
+      '<td style="padding:4px 8px;text-align:right;">$' + fmt(totalPaid) + '</td></tr>';
+    html += '</tbody></table>';
+  }
+
+  // Notes
+  if (p.notes) {
+    html += '<div style="font-weight:700;font-size:.82rem;margin-bottom:4px;">Notes</div>' +
+      '<div style="font-size:.78rem;color:var(--muted);white-space:pre-wrap;">' + esc(p.notes) + '</div>';
+  }
+
+  html += '</div>';
+  document.getElementById('export-preview').innerHTML = html;
+}
+
+/* ═══════════════════════════════════════════
+   EXPORT ACTIONS
+   ═══════════════════════════════════════════ */
+document.getElementById('btnPrint').addEventListener('click', function() {
+  renderExportPreview();
+  setTimeout(function() { window.print(); }, 200);
+});
+
+document.getElementById('btnShare').addEventListener('click', function() {
+  syncProjectFields();
+  var p = D.project;
+  var text = 'BNDR CAPITAL — Scope of Work & Budget\n';
+  text += '══════════════════════════════\n';
+  text += 'Property: ' + p.address + '\n';
+  if (p.date) text += 'Date: ' + p.date + '\n';
+  if (p.contractor) text += 'Contractor: ' + p.contractor + '\n';
+  text += 'PM: ' + p.pm + '\n\n';
+  text += 'BUDGET SUMMARY\n';
+
+  for (var c = 0; c < D.categories.length; c++) {
+    var cat = D.categories[c];
+    var ce = getCatEstimated(cat);
+    if (ce === 0 && getCatActual(cat) === 0) continue;
+    text += '  ' + cat.name + ': $' + fmt(ce) + ' est / $' + fmt(getCatActual(cat)) + ' actual\n';
+  }
+
+  text += '\nTotal Estimated: $' + fmt(getTotalEstimated()) + '\n';
+  text += 'Total Actual: $' + fmt(getTotalActual()) + '\n';
+  text += 'Total Paid: $' + fmt(getTotalPaid()) + '\n';
+  if (p.notes) text += '\nNotes: ' + p.notes + '\n';
+  text += '\n— BNDR Capital | (913) 219-8906';
+
+  if (navigator.share) {
+    navigator.share({ title: 'SOW & Budget — ' + p.address, text: text }).catch(function() {});
+  } else {
+    try {
+      navigator.clipboard.writeText(text).then(function() { alert('Copied to clipboard!'); });
+    } catch(err) {
+      var ta = document.createElement('textarea');
+      ta.value = text; ta.style.position = 'fixed'; ta.style.left = '-9999px';
+      document.body.appendChild(ta); ta.select(); document.execCommand('copy');
+      document.body.removeChild(ta); alert('Copied to clipboard!');
+    }
+  }
+});
+
+document.getElementById('btnExportJSON').addEventListener('click', function() {
+  syncProjectFields();
+  var json = JSON.stringify(D, null, 2);
+  var blob = new Blob([json], { type: 'application/json' });
+  var url = URL.createObjectURL(blob);
+  var a = document.createElement('a');
+  a.href = url;
+  a.download = 'BNDR-Budget-' + (D.project.address || 'project').replace(/[^a-zA-Z0-9]/g, '-').substring(0, 40) + '.json';
+  a.click(); URL.revokeObjectURL(url);
+});
+
+document.getElementById('btnImportJSON').addEventListener('change', function(e) {
+  var file = e.target.files[0];
+  if (!file) return;
+  var reader = new FileReader();
+  reader.onload = function(ev) {
+    try {
+      var loaded = JSON.parse(ev.target.result);
+      if (loaded && loaded.project && loaded.categories) {
+        D = loaded;
+        populateProjectFields();
+        renderBudget(); renderPayments();
+        saveState();
+        alert('Project loaded successfully!');
+      } else { alert('Invalid file format.'); }
+    } catch(err) { alert('Error reading file: ' + err.message); }
+  };
+  reader.readAsText(file);
+  e.target.value = '';
+});
+
+document.getElementById('btnDownloadHTML').addEventListener('click', function() {
+  syncProjectFields();
+  var stateJSON = JSON.stringify(D).replace(/<\//g, '<\\/');
+  var html = document.documentElement.outerHTML;
+  var fullHTML = '<!DOCTYPE html>\n' + html;
+
+  // Find INIT block and replace with state restore
+  var endTag = '</' + 'script>';
+  var endIdx = fullHTML.lastIndexOf(endTag);
+  var initMarker = '// INIT\n';
+  var initIdx = fullHTML.lastIndexOf(initMarker, endIdx);
+
+  if (initIdx === -1 || endIdx === -1) {
+    alert('Could not generate file.'); return;
+  }
+
+  var before = fullHTML.substring(0, initIdx);
+  var after = fullHTML.substring(endIdx);
+
+  var restore = '// INIT\n' +
+    '(function(){\n' +
+    '  var saved = ' + stateJSON + ';\n' +
+    '  if (saved && saved.project) { D = saved; }\n' +
+    '  populateProjectFields();\n' +
+    '  renderBudget();\n' +
+    '})();\n';
+
+  var finalHTML = before + restore + after;
+  var blob = new Blob([finalHTML], { type: 'text/html' });
+  var url = URL.createObjectURL(blob);
+  var a = document.createElement('a');
+  a.href = url;
+  a.download = 'BNDR-Budget-' + (D.project.address || 'project').replace(/[^a-zA-Z0-9]/g, '-').substring(0, 40) + '.html';
+  a.click(); URL.revokeObjectURL(url);
+});
+
+/* ═══════════════════════════════════════════
+   PROJECT TAB — auto-save on input
+   ═══════════════════════════════════════════ */
+document.getElementById('tab-project').addEventListener('input', function() { scheduleSave(); });
+
+document.getElementById('f-bonus').addEventListener('blur', function() {
+  var n = parseMoney(this.value);
+  this.value = n > 0 ? fmt(n) : '';
+});
+
+/* ═══════════════════════════════════════════
+   GENERATE APP ICON (canvas → apple-touch-icon)
+   ═══════════════════════════════════════════ */
+function generateAppIcon() {
+  try {
+    var c = document.createElement('canvas'); c.width = 180; c.height = 180;
+    var ctx = c.getContext('2d');
+    ctx.fillStyle = '#2D2D2D'; ctx.fillRect(0, 0, 180, 180);
+    // Draw simplified logo chevron
+    ctx.fillStyle = '#6B7A59';
+    ctx.beginPath(); ctx.moveTo(90, 50); ctx.lineTo(30, 135); ctx.lineTo(52, 135);
+    ctx.lineTo(90, 78); ctx.lineTo(128, 135); ctx.lineTo(150, 135); ctx.closePath(); ctx.fill();
+    // B letter
+    ctx.fillStyle = '#fff'; ctx.font = 'bold 70px -apple-system, system-ui, sans-serif';
+    ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillText('B', 90, 96);
+    var link = document.getElementById('appIcon');
+    if (link) link.href = c.toDataURL('image/png');
+  } catch(e) {}
+}
+
+/* ═══════════════════════════════════════════
+   SERVICE WORKER REGISTRATION
+   ═══════════════════════════════════════════ */
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.register('sw.js').catch(function() {});
+}
+
+/* ═══════════════════════════════════════════
+   INIT
+   ═══════════════════════════════════════════ */
+// INIT
+(function() {
+  generateAppIcon();
+
+  if (!loadState()) {
+    // Fresh start — set defaults
+    D.categories = defaultCategories();
+    D.project.date = todayStr();
+  }
+  populateProjectFields();
+  renderBudget();
+})();
+</script>
+</body>
+</html>

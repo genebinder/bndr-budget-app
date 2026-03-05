@@ -162,6 +162,20 @@
       font-family: inherit;
     }
     .li-desc::placeholder { color: var(--light-text); font-weight: 400; }
+    .li-contractor-row {
+      display: flex; align-items: center; gap: 6px; padding: 0 28px 6px 0;
+    }
+    .li-contractor-row label {
+      font-size: .58rem; font-weight: 600; color: var(--muted); white-space: nowrap;
+    }
+    .li-contractor-row input {
+      flex: 1; border: none; border-bottom: 1px dashed var(--border);
+      font-size: .72rem; font-family: inherit; color: var(--green-dark);
+      background: none; outline: none; padding: 2px 0; font-weight: 600;
+      -webkit-appearance: none;
+    }
+    .li-contractor-row input:focus { border-bottom-color: var(--green); }
+    .li-contractor-row input::placeholder { color: var(--light-text); font-weight: 400; font-style: italic; }
     .li-amounts { display: flex; gap: 8px; align-items: center; }
     .li-field { flex: 1; }
     .li-field label { font-size: .6rem; font-weight: 600; color: var(--muted); margin-bottom: 2px; display: block; }
@@ -1183,10 +1197,17 @@ function renderBudgetCategories() {
         ? ((iVar >= 0 ? '-' : '+') + '$' + fmt(Math.abs(iVar)))
         : '';
 
+      var itemContractorPlaceholder = cat.contractor ? cat.contractor : 'Same as category...';
+      var itemContractorVal = item.contractor || '';
+
       bodyHTML +=
         '<div class="li-row" data-item-id="' + item.id + '">' +
           '<input class="li-desc" type="text" value="' + escAttr(item.desc) + '" placeholder="Item description..." data-field="desc">' +
           '<button class="li-del no-print" title="Remove">&times;</button>' +
+          '<div class="li-contractor-row">' +
+            '<label>Contractor:</label>' +
+            '<input type="text" value="' + escAttr(itemContractorVal) + '" data-field="contractor" placeholder="' + escAttr(itemContractorPlaceholder) + '">' +
+          '</div>' +
           '<div class="li-amounts">' +
             '<div class="li-field"><label>Estimated</label><input type="text" inputmode="decimal" value="' + (item.estimated ? fmt(item.estimated) : '') + '" data-field="estimated" placeholder="$0"><div class="markup-row"><button class="markup-btn" data-action="markup" data-field="estimated" data-item-id="' + item.id + '">+ 15%</button></div></div>' +
             '<div class="li-field"><label>Actual</label><input type="text" inputmode="decimal" value="' + (item.actual ? fmt(item.actual) : '') + '" data-field="actual" placeholder="$0"><div class="markup-row"><button class="markup-btn" data-action="markup" data-field="actual" data-item-id="' + item.id + '">+ 15%</button></div></div>' +
@@ -1245,7 +1266,7 @@ document.getElementById('tab-budget').addEventListener('click', function(e) {
     var catId = parseInt(target.getAttribute('data-cat-id'));
     var cat = findCat(catId);
     if (cat) {
-      cat.items.push({ id: D.nextItemId++, desc: '', estimated: 0, actual: 0 });
+      cat.items.push({ id: D.nextItemId++, desc: '', contractor: '', estimated: 0, actual: 0 });
       cat.collapsed = false;
       renderBudget(); scheduleSave();
     }
@@ -1330,6 +1351,7 @@ document.getElementById('tab-budget').addEventListener('input', function(e) {
 
   var field = target.getAttribute('data-field');
   if (field === 'desc') { item.desc = target.value; }
+  if (field === 'contractor') { item.contractor = target.value; scheduleSave(); return; }
   if (field === 'estimated') { item.estimated = parseMoney(target.value); }
   if (field === 'actual') { item.actual = parseMoney(target.value); }
 
@@ -1805,7 +1827,7 @@ function renderPayForm() {
   var wrap = document.getElementById('pay-form-wrap');
   if (!showPayForm) { wrap.innerHTML = ''; return; }
 
-  // Build contractor dropdown from budget categories
+  // Build contractor dropdown from budget categories + line items
   var contractors = [];
   var seen = {};
   for (var c = 0; c < D.categories.length; c++) {
@@ -1813,6 +1835,13 @@ function renderPayForm() {
     if (cName && !seen[cName.toLowerCase()]) {
       contractors.push(cName);
       seen[cName.toLowerCase()] = true;
+    }
+    for (var ci2 = 0; ci2 < D.categories[c].items.length; ci2++) {
+      var iName = (D.categories[c].items[ci2].contractor || '').trim();
+      if (iName && !seen[iName.toLowerCase()]) {
+        contractors.push(iName);
+        seen[iName.toLowerCase()] = true;
+      }
     }
   }
   var contractorOptions = '<option value="">Select contractor...</option>';
@@ -1952,7 +1981,10 @@ function renderExportPreview() {
     for (var i = 0; i < cat.items.length; i++) {
       var item = cat.items[i];
       if (!item.desc && !item.estimated && !item.actual) continue;
-      html += '<tr><td style="padding:4px 8px 4px 20px;" colspan="2">' + esc(item.desc) + '</td>' +
+      var itemCon = (item.contractor || '').trim();
+      var showItemCon = itemCon && itemCon !== (cat.contractor || '').trim();
+      html += '<tr><td style="padding:4px 8px 4px 20px;">' + esc(item.desc) + '</td>' +
+        '<td style="padding:4px 8px;font-size:.68rem;color:var(--green-dark);">' + (showItemCon ? esc(itemCon) : '') + '</td>' +
         '<td style="padding:4px 8px;text-align:right;">$' + fmt(item.estimated) + '</td>' +
         '<td style="padding:4px 8px;text-align:right;">$' + fmt(item.actual) + '</td></tr>';
     }

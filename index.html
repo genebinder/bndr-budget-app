@@ -1352,7 +1352,16 @@ document.getElementById('tab-budget').addEventListener('input', function(e) {
   var field = target.getAttribute('data-field');
   if (field === 'desc') { item.desc = target.value; }
   if (field === 'contractor') { item.contractor = target.value; scheduleSave(); return; }
-  if (field === 'estimated') { item.estimated = parseMoney(target.value); }
+  if (field === 'estimated') {
+    var newEst = parseMoney(target.value);
+    item.estimated = newEst;
+    // Auto-fill actual if it's empty/zero
+    if (!item.actual && newEst > 0) {
+      item.actual = newEst;
+      var actInput = row.querySelector('input[data-field="actual"]');
+      if (actInput) actInput.value = fmt(newEst);
+    }
+  }
   if (field === 'actual') { item.actual = parseMoney(target.value); }
 
   scheduleSave();

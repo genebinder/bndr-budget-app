@@ -121,7 +121,8 @@
       align-items: center; gap: 6px; user-select: none;
     }
     .cat-header:active { background: var(--green-bg); }
-    .cat-name { font-size: .88rem; font-weight: 700; color: var(--text); flex: 1; min-width: 120px; }
+    .cat-name { font-size: .88rem; font-weight: 700; color: var(--text); }
+    .cat-paid { font-size: .75rem; font-weight: 700; color: var(--green); margin-left: 4px; flex: 1; }
     .cat-badge {
       font-size: .62rem; font-weight: 700; background: var(--green-light);
       color: var(--green); padding: 2px 8px; border-radius: 10px;
@@ -1442,11 +1443,11 @@ function renderBudgetCategories() {
     div.innerHTML =
       '<div class="cat-header" data-cat-id="' + cat.id + '">' +
         '<span class="cat-name">' + esc(cat.name) + '</span>' +
+        '<span class="cat-paid">' + (catAct > 0 ? '$' + fmt(catAct) + ' paid' : '') + '</span>' +
         '<span class="cat-badge">' + cat.items.length + '</span>' +
         '<span class="cat-chevron ' + (isOpen ? 'open' : '') + '">&#9660;</span>' +
         '<div class="cat-totals">' +
           '<span>Est: $' + fmt(catEst) + '</span>' +
-          '<span>Paid: $' + fmt(catAct) + '</span>' +
           '<span class="' + varClass + '">' + varText + '</span>' +
         '</div>' +
         contractorSummary +
@@ -1590,14 +1591,15 @@ document.getElementById('tab-budget').addEventListener('input', function(e) {
     }
     renderBudgetSummary();
     // Update category header totals
+    var ce = getCatEstimated(cat), ca = getCatActual(cat), cv = ce - ca;
     var catHeader = catCard.querySelector('.cat-totals');
     if (catHeader) {
-      var ce = getCatEstimated(cat), ca = getCatActual(cat), cv = ce - ca;
       catHeader.innerHTML =
         '<span>Est: $' + fmt(ce) + '</span>' +
-        '<span>Paid: $' + fmt(ca) + '</span>' +
         '<span class="' + (cv >= 0 ? 'positive' : 'negative') + '">' + (cv >= 0 ? '-' : '+') + '$' + fmt(Math.abs(cv)) + '</span>';
     }
+    var catPaidEl = catCard.querySelector('.cat-paid');
+    if (catPaidEl) catPaidEl.textContent = ca > 0 ? '$' + fmt(ca) + ' paid' : '';
   }
 });
 

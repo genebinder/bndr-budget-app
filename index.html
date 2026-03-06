@@ -59,7 +59,7 @@
     .tab-btn {
       flex: 1; display: flex; flex-direction: column; align-items: center;
       justify-content: center; gap: 1px; border: none; background: none;
-      color: var(--muted); font-size: .55rem; font-weight: 600; cursor: pointer;
+      color: var(--muted); font-size: .5rem; font-weight: 600; cursor: pointer;
       font-family: inherit; padding: 3px 0; transition: color .15s;
       -webkit-appearance: none;
     }
@@ -354,12 +354,44 @@
     }
     .rule-item.fee { border-left-color: var(--red); background: var(--red-light); }
 
+    /* ── Finance Tab ── */
+    .fp-section { background:var(--card); border-radius:10px; padding:10px 12px; margin-bottom:10px; box-shadow:0 1px 4px rgba(0,0,0,.06); }
+    .fp-section-hdr { display:flex; justify-content:space-between; align-items:center; cursor:pointer; font-size:.78rem; font-weight:700; color:var(--text); text-transform:uppercase; letter-spacing:.3px; padding:4px 0; }
+    .fp-section-hdr .fp-chev { transition:transform .2s; font-size:.7rem; color:var(--muted); }
+    .fp-section-hdr .fp-chev.collapsed { transform:rotate(-90deg); }
+    .fp-section-body { padding-top:8px; }
+    .fp-section-body.hidden { display:none; }
+    .fp-row { display:flex; gap:8px; margin-bottom:8px; }
+    .fp-row .fp-field { flex:1; }
+    .fp-field label { display:block; font-size:.65rem; font-weight:600; color:var(--muted); text-transform:uppercase; margin-bottom:2px; }
+    .fp-field input, .fp-field select { width:100%; padding:7px 8px; border:1px solid var(--border); border-radius:6px; font-size:.82rem; font-family:inherit; background:var(--card); box-sizing:border-box; }
+    .fp-hint { font-size:.6rem; color:var(--muted); margin-top:1px; }
+    .fp-loan-btns { display:flex; gap:4px; flex-wrap:wrap; margin-bottom:10px; }
+    .fp-loan-btn { padding:5px 10px; border:1px solid var(--border); border-radius:16px; font-size:.7rem; font-weight:600; cursor:pointer; background:var(--card); color:var(--text); font-family:inherit; }
+    .fp-loan-btn.active { background:var(--green); color:#fff; border-color:var(--green); }
+    .fp-out { background:var(--card); border-radius:10px; padding:10px 12px; margin-bottom:10px; box-shadow:0 1px 4px rgba(0,0,0,.06); border-left:3px solid var(--green); }
+    .fp-out-title { font-size:.72rem; font-weight:700; text-transform:uppercase; letter-spacing:.3px; margin-bottom:6px; color:var(--green); }
+    .fp-out-row { display:flex; justify-content:space-between; font-size:.75rem; padding:2px 0; }
+    .fp-out-row.total { font-weight:700; border-top:1px solid var(--border); margin-top:4px; padding-top:4px; }
+    .fp-out-row .fp-val { font-weight:600; }
+    .fp-hero { text-align:center; padding:8px; margin-bottom:6px; border-radius:8px; }
+    .fp-hero-num { font-size:1.4rem; font-weight:800; }
+    .fp-hero-label { font-size:.65rem; font-weight:600; text-transform:uppercase; color:var(--muted); }
+    .fp-hero-sub { display:flex; justify-content:center; gap:8px; margin-top:4px; flex-wrap:wrap; }
+    .fp-badge { padding:2px 8px; border-radius:10px; font-size:.62rem; font-weight:600; }
+    .fp-rule { border:2px solid #f0c040; border-radius:8px; padding:8px 10px; margin-bottom:10px; background:#fffbe6; }
+    .fp-rule-title { font-size:.7rem; font-weight:700; }
+    .fp-rule-val { font-size:1rem; font-weight:800; }
+    .fp-rule-hint { font-size:.6rem; color:var(--muted); }
+    .fp-chk-row { display:flex; align-items:center; gap:6px; font-size:.72rem; margin-bottom:4px; }
+    .fp-chk-row input[type=checkbox] { width:16px; height:16px; }
+
     /* ── Print styles ── */
     @media print {
       body { padding: 0; background: #fff; }
       .app-header, .tab-bar, .no-print { display: none !important; }
       .tab-panel { display: block !important; padding: 0; }
-      #tab-project, #tab-budget, #tab-payments, #tab-scope, #tab-imports { display: none !important; }
+      #tab-project, #tab-budget, #tab-payments, #tab-scope, #tab-imports, #tab-finance { display: none !important; }
       #tab-export { display: block !important; }
       .card { box-shadow: none; break-inside: avoid; }
       .print-page { display: block !important; }
@@ -600,6 +632,12 @@
   <div id="import-list"></div>
 </div>
 
+<!-- ══════ Tab: Finance ══════ -->
+<div id="tab-finance" class="tab-panel">
+  <div id="fp-results"></div>
+  <div id="fp-inputs"></div>
+</div>
+
 <!-- ══════ Tab Bar ══════ -->
 <nav class="tab-bar">
   <button class="tab-btn active" data-tab="tab-project">
@@ -621,6 +659,10 @@
   <button class="tab-btn" data-tab="tab-imports">
     <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M17 8l-5-5-5 5M12 3v12"/></svg>
     Imports
+  </button>
+  <button class="tab-btn" data-tab="tab-finance">
+    <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M12 20V10M6 20V4M18 20v-6"/></svg>
+    Finance
   </button>
   <button class="tab-btn" data-tab="tab-export">
     <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
@@ -645,6 +687,7 @@ var D = {
   deliveredMats: [],
   customFixedRules: [],
   customFeeRules: [],
+  projections: null,
   nextCatId: 1,
   nextItemId: 1,
   nextPayId: 1
@@ -1268,6 +1311,7 @@ function switchTab(tabId) {
   if (tabId === 'tab-scope') renderScope();
   if (tabId === 'tab-payments') renderPayments();
   if (tabId === 'tab-imports') renderImports();
+  if (tabId === 'tab-finance') renderFinance();
   if (tabId === 'tab-export') renderExportPreview();
   window.scrollTo(0, 0);
 }
@@ -2883,6 +2927,415 @@ document.getElementById('btnImportCSVFile').addEventListener('change', function(
   };
   reader.readAsText(file);
   e.target.value = '';
+});
+
+/* ═══════════════════════════════════════════
+   RENDER: FINANCIAL PROJECTIONS
+   ═══════════════════════════════════════════ */
+function defaultProjections() {
+  return {
+    propType:'sfr', holdMonths:3,
+    loanType:'hard_money', ltc:70, loanRate:12, loanPoints:2,
+    acTitle:800, acEscrow:1000, acRecord:150, acPermit:0, acMisc:200,
+    cTax:3000, cIns:120, cElec:100, cGas:55, cWater:50, cLawn:100, cSec:30, cHoa:0, cMgmt:0, cOther:0,
+    dListComm:3, dBuyComm:2.5, dTitle:1200, dStaging:0, dPhoto:200, dConcessPct:0, dRepairsPct:3, dWarranty:500, dClean:400, dMisc:0,
+    sfPrice:0, sfDown:7000, sfRate:10, sfTerm:30, sfBalloon:1, sfAgent:3000, sfEscPT:25, sfLand:20, sfTaxRate:32, sfCarry:true, sfTitle:true,
+    ltBase:'arv', ltCustom:0, ltLtv:75, ltRate:7, ltTerm:30, ltPoints:2, ltClosing:3000
+  };
+}
+function fpv(id) { var el = document.getElementById(id); if (!el) return 0; if (el.type === 'checkbox') return el.checked; return parseFloat(el.value) || 0; }
+function fpFmt(n) { return (typeof n === 'number' && !isNaN(n)) ? Math.round(n).toLocaleString() : '0'; }
+function fpPct(n) { return n.toFixed(1) + '%'; }
+function fpMonthlyPmt(principal, annRate, months) {
+  if (annRate <= 0 || months <= 0) return principal / (months || 1);
+  var r = annRate / 100 / 12;
+  return principal * r * Math.pow(1 + r, months) / (Math.pow(1 + r, months) - 1);
+}
+function fpRemainingBal(principal, annRate, totalMonths, paidMonths) {
+  if (annRate <= 0) return principal - (principal / totalMonths) * paidMonths;
+  var r = annRate / 100 / 12;
+  var pmt = fpMonthlyPmt(principal, annRate, totalMonths);
+  return principal * Math.pow(1 + r, paidMonths) - pmt * (Math.pow(1 + r, paidMonths) - 1) / r;
+}
+
+function renderFinance() {
+  if (!D.projections) D.projections = defaultProjections();
+  var P = D.projections;
+  var purchase = D.project.purchasePrice || 0;
+  var arv = D.project.arv || 0;
+  var rehab = getTotalEstimated();
+
+  // Build inputs HTML
+  var html = '';
+
+  // DEAL OVERVIEW (read-only summary from Project + Budget tabs)
+  html += '<div class="fp-section"><div class="fp-section-hdr" data-fp-sec="overview">Deal Overview <span class="fp-chev">▼</span></div><div class="fp-section-body">' +
+    '<div class="fp-row"><div class="fp-field"><label>Purchase Price</label><div style="font-weight:700;font-size:.85rem;padding:7px 0;">$' + fpFmt(purchase) + '</div><div class="fp-hint">From Project tab</div></div>' +
+    '<div class="fp-field"><label>ARV</label><div style="font-weight:700;font-size:.85rem;padding:7px 0;">$' + fpFmt(arv) + '</div><div class="fp-hint">From Project tab</div></div></div>' +
+    '<div class="fp-row"><div class="fp-field"><label>Rehab Budget</label><div style="font-weight:700;font-size:.85rem;padding:7px 0;color:var(--green);">$' + fpFmt(rehab) + '</div><div class="fp-hint">From Budget tab</div></div>' +
+    '<div class="fp-field"><label>Holding Period (Months)</label><input type="number" id="fp-holdMonths" value="' + P.holdMonths + '" min="1" max="60"></div></div>' +
+    '<div class="fp-row"><div class="fp-field"><label>Property Type</label><select id="fp-propType"><option value="sfr"' + (P.propType === 'sfr' ? ' selected' : '') + '>Single Family (SFR)</option><option value="duplex"' + (P.propType === 'duplex' ? ' selected' : '') + '>Duplex</option><option value="triplex"' + (P.propType === 'triplex' ? ' selected' : '') + '>Triplex</option><option value="condo"' + (P.propType === 'condo' ? ' selected' : '') + '>Condo</option><option value="mfr"' + (P.propType === 'mfr' ? ' selected' : '') + '>Multi-Family</option></select></div><div class="fp-field"></div></div>' +
+    '</div></div>';
+
+  // FINANCING
+  html += '<div class="fp-section"><div class="fp-section-hdr" data-fp-sec="financing">Financing <span class="fp-chev">▼</span></div><div class="fp-section-body">' +
+    '<div class="fp-loan-btns">' +
+    '<button class="fp-loan-btn' + (P.loanType === 'all_cash' ? ' active' : '') + '" data-lt="all_cash">All Cash</button>' +
+    '<button class="fp-loan-btn' + (P.loanType === 'hard_money' ? ' active' : '') + '" data-lt="hard_money">Hard Money</button>' +
+    '<button class="fp-loan-btn' + (P.loanType === 'private' ? ' active' : '') + '" data-lt="private">Private Money</button>' +
+    '<button class="fp-loan-btn' + (P.loanType === 'conventional' ? ' active' : '') + '" data-lt="conventional">Conventional</button></div>' +
+    (P.loanType !== 'all_cash' ?
+    '<div class="fp-row"><div class="fp-field"><label>Loan-to-Cost % (LTC)</label><input type="number" id="fp-ltc" value="' + P.ltc + '" min="0" max="100"></div>' +
+    '<div class="fp-field"><label>Interest Rate (Annual %)</label><input type="number" id="fp-loanRate" value="' + P.loanRate + '" min="0" max="30" step="0.25"></div></div>' +
+    '<div class="fp-row"><div class="fp-field"><label>Origination Points</label><input type="number" id="fp-loanPoints" value="' + P.loanPoints + '" min="0" max="10" step="0.25"><div class="fp-hint">1 pt = 1% of loan amount</div></div><div class="fp-field"></div></div>' : '') +
+    '</div></div>';
+
+  // ACQUISITION CLOSING COSTS
+  html += '<div class="fp-section"><div class="fp-section-hdr" data-fp-sec="acq">Acquisition Closing Costs <span class="fp-chev">▼</span></div><div class="fp-section-body">' +
+    '<div class="fp-row"><div class="fp-field"><label>Title Insurance</label><input type="number" id="fp-acTitle" value="' + P.acTitle + '" min="0"></div>' +
+    '<div class="fp-field"><label>Escrow / Settlement</label><input type="number" id="fp-acEscrow" value="' + P.acEscrow + '" min="0"></div></div>' +
+    '<div class="fp-row"><div class="fp-field"><label>Recording Fees</label><input type="number" id="fp-acRecord" value="' + P.acRecord + '" min="0"></div>' +
+    '<div class="fp-field"><label>Permit Fees (at Buy)</label><input type="number" id="fp-acPermit" value="' + P.acPermit + '" min="0"></div></div>' +
+    '<div class="fp-row"><div class="fp-field"><label>Misc (Courier, Notary)</label><input type="number" id="fp-acMisc" value="' + P.acMisc + '" min="0"></div><div class="fp-field"></div></div>' +
+    '</div></div>';
+
+  // CARRY / HOLD COSTS
+  html += '<div class="fp-section"><div class="fp-section-hdr" data-fp-sec="carry">Carry / Hold Costs <span class="fp-chev">▼</span></div><div class="fp-section-body">' +
+    '<div class="fp-row"><div class="fp-field"><label>Annual Property Taxes</label><input type="number" id="fp-cTax" value="' + P.cTax + '" min="0"><div class="fp-hint">Pro-rated to monthly</div></div>' +
+    '<div class="fp-field"><label>Insurance (per mo.)</label><input type="number" id="fp-cIns" value="' + P.cIns + '" min="0"></div></div>' +
+    '<div class="fp-row"><div class="fp-field"><label>Electric (per mo.)</label><input type="number" id="fp-cElec" value="' + P.cElec + '" min="0"></div>' +
+    '<div class="fp-field"><label>Gas / Heat (per mo.)</label><input type="number" id="fp-cGas" value="' + P.cGas + '" min="0"></div></div>' +
+    '<div class="fp-row"><div class="fp-field"><label>Water / Sewer (per mo.)</label><input type="number" id="fp-cWater" value="' + P.cWater + '" min="0"></div>' +
+    '<div class="fp-field"><label>Yard Maintenance (mo.)</label><input type="number" id="fp-cLawn" value="' + P.cLawn + '" min="0"></div></div>' +
+    '<div class="fp-row"><div class="fp-field"><label>Security (per mo.)</label><input type="number" id="fp-cSec" value="' + P.cSec + '" min="0"></div>' +
+    '<div class="fp-field"><label>HOA Dues (per mo.)</label><input type="number" id="fp-cHoa" value="' + P.cHoa + '" min="0"></div></div>' +
+    '<div class="fp-row"><div class="fp-field"><label>Property Mgmt (per mo.)</label><input type="number" id="fp-cMgmt" value="' + P.cMgmt + '" min="0"></div>' +
+    '<div class="fp-field"><label>Other Monthly</label><input type="number" id="fp-cOther" value="' + P.cOther + '" min="0"></div></div>' +
+    '</div></div>';
+
+  // DISPOSITION / SELLING COSTS
+  html += '<div class="fp-section"><div class="fp-section-hdr" data-fp-sec="disp">Disposition / Selling Costs <span class="fp-chev">▼</span></div><div class="fp-section-body">' +
+    '<div class="fp-row"><div class="fp-field"><label>Listing Agent Comm. (%)</label><input type="number" id="fp-dListComm" value="' + P.dListComm + '" min="0" max="10" step="0.25"></div>' +
+    '<div class="fp-field"><label>Buyer Agent Comm. (%)</label><input type="number" id="fp-dBuyComm" value="' + P.dBuyComm + '" min="0" max="10" step="0.25"></div></div>' +
+    '<div class="fp-row"><div class="fp-field"><label>Seller Title / Escrow</label><input type="number" id="fp-dTitle" value="' + P.dTitle + '" min="0"></div>' +
+    '<div class="fp-field"><label>Staging</label><input type="number" id="fp-dStaging" value="' + P.dStaging + '" min="0"></div></div>' +
+    '<div class="fp-row"><div class="fp-field"><label>Photo / Marketing</label><input type="number" id="fp-dPhoto" value="' + P.dPhoto + '" min="0"></div>' +
+    '<div class="fp-field"><label>Concessions to Buyer (%)</label><input type="number" id="fp-dConcessPct" value="' + P.dConcessPct + '" min="0" max="10" step="0.25"></div></div>' +
+    '<div class="fp-row"><div class="fp-field"><label>Seller Repairs (%)</label><input type="number" id="fp-dRepairsPct" value="' + P.dRepairsPct + '" min="0" max="20" step="0.25"></div>' +
+    '<div class="fp-field"><label>Home Warranty</label><input type="number" id="fp-dWarranty" value="' + P.dWarranty + '" min="0"></div></div>' +
+    '<div class="fp-row"><div class="fp-field"><label>Deep Clean</label><input type="number" id="fp-dClean" value="' + P.dClean + '" min="0"></div>' +
+    '<div class="fp-field"><label>Misc / Prorated</label><input type="number" id="fp-dMisc" value="' + P.dMisc + '" min="0"></div></div>' +
+    '</div></div>';
+
+  // SELLER FINANCING
+  html += '<div class="fp-section"><div class="fp-section-hdr" data-fp-sec="sf">Seller Financing Terms <span class="fp-chev">▼</span></div><div class="fp-section-body">' +
+    '<div class="fp-row"><div class="fp-field"><label>Sale Price (blank = ARV)</label><input type="number" id="fp-sfPrice" value="' + (P.sfPrice || '') + '" min="0" placeholder="Use ARV"></div>' +
+    '<div class="fp-field"><label>Down Payment from Buyer</label><input type="number" id="fp-sfDown" value="' + P.sfDown + '" min="0"></div></div>' +
+    '<div class="fp-row"><div class="fp-field"><label>Note Interest Rate (%)</label><input type="number" id="fp-sfRate" value="' + P.sfRate + '" min="0" max="30" step="0.25"></div>' +
+    '<div class="fp-field"><label>Amortization Term (Yrs)</label><input type="number" id="fp-sfTerm" value="' + P.sfTerm + '" min="1" max="50"></div></div>' +
+    '<div class="fp-row"><div class="fp-field"><label>Balloon Due (Yrs, 0=None)</label><input type="number" id="fp-sfBalloon" value="' + P.sfBalloon + '" min="0" max="50"></div>' +
+    '<div class="fp-field"><label>Marketing Fee</label><input type="number" id="fp-sfAgent" value="' + P.sfAgent + '" min="0"></div></div>' +
+    '<div class="fp-row"><div class="fp-field"><label>Escrow Fee (mo.)</label><input type="number" id="fp-sfEscPT" value="' + P.sfEscPT + '" min="0"></div>' +
+    '<div class="fp-field"><label>Land Value %</label><input type="number" id="fp-sfLand" value="' + P.sfLand + '" min="0" max="100"></div></div>' +
+    '<div class="fp-row"><div class="fp-field"><label>Marginal Tax Rate (%)</label><input type="number" id="fp-sfTaxRate" value="' + P.sfTaxRate + '" min="0" max="50"></div><div class="fp-field"></div></div>' +
+    '<div class="fp-chk-row"><input type="checkbox" id="fp-sfCarry"' + (P.sfCarry ? ' checked' : '') + '><label for="fp-sfCarry">Include carry costs in cost basis</label></div>' +
+    '<div class="fp-chk-row"><input type="checkbox" id="fp-sfTitle"' + (P.sfTitle ? ' checked' : '') + '><label for="fp-sfTitle">Include title/closing in note</label></div>' +
+    '</div></div>';
+
+  // LONG-TERM FINANCING
+  html += '<div class="fp-section"><div class="fp-section-hdr" data-fp-sec="lt">Long-Term Financing (Refi & Hold) <span class="fp-chev">▼</span></div><div class="fp-section-body">' +
+    '<div class="fp-row"><div class="fp-field"><label>Loan Based On</label><select id="fp-ltBase"><option value="arv"' + (P.ltBase === 'arv' ? ' selected' : '') + '>After Repair Value (ARV)</option><option value="purchase"' + (P.ltBase === 'purchase' ? ' selected' : '') + '>Purchase Price</option><option value="custom"' + (P.ltBase === 'custom' ? ' selected' : '') + '>Custom Amount</option></select></div>' +
+    '<div class="fp-field"><label>Loan-to-Value (LTV %)</label><input type="number" id="fp-ltLtv" value="' + P.ltLtv + '" min="0" max="100"></div></div>' +
+    (P.ltBase === 'custom' ? '<div class="fp-row"><div class="fp-field"><label>Custom Loan Base ($)</label><input type="number" id="fp-ltCustom" value="' + P.ltCustom + '" min="0"></div><div class="fp-field"></div></div>' : '') +
+    '<div class="fp-row"><div class="fp-field"><label>Interest Rate (%)</label><input type="number" id="fp-ltRate" value="' + P.ltRate + '" min="0" max="30" step="0.125"></div>' +
+    '<div class="fp-field"><label>Loan Term (Years)</label><input type="number" id="fp-ltTerm" value="' + P.ltTerm + '" min="1" max="50"></div></div>' +
+    '<div class="fp-row"><div class="fp-field"><label>Origination Points</label><input type="number" id="fp-ltPoints" value="' + P.ltPoints + '" min="0" max="10" step="0.25"></div>' +
+    '<div class="fp-field"><label>Other Refi Closing Costs</label><input type="number" id="fp-ltClosing" value="' + P.ltClosing + '" min="0"></div></div>' +
+    '</div></div>';
+
+  document.getElementById('fp-inputs').innerHTML = html;
+
+  // Calculate and render results
+  calcFinance();
+}
+
+function syncFinanceFields() {
+  if (!D.projections) return;
+  var P = D.projections;
+  var ids = ['holdMonths','propType','ltc','loanRate','loanPoints',
+    'acTitle','acEscrow','acRecord','acPermit','acMisc',
+    'cTax','cIns','cElec','cGas','cWater','cLawn','cSec','cHoa','cMgmt','cOther',
+    'dListComm','dBuyComm','dTitle','dStaging','dPhoto','dConcessPct','dRepairsPct','dWarranty','dClean','dMisc',
+    'sfPrice','sfDown','sfRate','sfTerm','sfBalloon','sfAgent','sfEscPT','sfLand','sfTaxRate',
+    'ltLtv','ltRate','ltTerm','ltPoints','ltClosing','ltCustom'];
+  for (var i = 0; i < ids.length; i++) {
+    var el = document.getElementById('fp-' + ids[i]);
+    if (el) P[ids[i]] = parseFloat(el.value) || 0;
+  }
+  var selIds = ['propType','ltBase'];
+  for (var s = 0; s < selIds.length; s++) {
+    var sel = document.getElementById('fp-' + selIds[s]);
+    if (sel) P[selIds[s]] = sel.value;
+  }
+  var chk = document.getElementById('fp-sfCarry');
+  if (chk) P.sfCarry = chk.checked;
+  chk = document.getElementById('fp-sfTitle');
+  if (chk) P.sfTitle = chk.checked;
+}
+
+function calcFinance() {
+  var P = D.projections || defaultProjections();
+  var purchase = D.project.purchasePrice || 0;
+  var arv = D.project.arv || 0;
+  var rehab = getTotalEstimated();
+  var hold = P.holdMonths || 3;
+  var isCash = P.loanType === 'all_cash';
+
+  // Financing
+  var loanAmt = isCash ? 0 : (purchase + rehab) * (P.ltc / 100);
+  var origFee = loanAmt * (P.loanPoints / 100);
+  var interest = loanAmt * (P.loanRate / 100 / 12) * hold;
+  var finCost = origFee + interest;
+
+  // Acquisition Closing
+  var acqCost = P.acTitle + P.acEscrow + P.acRecord + P.acPermit + P.acMisc;
+
+  // Carry Costs
+  var monthlyCarry = (P.cTax / 12) + P.cIns + P.cElec + P.cGas + P.cWater + P.cLawn + P.cSec + P.cHoa + P.cMgmt + P.cOther;
+  var carryCost = monthlyCarry * hold;
+
+  // Disposition
+  var listComm = arv * (P.dListComm / 100);
+  var buyComm = arv * (P.dBuyComm / 100);
+  var concessAmt = arv * (P.dConcessPct / 100);
+  var repairsAmt = arv * (P.dRepairsPct / 100);
+  var dispFixed = P.dTitle + P.dStaging + P.dPhoto + concessAmt + repairsAmt + P.dWarranty + P.dClean + P.dMisc;
+  var dispCost = listComm + buyComm + dispFixed;
+  var dispCommPct = (P.dListComm + P.dBuyComm) / 100;
+
+  // Total Cost & Profit
+  var totalCost = purchase + acqCost + finCost + rehab + carryCost + dispCost;
+  var profit = arv - totalCost;
+  var roi = totalCost > 0 ? (profit / totalCost) * 100 : 0;
+  var annRoi = hold > 0 ? roi * 12 / hold : 0;
+  var margin = arv > 0 ? (profit / arv) * 100 : 0;
+
+  // Upfront
+  var cashEquity = purchase + rehab - loanAmt;
+  var upfrontCash = cashEquity + origFee + acqCost;
+
+  // 70% Rule
+  var mao = (arv * 0.70) - rehab;
+  var maoOk = purchase <= mao;
+
+  // Break-Even
+  var costExclDisp = purchase + acqCost + finCost + rehab + carryCost;
+  var breakEven = dispCommPct < 1 ? (costExclDisp + dispFixed) / (1 - dispCommPct) : 0;
+
+  // Deal Score
+  var scoreLabel, scoreColor;
+  if (margin >= 20) { scoreLabel = 'Excellent Deal'; scoreColor = '#27ae60'; }
+  else if (margin >= 15) { scoreLabel = 'Good Deal'; scoreColor = '#2ecc71'; }
+  else if (margin >= 10) { scoreLabel = 'OK Deal'; scoreColor = '#f39c12'; }
+  else if (margin >= 5) { scoreLabel = 'Thin Deal'; scoreColor = '#e67e22'; }
+  else { scoreLabel = 'Bad Deal'; scoreColor = '#e74c3c'; }
+
+  // Seller Financing
+  var sfSalePrice = P.sfPrice || arv;
+  var sfNoteAmt = sfSalePrice - P.sfDown;
+  var sfMonthly = sfNoteAmt > 0 ? fpMonthlyPmt(sfNoteAmt, P.sfRate, P.sfTerm * 12) : 0;
+  var sfBallYrs = P.sfBalloon > 0 && P.sfBalloon < P.sfTerm ? P.sfBalloon : 0;
+  var sfBallAmt = sfBallYrs > 0 ? fpRemainingBal(sfNoteAmt, P.sfRate, P.sfTerm * 12, sfBallYrs * 12) : 0;
+  var sfPayMonths = sfBallYrs > 0 ? sfBallYrs * 12 : P.sfTerm * 12;
+  var sfTotalPay = (sfMonthly * sfPayMonths) + sfBallAmt;
+  var sfTotalInterest = sfTotalPay - sfNoteAmt;
+  var sfTotalCollected = P.sfDown + sfTotalPay;
+  var sfTaxMo = P.cTax / 12;
+  var sfBuyerTotal = sfMonthly + sfTaxMo + P.cIns + P.sfEscPT;
+  var sfCostBasis = purchase + acqCost + finCost + rehab + (P.sfCarry ? carryCost : 0) + (P.sfTitle ? P.dTitle : 0) + P.sfAgent;
+  var sfNetProfit = sfTotalCollected - sfCostBasis;
+  var sfActiveYrs = sfBallYrs > 0 ? sfBallYrs : P.sfTerm;
+  var sfEquity = sfSalePrice - (purchase + acqCost + finCost + rehab + (P.sfCarry ? carryCost : 0));
+  var sfBuildVal = (purchase + rehab) * (1 - P.sfLand / 100);
+  var sfAnnDepr = sfBuildVal / 27.5;
+  var sfDeprSavings = sfAnnDepr * (P.sfTaxRate / 100) * sfActiveYrs;
+  var sfTotalCash = sfTotalInterest + sfDeprSavings;
+
+  // Long-Term Financing
+  var ltBaseAmt = P.ltBase === 'arv' ? arv : (P.ltBase === 'purchase' ? purchase : P.ltCustom);
+  var ltLoanAmt = ltBaseAmt * (P.ltLtv / 100);
+  var ltMonthlyPI = ltLoanAmt > 0 ? fpMonthlyPmt(ltLoanAmt, P.ltRate, P.ltTerm * 12) : 0;
+  var ltTotalPaid = ltMonthlyPI * P.ltTerm * 12;
+  var ltTotalInt = ltTotalPaid - ltLoanAmt;
+  var ltOrigPts = ltLoanAmt * (P.ltPoints / 100);
+  var ltRefiCosts = ltOrigPts + P.ltClosing;
+  var ltPiti = ltMonthlyPI + (P.cTax / 12) + P.cIns;
+  var ltCashInDeal = (purchase + acqCost + finCost + rehab + carryCost) - ltLoanAmt + ltRefiCosts;
+
+  // SF vs Debt Service
+  var sfSpreadMo = sfBuyerTotal - ltPiti;
+  var sfSpreadAnn = sfSpreadMo * 12;
+  var sfSpreadYrs = sfBallYrs > 0 ? sfBallYrs : P.sfTerm;
+  var sfSpreadTotal = sfSpreadMo * sfSpreadYrs * 12;
+
+  // Build results HTML
+  var rhtml = '';
+
+  // CASH SALE RESULT
+  var profitColor = profit >= 0 ? '#27ae60' : '#e74c3c';
+  var profitBg = profit >= 0 ? '#e8f8ef' : '#fde8e8';
+  rhtml += '<div class="fp-out" style="border-left-color:' + profitColor + ';">' +
+    '<div class="fp-out-title" style="color:' + profitColor + ';">Cash Sale Result</div>' +
+    '<div class="fp-hero" style="background:' + profitBg + ';">' +
+    '<div class="fp-hero-label">Net Profit (Cash Sale)</div>' +
+    '<div class="fp-hero-num" style="color:' + profitColor + ';">' + (profit >= 0 ? '$' : '-$') + fpFmt(Math.abs(profit)) + '</div>' +
+    '<div class="fp-hero-sub">' +
+    '<span class="fp-badge" style="background:#e0e0e0;">ROI: ' + fpPct(roi) + '</span>' +
+    '<span class="fp-badge" style="background:#e0e0e0;">Ann. ROI: ' + fpPct(annRoi) + '</span>' +
+    '<span class="fp-badge" style="background:#e0e0e0;">Margin: ' + fpPct(margin) + '</span></div></div>' +
+    '<div style="text-align:center;font-size:.72rem;font-weight:600;color:' + scoreColor + ';">● ' + scoreLabel + '</div></div>';
+
+  // FULL COST BREAKDOWN
+  rhtml += '<div class="fp-out"><div class="fp-out-title">Full Cost Breakdown</div>' +
+    '<div class="fp-out-row"><span>Purchase Price</span><span class="fp-val">$' + fpFmt(purchase) + '</span></div>' +
+    '<div class="fp-out-row"><span>Acquisition Closing</span><span class="fp-val">$' + fpFmt(acqCost) + '</span></div>' +
+    '<div class="fp-out-row"><span>Financing (pts + interest)</span><span class="fp-val">$' + fpFmt(finCost) + '</span></div>' +
+    '<div class="fp-out-row"><span>Rehab Budget</span><span class="fp-val">$' + fpFmt(rehab) + '</span></div>' +
+    '<div class="fp-out-row"><span>Carry / Hold Costs</span><span class="fp-val">$' + fpFmt(carryCost) + '</span></div>' +
+    '<div class="fp-out-row"><span>Disposition / Selling</span><span class="fp-val">$' + fpFmt(dispCost) + '</span></div>' +
+    '<div class="fp-out-row total"><span>Total All-In Cost</span><span class="fp-val" style="color:#c0392b;">$' + fpFmt(totalCost) + '</span></div>' +
+    '<div class="fp-out-row"><span>ARV (Sale Price)</span><span class="fp-val" style="color:var(--green);">$' + fpFmt(arv) + '</span></div></div>';
+
+  // UPFRONT / OUT-OF-POCKET
+  rhtml += '<div class="fp-out"><div class="fp-out-title">Upfront / Out-of-Pocket</div>' +
+    '<div class="fp-out-row"><span>Purchase Price</span><span class="fp-val">$' + fpFmt(purchase) + '</span></div>' +
+    '<div class="fp-out-row"><span>Rehab Budget</span><span class="fp-val">$' + fpFmt(rehab) + '</span></div>' +
+    (isCash ? '' : '<div class="fp-out-row"><span>Less: Loan Amount</span><span class="fp-val" style="color:var(--green);">$' + fpFmt(loanAmt) + '</span></div>' +
+    '<div class="fp-out-row"><span>Cash Equity Needed</span><span class="fp-val">$' + fpFmt(cashEquity) + '</span></div>' +
+    '<div class="fp-out-row"><span>Origination Points</span><span class="fp-val">$' + fpFmt(origFee) + '</span></div>') +
+    '<div class="fp-out-row"><span>Acquisition Closing</span><span class="fp-val">$' + fpFmt(acqCost) + '</span></div>' +
+    '<div class="fp-out-row total"><span>Total Upfront Cash</span><span class="fp-val" style="color:#2980b9;">$' + fpFmt(upfrontCash) + '</span></div></div>';
+
+  // 70% RULE + BREAK-EVEN
+  rhtml += '<div class="fp-rule"><div class="fp-rule-title">70% Rule — Max Allowable Offer</div>' +
+    '<div class="fp-rule-val">MAO = $' + fpFmt(mao) + ' ' + (maoOk ? '✓ OK' : '⚠ OVER') + '</div>' +
+    '<div class="fp-rule-hint">= (ARV × 70%) − Rehab</div></div>';
+  rhtml += '<div class="fp-rule"><div class="fp-rule-title">Break-Even Sale Price</div>' +
+    '<div class="fp-rule-val">$' + fpFmt(breakEven) + '</div>' +
+    '<div class="fp-rule-hint">Minimum price to cover all costs</div></div>';
+
+  // PROFIT BREAKDOWN
+  rhtml += '<div class="fp-out"><div class="fp-out-title">Profit Breakdown</div>' +
+    '<div class="fp-out-row"><span>Sale Price (ARV)</span><span class="fp-val">$' + fpFmt(arv) + '</span></div>' +
+    '<div class="fp-out-row"><span>Purchase Price</span><span class="fp-val">-$' + fpFmt(purchase) + '</span></div>' +
+    '<div class="fp-out-row"><span>Rehab Budget</span><span class="fp-val">-$' + fpFmt(rehab) + '</span></div>' +
+    '<div class="fp-out-row"><span>Acquisition Closing</span><span class="fp-val">-$' + fpFmt(acqCost) + '</span></div>' +
+    '<div class="fp-out-row"><span>Financing Costs</span><span class="fp-val">-$' + fpFmt(finCost) + '</span></div>' +
+    '<div class="fp-out-row"><span>Carry / Hold Costs</span><span class="fp-val">-$' + fpFmt(carryCost) + '</span></div>' +
+    '<div class="fp-out-row"><span>Disposition / Selling</span><span class="fp-val">-$' + fpFmt(dispCost) + '</span></div>' +
+    '<div class="fp-out-row total"><span>Net Profit</span><span class="fp-val" style="color:' + profitColor + ';">' + (profit >= 0 ? '$' : '-$') + fpFmt(Math.abs(profit)) + '</span></div></div>';
+
+  // SELLER FINANCING RESULT
+  rhtml += '<div class="fp-out" style="border-left-color:#8e44ad;"><div class="fp-out-title" style="color:#8e44ad;">Seller Financing Result</div>' +
+    '<div class="fp-hero" style="background:#f3e8ff;">' +
+    '<div class="fp-hero-num" style="color:#8e44ad;">$' + fpFmt(sfBuyerTotal) + '/mo</div>' +
+    '<div class="fp-hero-label">Buyer\'s Total Monthly Cost</div></div>' +
+    '<div class="fp-out-row"><span>Note P&I</span><span class="fp-val">$' + fpFmt(sfMonthly) + '/mo</span></div>' +
+    '<div class="fp-out-row"><span>Taxes Pass-Through</span><span class="fp-val">$' + fpFmt(sfTaxMo) + '/mo</span></div>' +
+    '<div class="fp-out-row"><span>Insurance Pass-Through</span><span class="fp-val">$' + fpFmt(P.cIns) + '/mo</span></div>' +
+    '<div class="fp-out-row"><span>Escrow Fee</span><span class="fp-val">$' + fpFmt(P.sfEscPT) + '/mo</span></div>' +
+    '<div style="height:8px;"></div>' +
+    '<div class="fp-out-row"><span>Sale Price</span><span class="fp-val">$' + fpFmt(sfSalePrice) + '</span></div>' +
+    '<div class="fp-out-row"><span>Down Payment</span><span class="fp-val">$' + fpFmt(P.sfDown) + '</span></div>' +
+    '<div class="fp-out-row"><span>Note Amount</span><span class="fp-val">$' + fpFmt(sfNoteAmt) + '</span></div>' +
+    (sfBallYrs > 0 ? '<div class="fp-out-row"><span>Balloon Due (yr ' + sfBallYrs + ')</span><span class="fp-val">$' + fpFmt(sfBallAmt) + '</span></div>' : '') +
+    '<div class="fp-out-row"><span>Total Payments Collected</span><span class="fp-val">$' + fpFmt(sfTotalPay) + '</span></div>' +
+    '<div class="fp-out-row"><span>Total Interest Earned</span><span class="fp-val" style="color:var(--green);">$' + fpFmt(sfTotalInterest) + '</span></div>' +
+    '<div class="fp-out-row total"><span>Net Profit (Note Deal)</span><span class="fp-val" style="color:#8e44ad;">$' + fpFmt(sfNetProfit) + '</span></div>' +
+    '<div style="height:6px;"></div>' +
+    '<div class="fp-out-row"><span>Equity (sale spread)</span><span class="fp-val">$' + fpFmt(sfEquity) + '</span></div>' +
+    '<div class="fp-out-row"><span>Interest Income</span><span class="fp-val" style="color:var(--green);">$' + fpFmt(sfTotalInterest) + '</span></div>' +
+    '<div class="fp-out-row"><span>Depreciation Savings</span><span class="fp-val" style="color:var(--green);">$' + fpFmt(sfDeprSavings) + '</span></div>' +
+    '<div class="fp-out-row total"><span>Total Cash to You</span><span class="fp-val" style="color:var(--green);">$' + fpFmt(sfTotalCash) + '</span></div></div>';
+
+  // VS CASH SALE
+  var sfVsCash = sfNetProfit - profit;
+  rhtml += '<div class="fp-rule" style="border-color:' + (sfVsCash >= 0 ? '#27ae60' : '#e74c3c') + ';background:' + (sfVsCash >= 0 ? '#e8f8ef' : '#fde8e8') + ';">' +
+    '<div class="fp-rule-title">vs. Cash Sale</div>' +
+    '<div class="fp-rule-val">Seller financing earns ' + (sfVsCash >= 0 ? '$' : '-$') + fpFmt(Math.abs(sfVsCash)) + (sfVsCash >= 0 ? ' more' : ' less') + '</div>' +
+    '<div class="fp-rule-hint">Over ' + sfActiveYrs + ' yr' + (sfActiveYrs !== 1 ? 's' : '') + '</div></div>';
+
+  // LONG-TERM FINANCING
+  rhtml += '<div class="fp-out" style="border-left-color:#2980b9;"><div class="fp-out-title" style="color:#2980b9;">Long-Term Financing (Refi)</div>' +
+    '<div class="fp-hero" style="background:#e8f4fd;">' +
+    '<div class="fp-hero-num" style="color:#2980b9;">$' + fpFmt(ltPiti) + '/mo</div>' +
+    '<div class="fp-hero-label">Monthly P&I + Taxes & Insurance</div></div>' +
+    '<div class="fp-out-row"><span>P&I (principal + interest)</span><span class="fp-val">$' + fpFmt(ltMonthlyPI) + '/mo</span></div>' +
+    '<div class="fp-out-row"><span>Taxes (monthly)</span><span class="fp-val">$' + fpFmt(P.cTax / 12) + '/mo</span></div>' +
+    '<div class="fp-out-row"><span>Insurance (monthly)</span><span class="fp-val">$' + fpFmt(P.cIns) + '/mo</span></div>' +
+    '<div style="height:6px;"></div>' +
+    '<div class="fp-out-row"><span>Loan Amount</span><span class="fp-val">$' + fpFmt(ltLoanAmt) + '</span></div>' +
+    '<div class="fp-out-row"><span>Origination Points</span><span class="fp-val">$' + fpFmt(ltOrigPts) + '</span></div>' +
+    '<div class="fp-out-row"><span>Other Closing Costs</span><span class="fp-val">$' + fpFmt(P.ltClosing) + '</span></div>' +
+    '<div class="fp-out-row"><span>Total Refi Costs</span><span class="fp-val">$' + fpFmt(ltRefiCosts) + '</span></div>' +
+    '<div class="fp-out-row"><span>Total Interest (life of loan)</span><span class="fp-val">$' + fpFmt(ltTotalInt) + '</span></div>' +
+    '<div class="fp-out-row"><span>Total Paid (P&I)</span><span class="fp-val">$' + fpFmt(ltTotalPaid) + '</span></div>' +
+    '<div style="height:4px;"></div>' +
+    '<div class="fp-rule" style="border-color:#2980b9;background:#e8f4fd;margin-bottom:0;">' +
+    '<div class="fp-rule-title">' + (ltCashInDeal > 0 ? 'Cash Remaining in Deal' : 'Cash Out After Refi') + '</div>' +
+    '<div class="fp-rule-val" style="color:' + (ltCashInDeal > 0 ? '#c0392b' : '#27ae60') + ';">$' + fpFmt(Math.abs(ltCashInDeal)) + (ltCashInDeal <= 0 ? ' cash out' : ' still in') + '</div></div></div>';
+
+  // SF vs DEBT SERVICE
+  rhtml += '<div class="fp-out" style="border-left-color:#16a085;"><div class="fp-out-title" style="color:#16a085;">Seller Finance vs. Debt Service</div>' +
+    '<div class="fp-out-row"><span>Seller Finance Income</span><span class="fp-val" style="color:var(--green);">$' + fpFmt(sfBuyerTotal) + '/mo</span></div>' +
+    '<div class="fp-out-row"><span>Long-Term Debt Payment</span><span class="fp-val" style="color:#c0392b;">$' + fpFmt(ltPiti) + '/mo</span></div>' +
+    '<div class="fp-out-row total"><span>Net Monthly Cash Flow</span><span class="fp-val" style="color:' + (sfSpreadMo >= 0 ? 'var(--green)' : '#c0392b') + ';">$' + fpFmt(sfSpreadMo) + '/mo</span></div>' +
+    '<div class="fp-out-row"><span>Annual Cash Flow</span><span class="fp-val">$' + fpFmt(sfSpreadAnn) + '/yr</span></div>' +
+    '<div class="fp-out-row total"><span>Total Spread (' + sfSpreadYrs + ' yr' + (sfSpreadYrs !== 1 ? 's' : '') + ')</span><span class="fp-val" style="color:' + (sfSpreadTotal >= 0 ? 'var(--green)' : '#c0392b') + ';">$' + fpFmt(sfSpreadTotal) + '</span></div></div>';
+
+  document.getElementById('fp-results').innerHTML = rhtml;
+}
+
+// Finance tab event delegation
+document.getElementById('tab-finance').addEventListener('input', function(e) {
+  if (!D.projections) return;
+  syncFinanceFields();
+  calcFinance();
+  scheduleSave();
+});
+document.getElementById('tab-finance').addEventListener('change', function(e) {
+  if (!D.projections) return;
+  var target = e.target;
+  // Loan type buttons handled via click
+  if (target.id === 'fp-ltBase') {
+    syncFinanceFields();
+    renderFinance(); // re-render to show/hide custom field
+    scheduleSave();
+  } else {
+    syncFinanceFields();
+    calcFinance();
+    scheduleSave();
+  }
+});
+document.getElementById('tab-finance').addEventListener('click', function(e) {
+  // Section collapse/expand
+  var hdr = e.target.closest('.fp-section-hdr');
+  if (hdr) {
+    var body = hdr.nextElementSibling;
+    var chev = hdr.querySelector('.fp-chev');
+    if (body) {
+      body.classList.toggle('hidden');
+      if (chev) chev.classList.toggle('collapsed');
+    }
+    return;
+  }
+  // Loan type toggle
+  var lBtn = e.target.closest('.fp-loan-btn');
+  if (lBtn && D.projections) {
+    D.projections.loanType = lBtn.getAttribute('data-lt');
+    renderFinance();
+    scheduleSave();
+  }
 });
 
 /* ═══════════════════════════════════════════

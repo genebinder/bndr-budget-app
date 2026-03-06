@@ -512,7 +512,11 @@
     </div>
     <div class="row2">
       <div class="fg"><label>ARV ($)</label><input type="text" id="f-arv" inputmode="decimal" placeholder="$0"></div>
-      <div class="fg"><label>Gross Profit</label><div id="f-gross-profit" style="font-size:.95rem;font-weight:700;padding:8px 0;">$0</div></div>
+      <div class="fg"><label>Net Profit (Cash Sale)</label><div id="f-gross-profit" style="font-size:.95rem;font-weight:700;padding:8px 0;">$0</div></div>
+    </div>
+    <div class="row2">
+      <div class="fg"><label>SF Cash at Close</label><div id="f-sf-cash-close" style="font-size:.95rem;font-weight:700;padding:8px 0;">$0</div></div>
+      <div class="fg"></div>
     </div>
   </div>
   <div class="card">
@@ -1243,17 +1247,52 @@ function populateProjectFields() {
 function updateRehabCost() {
   var rehabEl = document.getElementById('f-rehab-cost');
   var profitEl = document.getElementById('f-gross-profit');
+  var sfCloseEl = document.getElementById('f-sf-cash-close');
   var rehab = getTotalEstimated();
+  var purchase = D.project.purchasePrice || 0;
+  var arv = D.project.arv || 0;
   if (rehabEl) {
     rehabEl.textContent = '$' + fmt(rehab);
     rehabEl.style.color = rehab > 0 ? 'var(--green)' : 'var(--muted)';
   }
+  // Net Profit (Cash Sale) — uses full Finance tab calculation
   if (profitEl) {
-    var purchase = parseMoney(document.getElementById('f-purchase-price').value);
-    var arv = parseMoney(document.getElementById('f-arv').value);
-    var profit = arv - purchase - rehab;
+    var P = D.projections || defaultProjections();
+    var isCash = P.loanType === 'all_cash';
+    var hold = P.holdMonths || 3;
+    var loanAmt = isCash ? 0 : (purchase + rehab) * (P.ltc / 100);
+    var finCost = (loanAmt * (P.loanPoints / 100)) + (loanAmt * (P.loanRate / 100 / 12) * hold);
+    var acqCost = P.acTitle + P.acEscrow + P.acRecord + P.acPermit + P.acMisc;
+    var monthlyCarry = (P.cTax / 12) + P.cIns + P.cElec + P.cGas + P.cWater + P.cLawn + P.cSec + P.cHoa + P.cMgmt + P.cOther;
+    var carryCost = monthlyCarry * hold;
+    var listComm = arv * (P.dListComm / 100);
+    var buyComm = arv * (P.dBuyComm / 100);
+    var concessAmt = arv * (P.dConcessPct / 100);
+    var repairsAmt = arv * (P.dRepairsPct / 100);
+    var dispCost = listComm + buyComm + P.dTitle + P.dStaging + P.dPhoto + concessAmt + repairsAmt + P.dWarranty + P.dClean + P.dMisc;
+    var totalCost = purchase + acqCost + finCost + rehab + carryCost + dispCost;
+    var profit = arv - totalCost;
     profitEl.textContent = (profit >= 0 ? '$' : '-$') + fmt(Math.abs(profit));
     profitEl.style.color = profit > 0 ? 'var(--green)' : profit < 0 ? '#c0392b' : 'var(--muted)';
+  }
+  // SF Cash at Close = cash out from refi + down payment - marketing fee
+  if (sfCloseEl) {
+    var P = D.projections || defaultProjections();
+    var hold = P.holdMonths || 3;
+    var isCash = P.loanType === 'all_cash';
+    var loanAmt = isCash ? 0 : (purchase + rehab) * (P.ltc / 100);
+    var finCost2 = (loanAmt * (P.loanPoints / 100)) + (loanAmt * (P.loanRate / 100 / 12) * hold);
+    var acqCost2 = P.acTitle + P.acEscrow + P.acRecord + P.acPermit + P.acMisc;
+    var monthlyCarry2 = (P.cTax / 12) + P.cIns + P.cElec + P.cGas + P.cWater + P.cLawn + P.cSec + P.cHoa + P.cMgmt + P.cOther;
+    var carryCost2 = monthlyCarry2 * hold;
+    var ltBaseAmt = P.ltBase === 'arv' ? arv : (P.ltBase === 'purchase' ? purchase : P.ltCustom);
+    var ltLoanAmt = ltBaseAmt * (P.ltLtv / 100);
+    var ltOrigPts = ltLoanAmt * (P.ltPoints / 100);
+    var ltRefiCosts = ltOrigPts + P.ltClosing;
+    var ltCashInDeal = (purchase + acqCost2 + finCost2 + rehab + carryCost2) - ltLoanAmt + ltRefiCosts;
+    var sfCash = (-ltCashInDeal) + P.sfDown - P.sfAgent;
+    sfCloseEl.textContent = (sfCash >= 0 ? '$' : '-$') + fmt(Math.abs(sfCash));
+    sfCloseEl.style.color = sfCash > 0 ? 'var(--green)' : sfCash < 0 ? '#c0392b' : 'var(--muted)';
   }
 }
 
@@ -3250,9 +3289,7 @@ function calcFinance() {
     '<div class="fp-out-row"><span>Sale Price</span><span class="fp-val">$' + fpFmt(sfSalePrice) + '</span></div>' +
     '<div class="fp-out-row"><span>Down Payment</span><span class="fp-val">$' + fpFmt(P.sfDown) + '</span></div>' +
     '<div class="fp-out-row"><span>Note Amount</span><span class="fp-val">$' + fpFmt(sfNoteAmt) + '</span></div>' +
-    (sfBallYrs > 0 ? '<div class="fp-out-row"><span>Balloon Due (yr ' + sfBallYrs + ')</span><span class="fp-val">$' + fpFmt(sfBallAmt) + '</span></div>' : '') +
-    '<div class="fp-out-row"><span>Total Payments Collected</span><span class="fp-val">$' + fpFmt(sfTotalPay) + '</span></div>' +
-    '<div class="fp-out-row"><span>Total Interest Earned</span><span class="fp-val" style="color:var(--green);">$' + fpFmt(sfTotalInterest) + '</span></div>' +
+    '<div class="fp-out-row"><span>Marketing Fee</span><span class="fp-val" style="color:#c0392b;">-$' + fpFmt(P.sfAgent) + '</span></div>' +
     '<div class="fp-out-row total"><span>Net Profit (Note Deal)</span><span class="fp-val" style="color:#8e44ad;">$' + fpFmt(sfNetProfit) + '</span></div>' +
     '<div style="height:6px;"></div>' +
     '<div class="fp-out-row"><span>Equity (sale spread)</span><span class="fp-val">$' + fpFmt(sfEquity) + '</span></div>' +
@@ -3280,8 +3317,6 @@ function calcFinance() {
     '<div class="fp-out-row"><span>Origination Points</span><span class="fp-val">$' + fpFmt(ltOrigPts) + '</span></div>' +
     '<div class="fp-out-row"><span>Other Closing Costs</span><span class="fp-val">$' + fpFmt(P.ltClosing) + '</span></div>' +
     '<div class="fp-out-row"><span>Total Refi Costs</span><span class="fp-val">$' + fpFmt(ltRefiCosts) + '</span></div>' +
-    '<div class="fp-out-row"><span>Total Interest (life of loan)</span><span class="fp-val">$' + fpFmt(ltTotalInt) + '</span></div>' +
-    '<div class="fp-out-row"><span>Total Paid (P&I)</span><span class="fp-val">$' + fpFmt(ltTotalPaid) + '</span></div>' +
     '<div style="height:4px;"></div>' +
     '<div class="fp-rule" style="border-color:#2980b9;background:#e8f4fd;margin-bottom:0;">' +
     '<div class="fp-rule-title">' + (ltCashInDeal > 0 ? 'Cash Remaining in Deal' : 'Cash Out After Refi') + '</div>' +

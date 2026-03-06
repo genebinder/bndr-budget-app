@@ -473,6 +473,10 @@
       <div class="fg"><label>Start Date</label><input type="text" id="f-start" placeholder="TBD"></div>
       <div class="fg"><label>Completion Date</label><input type="text" id="f-end" placeholder="TBD"></div>
     </div>
+    <div class="row2">
+      <div class="fg"><label>Purchase Price ($)</label><input type="text" id="f-purchase-price" inputmode="decimal" placeholder="$0"></div>
+      <div class="fg"><label>Total Rehab Cost</label><div id="f-rehab-cost" style="font-size:.95rem;font-weight:700;padding:8px 0;color:var(--green);">$0</div></div>
+    </div>
   </div>
   <div class="card">
     <div class="card-title">Bonus</div>
@@ -1167,6 +1171,7 @@ function syncProjectFields() {
   D.project.lockbox = document.getElementById('f-lockbox').value;
   D.project.startDate = document.getElementById('f-start').value;
   D.project.endDate = document.getElementById('f-end').value;
+  D.project.purchasePrice = parseMoney(document.getElementById('f-purchase-price').value);
   D.project.bonusAmount = parseMoney(document.getElementById('f-bonus').value);
   D.project.bonusDate = document.getElementById('f-bonus-date').value;
   D.project.notes = document.getElementById('f-notes').value;
@@ -1179,9 +1184,19 @@ function populateProjectFields() {
   document.getElementById('f-lockbox').value = D.project.lockbox || '';
   document.getElementById('f-start').value = D.project.startDate || '';
   document.getElementById('f-end').value = D.project.endDate || '';
+  document.getElementById('f-purchase-price').value = D.project.purchasePrice ? fmt(D.project.purchasePrice) : '';
   document.getElementById('f-bonus').value = D.project.bonusAmount ? fmt(D.project.bonusAmount) : '';
   document.getElementById('f-bonus-date').value = D.project.bonusDate || '';
   document.getElementById('f-notes').value = D.project.notes || '';
+  updateRehabCost();
+}
+function updateRehabCost() {
+  var el = document.getElementById('f-rehab-cost');
+  if (el) {
+    var total = getTotalEstimated();
+    el.textContent = '$' + fmt(total);
+    el.style.color = total > 0 ? 'var(--green)' : 'var(--muted)';
+  }
 }
 
 /* ═══════════════════════════════════════════
@@ -1234,6 +1249,7 @@ function switchTab(tabId) {
   // Imports tab is global — hide project selector bar
   var projectBar = document.querySelector('.project-bar');
   if (projectBar) projectBar.style.display = (tabId === 'tab-imports') ? 'none' : '';
+  if (tabId === 'tab-project') updateRehabCost();
   if (tabId === 'tab-budget') renderBudget();
   if (tabId === 'tab-scope') renderScope();
   if (tabId === 'tab-payments') renderPayments();
@@ -3315,6 +3331,10 @@ document.getElementById('btnSharePassword').addEventListener('click', function()
    ═══════════════════════════════════════════ */
 document.getElementById('tab-project').addEventListener('input', function() { scheduleSave(); });
 
+document.getElementById('f-purchase-price').addEventListener('blur', function() {
+  var n = parseMoney(this.value);
+  this.value = n > 0 ? fmt(n) : '';
+});
 document.getElementById('f-bonus').addEventListener('blur', function() {
   var n = parseMoney(this.value);
   this.value = n > 0 ? fmt(n) : '';

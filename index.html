@@ -972,16 +972,34 @@ function getTotalEstimated() {
 }
 function getTotalActual() {
   var t = 0;
-  for (var c = 0; c < D.categories.length; c++)
-    for (var i = 0; i < D.categories[c].items.length; i++)
-      t += (D.categories[c].items[i].actual || 0);
+  for (var i = 0; i < D.payments.length; i++) {
+    if (D.payments[i].category) t += (D.payments[i].amount || 0);
+  }
   return t;
 }
 function getCatEstimated(cat) {
   var t = 0; for (var i = 0; i < cat.items.length; i++) t += (cat.items[i].estimated || 0); return t;
 }
 function getCatActual(cat) {
-  var t = 0; for (var i = 0; i < cat.items.length; i++) t += (cat.items[i].actual || 0); return t;
+  var t = 0;
+  for (var i = 0; i < D.payments.length; i++) {
+    if ((D.payments[i].category || '') === cat.name) t += (D.payments[i].amount || 0);
+  }
+  return t;
+}
+function getItemPaid(catName, itemDesc) {
+  var t = 0;
+  for (var i = 0; i < D.payments.length; i++) {
+    if ((D.payments[i].category || '') === catName && (D.payments[i].subcategory || '') === itemDesc) t += (D.payments[i].amount || 0);
+  }
+  return t;
+}
+function getCatGeneralPaid(catName) {
+  var t = 0;
+  for (var i = 0; i < D.payments.length; i++) {
+    if ((D.payments[i].category || '') === catName && !(D.payments[i].subcategory)) t += (D.payments[i].amount || 0);
+  }
+  return t;
 }
 function getTotalPaid() {
   var t = 0; for (var i = 0; i < D.payments.length; i++) t += (D.payments[i].amount || 0); return t;
@@ -1252,7 +1270,7 @@ function renderBudgetSummary() {
   document.getElementById('budget-summary').innerHTML =
     '<div class="summary-card">' +
       '<div class="summary-row"><span class="summary-label">Total Estimated</span><span class="summary-value">$' + fmt(totalEst) + '</span></div>' +
-      '<div class="summary-row"><span class="summary-label">Total Actual</span><span class="summary-value">$' + fmt(totalAct) + '</span></div>' +
+      '<div class="summary-row"><span class="summary-label">Total Paid (Categorized)</span><span class="summary-value">$' + fmt(totalAct) + '</span></div>' +
       '<div class="summary-divider"></div>' +
       '<div class="summary-row"><span class="summary-label">' + varLabel + '</span><span class="summary-value ' + varClass + '">' + varSign + fmt(Math.abs(variance)) + '</span></div>' +
       '<div class="progress-wrap"><div class="progress-fill" style="width:' + Math.min(pct, 100) + '%;' + (pct > 100 ? 'background:#f87171;' : '') + '"></div></div>' +
@@ -1285,11 +1303,23 @@ function renderBudgetCategories() {
       '</div>';
 
     var bodyHTML = contractorHTML;
+
+    // Show general (uncategorized) payments for this category
+    var generalPaid = getCatGeneralPaid(cat.name);
+    if (generalPaid > 0) {
+      bodyHTML +=
+        '<div style="display:flex;justify-content:space-between;align-items:center;padding:6px 0;border-bottom:1px solid var(--border);font-size:.75rem;">' +
+          '<span style="font-weight:600;color:var(--muted);">General (no sub-category)</span>' +
+          '<span style="font-weight:700;color:var(--green);">Paid: $' + fmt(generalPaid) + '</span>' +
+        '</div>';
+    }
+
     for (var i = 0; i < cat.items.length; i++) {
       var item = cat.items[i];
-      var iVar = item.estimated - item.actual;
+      var itemPaid = item.desc ? getItemPaid(cat.name, item.desc) : 0;
+      var iVar = item.estimated - itemPaid;
       var iVarClass = iVar >= 0 ? 'positive' : 'negative';
-      var iVarText = item.estimated > 0 || item.actual > 0
+      var iVarText = item.estimated > 0 || itemPaid > 0
         ? ((iVar >= 0 ? '-' : '+') + '$' + fmt(Math.abs(iVar)))
         : '';
 
@@ -1306,7 +1336,7 @@ function renderBudgetCategories() {
           '</div>' +
           '<div class="li-amounts">' +
             '<div class="li-field"><label>Estimated</label><input type="text" inputmode="decimal" value="' + (item.estimated ? fmt(item.estimated) : '') + '" data-field="estimated" placeholder="$0"><div class="markup-row"><button class="markup-btn" data-action="markup" data-field="estimated" data-item-id="' + item.id + '">+ 15%</button></div></div>' +
-            '<div class="li-field"><label>Actual</label><input type="text" inputmode="decimal" value="' + (item.actual ? fmt(item.actual) : '') + '" data-field="actual" placeholder="$0"><div class="markup-row"><button class="markup-btn" data-action="markup" data-field="actual" data-item-id="' + item.id + '">+ 15%</button></div></div>' +
+            '<div class="li-field"><label>Paid</label><div style="font-size:.85rem;font-weight:700;padding:6px 0;color:' + (itemPaid > 0 ? 'var(--green)' : 'var(--muted)') + ';">$' + fmt(itemPaid) + '</div></div>' +
             '<div class="li-var ' + iVarClass + '">' + iVarText + '</div>' +
           '</div>' +
         '</div>';
@@ -1326,7 +1356,7 @@ function renderBudgetCategories() {
         '<span class="cat-chevron ' + (isOpen ? 'open' : '') + '">&#9660;</span>' +
         '<div class="cat-totals">' +
           '<span>Est: $' + fmt(catEst) + '</span>' +
-          '<span>Act: $' + fmt(catAct) + '</span>' +
+          '<span>Paid: $' + fmt(catAct) + '</span>' +
           '<span class="' + varClass + '">' + varText + '</span>' +
         '</div>' +
         contractorSummary +
@@ -1449,24 +1479,17 @@ document.getElementById('tab-budget').addEventListener('input', function(e) {
   if (field === 'desc') { item.desc = target.value; }
   if (field === 'contractor') { item.contractor = target.value; scheduleSave(); return; }
   if (field === 'estimated') {
-    var newEst = parseMoney(target.value);
-    item.estimated = newEst;
-    // Auto-fill actual if it's empty/zero
-    if (!item.actual && newEst > 0) {
-      item.actual = newEst;
-      var actInput = row.querySelector('input[data-field="actual"]');
-      if (actInput) actInput.value = fmt(newEst);
-    }
+    item.estimated = parseMoney(target.value);
   }
-  if (field === 'actual') { item.actual = parseMoney(target.value); }
 
   scheduleSave();
 
   // Update variance display for this item
-  if (field === 'estimated' || field === 'actual') {
-    var iVar = item.estimated - item.actual;
+  if (field === 'estimated') {
+    var itemPaid = item.desc ? getItemPaid(cat.name, item.desc) : 0;
+    var iVar = item.estimated - itemPaid;
     var varEl = row.querySelector('.li-var');
-    if (varEl && (item.estimated > 0 || item.actual > 0)) {
+    if (varEl && (item.estimated > 0 || itemPaid > 0)) {
       varEl.className = 'li-var ' + (iVar >= 0 ? 'positive' : 'negative');
       varEl.textContent = (iVar >= 0 ? '-' : '+') + '$' + fmt(Math.abs(iVar));
     }
@@ -1477,7 +1500,7 @@ document.getElementById('tab-budget').addEventListener('input', function(e) {
       var ce = getCatEstimated(cat), ca = getCatActual(cat), cv = ce - ca;
       catHeader.innerHTML =
         '<span>Est: $' + fmt(ce) + '</span>' +
-        '<span>Act: $' + fmt(ca) + '</span>' +
+        '<span>Paid: $' + fmt(ca) + '</span>' +
         '<span class="' + (cv >= 0 ? 'positive' : 'negative') + '">' + (cv >= 0 ? '-' : '+') + '$' + fmt(Math.abs(cv)) + '</span>';
     }
   }
@@ -1486,7 +1509,7 @@ document.getElementById('tab-budget').addEventListener('input', function(e) {
 /* ── Format money fields on blur ── */
 document.getElementById('tab-budget').addEventListener('blur', function(e) {
   var target = e.target;
-  if (target.getAttribute('data-field') === 'estimated' || target.getAttribute('data-field') === 'actual') {
+  if (target.getAttribute('data-field') === 'estimated') {
     var n = parseMoney(target.value);
     target.value = n > 0 ? fmt(n) : '';
   }
@@ -1494,7 +1517,7 @@ document.getElementById('tab-budget').addEventListener('blur', function(e) {
 
 document.getElementById('tab-budget').addEventListener('focus', function(e) {
   var target = e.target;
-  if (target.getAttribute('data-field') === 'estimated' || target.getAttribute('data-field') === 'actual') {
+  if (target.getAttribute('data-field') === 'estimated') {
     var n = parseMoney(target.value);
     target.value = n > 0 ? n : '';
   }
@@ -1971,6 +1994,25 @@ function renderPayList() {
       html += '<div class="pay-edit-row">' +
         '<select class="pay-cat-sel" data-pay-id="' + p.id + '">' + catSelect + '</select>' +
       '</div>';
+      // Subcategory dropdown (populated from selected category's items)
+      if (p.category) {
+        var subOpts = '<option value="">— General (no sub) —</option>';
+        for (var sc = 0; sc < D.categories.length; sc++) {
+          if (D.categories[sc].name === p.category) {
+            for (var si = 0; si < D.categories[sc].items.length; si++) {
+              var subName = D.categories[sc].items[si].desc;
+              if (subName) {
+                var subSel = (subName === (p.subcategory || '')) ? ' selected' : '';
+                subOpts += '<option value="' + escAttr(subName) + '"' + subSel + '>' + esc(subName) + '</option>';
+              }
+            }
+            break;
+          }
+        }
+        html += '<div class="pay-edit-row">' +
+          '<select class="pay-sub-sel" data-pay-id="' + p.id + '">' + subOpts + '</select>' +
+        '</div>';
+      }
       html += '<div style="margin-top:4px;">' +
         '<button class="pay-save-btn" data-pay-action="save" data-pay-id="' + p.id + '">Done</button>' +
       '</div>';
@@ -1983,7 +2025,10 @@ function renderPayList() {
       '</div>';
       if (con) html += '<div class="pay-contractor" style="font-size:.72rem;font-weight:700;color:var(--green);margin-top:2px;">' + esc(con) + '</div>';
       html += '<div class="pay-desc">';
-      if (p.category) html += '<span class="pay-cat-badge">' + esc(p.category) + '</span> ';
+      if (p.category) {
+        html += '<span class="pay-cat-badge">' + esc(p.category) + '</span> ';
+        if (p.subcategory) html += '<span class="pay-cat-badge" style="background:#d1fae5;color:#065f46;">' + esc(p.subcategory) + '</span> ';
+      }
       html += (p.desc ? esc(p.desc) : '<span style="color:var(--muted);">No description</span>');
       html += '</div>';
       if (balText) html += '<div class="pay-bal ' + balClass + '">' + balText + '</div>';
@@ -2102,11 +2147,13 @@ function savePayInlineEdits(payId) {
   var conInp = wrap.querySelector('input[data-field="contractor"][data-pay-id="' + payId + '"]');
   var descInp = wrap.querySelector('input[data-field="desc"][data-pay-id="' + payId + '"]');
   var catSel = wrap.querySelector('select.pay-cat-sel[data-pay-id="' + payId + '"]');
+  var subSel = wrap.querySelector('select.pay-sub-sel[data-pay-id="' + payId + '"]');
   if (dateInp) p.date = dateInp.value.trim();
   if (amtInp) p.amount = parseMoney(amtInp.value);
   if (conInp) p.contractor = conInp.value.trim();
   if (descInp) p.desc = descInp.value.trim();
   if (catSel) p.category = catSel.value;
+  if (subSel) p.subcategory = subSel.value;
   scheduleSave();
 }
 
@@ -2140,15 +2187,28 @@ document.getElementById('pay-list').addEventListener('click', function(e) {
 });
 
 document.getElementById('pay-list').addEventListener('change', function(e) {
-  if (e.target.classList.contains('pay-cat-sel')) {
-    var payId = parseInt(e.target.getAttribute('data-pay-id'));
-    for (var i = 0; i < D.payments.length; i++) {
-      if (D.payments[i].id === payId) {
-        D.payments[i].category = e.target.value;
-        scheduleSave();
-        break;
-      }
-    }
+  var target = e.target;
+  var payId = parseInt(target.getAttribute('data-pay-id'));
+  if (!payId) return;
+  var p = null;
+  for (var i = 0; i < D.payments.length; i++) {
+    if (D.payments[i].id === payId) { p = D.payments[i]; break; }
+  }
+  if (!p) return;
+
+  if (target.classList.contains('pay-cat-sel')) {
+    // Save other inline fields first
+    savePayInlineEdits(payId);
+    p.category = target.value;
+    p.subcategory = ''; // Reset subcategory when category changes
+    scheduleSave();
+    renderPayList(); // Re-render to show subcategory dropdown
+    return;
+  }
+  if (target.classList.contains('pay-sub-sel')) {
+    p.subcategory = target.value;
+    scheduleSave();
+    return;
   }
 });
 
@@ -2364,6 +2424,7 @@ function importCSVToQueue(csvText) {
       assignedProjectId: valid[i].assignedProjectId || null,
       assignedProjectName: valid[i].assignedProjectName || '',
       assignedCategoryName: '',
+      assignedSubcategoryName: '',
       importedAt: new Date().toISOString(),
       committedAt: null
     };
@@ -2445,6 +2506,32 @@ function buildCategoryOptions(projectId, selectedCatName) {
   return html;
 }
 
+function buildSubcategoryOptions(projectId, catName, selectedSubName) {
+  var html = '<option value="">— General (no sub) —</option>';
+  if (!catName || !projectId) return html;
+  try {
+    var raw = localStorage.getItem('bndr-project-' + projectId);
+    if (raw) {
+      var projData = JSON.parse(raw);
+      if (projData && projData.categories) {
+        for (var c = 0; c < projData.categories.length; c++) {
+          if (projData.categories[c].name === catName) {
+            for (var i = 0; i < projData.categories[c].items.length; i++) {
+              var subName = projData.categories[c].items[i].desc;
+              if (subName) {
+                var sel = (subName === selectedSubName) ? ' selected' : '';
+                html += '<option value="' + escAttr(subName) + '"' + sel + '>' + esc(subName) + '</option>';
+              }
+            }
+            break;
+          }
+        }
+      }
+    }
+  } catch(e) {}
+  return html;
+}
+
 function renderImportList() {
   var wrap = document.getElementById('import-list');
   var items = importQueue.items.filter(function(item) {
@@ -2491,7 +2578,10 @@ function renderImportList() {
     html += '<div class="iq-badges">';
     html += '<span class="iq-status-badge ' + item.status + '">' + item.status.toUpperCase() + '</span>';
     if (item.assignedProjectName) html += '<span class="iq-project-badge">' + esc(item.assignedProjectName) + '</span>';
-    if (item.assignedCategoryName) html += '<span class="iq-cat-badge">' + esc(item.assignedCategoryName) + '</span>';
+    if (item.assignedCategoryName) {
+      html += '<span class="iq-cat-badge">' + esc(item.assignedCategoryName) + '</span>';
+      if (item.assignedSubcategoryName) html += '<span class="iq-cat-badge" style="background:#d1fae5;color:#065f46;">' + esc(item.assignedSubcategoryName) + '</span>';
+    }
     html += '</div>';
 
     // Assignment dropdowns (non-committed only)
@@ -2505,6 +2595,10 @@ function renderImportList() {
       if (item.assignedProjectId) {
         var catOpts = buildCategoryOptions(item.assignedProjectId, item.assignedCategoryName);
         html += '<select class="iq-cat-sel" data-iq-id="' + escAttr(item.id) + '">' + catOpts + '</select>';
+        if (item.assignedCategoryName) {
+          var subOpts = buildSubcategoryOptions(item.assignedProjectId, item.assignedCategoryName, item.assignedSubcategoryName);
+          html += '<select class="iq-sub-sel" data-iq-id="' + escAttr(item.id) + '">' + subOpts + '</select>';
+        }
       }
       html += '</div>';
       html += '<div class="iq-actions" style="margin-top:4px;">';
@@ -2567,6 +2661,7 @@ function commitImportItem(iqId) {
     date: item.date,
     contractor: item.contractor,
     category: item.assignedCategoryName || item.category || '',
+    subcategory: item.assignedSubcategoryName || '',
     desc: item.desc,
     amount: item.amount,
     fees: item.fees || 0,
@@ -2643,6 +2738,7 @@ document.getElementById('import-list').addEventListener('change', function(e) {
     } else {
       item.assignedProjectName = '';
       item.assignedCategoryName = '';
+      item.assignedSubcategoryName = '';
       item.status = 'unassigned';
     }
     saveImportQueue();
@@ -2651,6 +2747,13 @@ document.getElementById('import-list').addEventListener('change', function(e) {
   }
   if (target.classList.contains('iq-cat-sel')) {
     item.assignedCategoryName = target.value || '';
+    item.assignedSubcategoryName = ''; // Reset sub when category changes
+    saveImportQueue();
+    renderImportList(); // Re-render to show subcategory dropdown
+    return;
+  }
+  if (target.classList.contains('iq-sub-sel')) {
+    item.assignedSubcategoryName = target.value || '';
     saveImportQueue();
     return;
   }
@@ -2697,6 +2800,7 @@ document.getElementById('btnCommitAll').addEventListener('click', function() {
         date: items[j].date,
         contractor: items[j].contractor,
         category: items[j].assignedCategoryName || items[j].category || '',
+        subcategory: items[j].assignedSubcategoryName || '',
         desc: items[j].desc,
         amount: items[j].amount,
         fees: items[j].fees || 0,

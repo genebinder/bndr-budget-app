@@ -563,6 +563,10 @@
       Import CSV
       <input type="file" id="btnImportCSVFile" accept=".csv" style="display:none;">
     </label>
+    <button class="btn btn-outline" id="btnReclassify" style="flex:1;display:flex;align-items:center;justify-content:center;gap:4px;">
+      <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" style="width:16px;height:16px;"><path d="M1 4v6h6M23 20v-6h-6"/><path d="M20.49 9A9 9 0 005.64 5.64L1 10m22 4l-4.64 4.36A9 9 0 013.51 15"/></svg>
+      Re-classify
+    </button>
     <button class="btn btn-outline" id="btnCommitAll" style="flex:1;">Commit All Assigned</button>
   </div>
   <div id="import-filter-bar"></div>
@@ -2541,6 +2545,23 @@ document.getElementById('import-list').addEventListener('change', function(e) {
     item.assignedCategoryName = target.value || '';
     saveImportQueue();
     return;
+  }
+});
+
+document.getElementById('btnReclassify').addEventListener('click', function() {
+  var unassigned = importQueue.items.filter(function(item) { return item.status === 'unassigned'; });
+  if (unassigned.length === 0) { alert('No unassigned payments to re-classify.'); return; }
+  var matched = 0;
+  autoClassifyImportedPayments(unassigned);
+  for (var i = 0; i < unassigned.length; i++) {
+    if (unassigned[i].status === 'assigned') matched++;
+  }
+  saveImportQueue();
+  renderImports();
+  if (matched > 0) {
+    alert(matched + ' payment' + (matched !== 1 ? 's' : '') + ' auto-assigned to projects!');
+  } else {
+    alert('No new matches found. Try adding project addresses or assigning manually.');
   }
 });
 

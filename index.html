@@ -1190,6 +1190,9 @@ function switchTab(tabId) {
   document.querySelectorAll('.tab-btn').forEach(function(b) { b.classList.remove('active'); });
   document.getElementById(tabId).classList.add('active');
   document.querySelector('[data-tab="' + tabId + '"]').classList.add('active');
+  // Imports tab is global — hide project selector bar
+  var projectBar = document.querySelector('.project-bar');
+  if (projectBar) projectBar.style.display = (tabId === 'tab-imports') ? 'none' : '';
   if (tabId === 'tab-budget') renderBudget();
   if (tabId === 'tab-scope') renderScope();
   if (tabId === 'tab-payments') renderPayments();
@@ -2274,18 +2277,21 @@ function renderImports() {
 
 function renderImportSummary() {
   var unassigned = 0, assigned = 0, committed = 0, pendingAmount = 0;
+  var projectSet = {};
   for (var i = 0; i < importQueue.items.length; i++) {
     var item = importQueue.items[i];
     if (item.status === 'unassigned') { unassigned++; pendingAmount += item.amount; }
-    else if (item.status === 'assigned') { assigned++; pendingAmount += item.amount; }
+    else if (item.status === 'assigned') { assigned++; pendingAmount += item.amount; if (item.assignedProjectId) projectSet[item.assignedProjectId] = true; }
     else if (item.status === 'committed') committed++;
   }
   var pending = unassigned + assigned;
+  var projectCount = Object.keys(projectSet).length;
   var html =
+    '<div style="font-size:.75rem;font-weight:700;color:var(--muted);letter-spacing:1px;margin-bottom:6px;">ALL PROJECTS — EXPENSE IMPORTS</div>' +
     '<div class="summary-card">' +
       '<div class="summary-row"><span class="summary-label">Import Queue</span><span class="summary-value">' + pending + ' pending</span></div>' +
       '<div class="summary-row"><span class="summary-label">Unassigned</span><span class="summary-value" style="color:' + (unassigned > 0 ? '#d97706' : '') + ';">' + unassigned + '</span></div>' +
-      '<div class="summary-row"><span class="summary-label">Ready to Commit</span><span class="summary-value" style="color:var(--green);">' + assigned + '</span></div>' +
+      '<div class="summary-row"><span class="summary-label">Ready to Commit</span><span class="summary-value" style="color:var(--green);">' + assigned + (projectCount > 0 ? ' (' + projectCount + ' project' + (projectCount !== 1 ? 's' : '') + ')' : '') + '</span></div>' +
       '<div class="summary-divider"></div>' +
       '<div class="summary-row"><span class="summary-label">Pending Total</span><span class="summary-big">$' + fmt(pendingAmount) + '</span></div>' +
     '</div>';

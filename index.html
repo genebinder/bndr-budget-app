@@ -1802,6 +1802,26 @@ function renderPaySummary() {
   document.getElementById('pay-summary').innerHTML = html;
 }
 
+function getContractorBudget(contractorName) {
+  if (!contractorName) return 0;
+  var cn = contractorName.toLowerCase().trim();
+  var total = 0;
+  for (var c = 0; c < D.categories.length; c++) {
+    var cat = D.categories[c];
+    var catCon = (cat.contractor || '').toLowerCase().trim();
+    for (var i = 0; i < cat.items.length; i++) {
+      var item = cat.items[i];
+      // Item's effective contractor: its own if set, else the category's
+      var itemCon = (item.contractor || '').trim();
+      var effectiveCon = itemCon ? itemCon.toLowerCase() : catCon;
+      if (effectiveCon === cn) {
+        total += (item.estimated || 0);
+      }
+    }
+  }
+  return total;
+}
+
 function renderPayList() {
   var wrap = document.getElementById('pay-list');
   if (D.payments.length === 0) {
@@ -1809,17 +1829,29 @@ function renderPayList() {
     return;
   }
 
-  var totalEst = getTotalEstimated();
-  var bonus = D.project.bonusAmount || 0;
-  var grandTotal = totalEst + bonus;
-  var runningBal = grandTotal;
+  // Track running paid totals per contractor
+  var paidByContractor = {};
   var html = '';
 
   for (var i = 0; i < D.payments.length; i++) {
     var p = D.payments[i];
-    runningBal -= (p.amount || 0);
-    var isNeg = runningBal < 0;
-    var balClass = isNeg ? 'negative' : '';
+    var con = (p.contractor || '').trim();
+    var conKey = con.toLowerCase();
+
+    if (con) {
+      // Per-contractor balance
+      if (!paidByContractor[conKey]) paidByContractor[conKey] = 0;
+      paidByContractor[conKey] += (p.amount || 0);
+      var conBudget = getContractorBudget(con);
+      var conBal = conBudget - paidByContractor[conKey];
+      var isNeg = conBal < 0;
+      var balClass = isNeg ? 'negative' : '';
+      var balText = esc(con) + ' Balance: $' + fmt(Math.abs(conBal)) + (isNeg ? ' over' : '');
+    } else {
+      // No contractor — show nothing or generic
+      var balText = '';
+      var balClass = '';
+    }
 
     html +=
       '<div class="pay-entry" data-pay-id="' + p.id + '">' +
@@ -1828,9 +1860,9 @@ function renderPayList() {
           '<span class="pay-date">' + esc(p.date) + '</span>' +
           '<span class="pay-amount">$' + fmt(p.amount || 0) + '</span>' +
         '</div>' +
-        (p.contractor ? '<div class="pay-contractor" style="font-size:.72rem;font-weight:700;color:var(--green);margin-top:2px;">' + esc(p.contractor) + '</div>' : '') +
+        (con ? '<div class="pay-contractor" style="font-size:.72rem;font-weight:700;color:var(--green);margin-top:2px;">' + esc(con) + '</div>' : '') +
         '<div class="pay-desc">' + esc(p.category || '') + (p.desc ? ' — ' + esc(p.desc) : '') + '</div>' +
-        '<div class="pay-bal ' + balClass + '">Balance: $' + fmt(Math.abs(runningBal)) + (isNeg ? ' over' : '') + '</div>' +
+        (balText ? '<div class="pay-bal ' + balClass + '">' + balText + '</div>' : '') +
       '</div>';
   }
   wrap.innerHTML = html;

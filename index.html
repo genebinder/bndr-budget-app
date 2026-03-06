@@ -353,6 +353,18 @@
     .text-center { text-align: center; }
     .hidden { display: none !important; }
 
+    /* ── CSV Import Preview ── */
+    .csv-preview { background: var(--card); border-radius: var(--radius); padding: 16px; margin-bottom: 12px; box-shadow: 0 1px 3px rgba(0,0,0,.06); }
+    .csv-preview .csv-title { font-size: .78rem; font-weight: 700; color: var(--green); margin-bottom: 8px; }
+    .csv-preview .csv-count { font-size: .72rem; color: var(--muted); margin-bottom: 10px; }
+    .csv-preview .csv-row { font-size: .72rem; padding: 6px 0; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; gap: 8px; }
+    .csv-preview .csv-row:last-of-type { border-bottom: none; }
+    .csv-preview .csv-row .csv-vendor { font-weight: 700; color: var(--text); flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .csv-preview .csv-row .csv-amt { font-weight: 700; white-space: nowrap; }
+    .csv-preview .csv-row .csv-date { color: var(--muted); white-space: nowrap; }
+    .csv-btns { display: flex; gap: 8px; margin-top: 12px; }
+    .csv-btns .btn { flex: 1; }
+
     /* ── Project Selector Bar ── */
     .project-bar {
       position: fixed; top: calc(var(--hdr-h) + env(safe-area-inset-top, 0px));
@@ -481,7 +493,15 @@
 <!-- ══════ Tab: Payments ══════ -->
 <div id="tab-payments" class="tab-panel">
   <div id="pay-summary"></div>
-  <button class="btn btn-green mt no-print" id="btnAddPay" style="margin-bottom:12px;">+ Add Payment</button>
+  <div class="no-print" style="display:flex;gap:8px;margin-bottom:12px;">
+    <button class="btn btn-green" id="btnAddPay" style="flex:1;">+ Add Payment</button>
+    <label class="btn btn-outline" id="btnMelioLabel" style="flex:1;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:4px;">
+      <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" style="width:16px;height:16px;"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M17 8l-5-5-5 5M12 3v12"/></svg>
+      Import CSV
+      <input type="file" id="btnMelioCSV" accept=".csv" style="display:none;">
+    </label>
+  </div>
+  <div id="melio-preview" class="hidden"></div>
   <div id="pay-form-wrap"></div>
   <div id="pay-list"></div>
 </div>
@@ -1969,6 +1989,160 @@ document.getElementById('pay-list').addEventListener('click', function(e) {
       renderPayments(); scheduleSave();
     }
   }
+});
+
+/* ═══════════════════════════════════════════
+   CSV IMPORT (Melio / Generic)
+   ═══════════════════════════════════════════ */
+var pendingCSVPayments = [];
+
+function parseCSV(text) {
+  var lines = text.split(/\r?\n/).filter(function(l) { return l.trim(); });
+  if (lines.length < 2) return [];
+  // Parse header
+  var headers = splitCSVLine(lines[0]);
+  var rows = [];
+  for (var i = 1; i < lines.length; i++) {
+    var cols = splitCSVLine(lines[i]);
+    var obj = {};
+    for (var j = 0; j < headers.length; j++) {
+      obj[headers[j].trim().toLowerCase()] = (cols[j] || '').trim();
+    }
+    rows.push(obj);
+  }
+  return rows;
+}
+
+function splitCSVLine(line) {
+  var result = [];
+  var current = '';
+  var inQuotes = false;
+  for (var i = 0; i < line.length; i++) {
+    var ch = line[i];
+    if (ch === '"') { inQuotes = !inQuotes; }
+    else if (ch === ',' && !inQuotes) { result.push(current); current = ''; }
+    else { current += ch; }
+  }
+  result.push(current);
+  return result;
+}
+
+function mapCSVRow(row) {
+  // Auto-detect common field names from Melio and generic CSVs
+  var keys = Object.keys(row);
+  var find = function(patterns) {
+    for (var p = 0; p < patterns.length; p++) {
+      for (var k = 0; k < keys.length; k++) {
+        if (keys[k].indexOf(patterns[p]) > -1) return row[keys[k]];
+      }
+    }
+    return '';
+  };
+
+  var amountStr = find(['amount', 'payment amount', 'total', 'sum', 'paid']);
+  var amount = parseFloat(amountStr.replace(/[^0-9.\-]/g, '')) || 0;
+  if (amount < 0) amount = Math.abs(amount);
+
+  var dateStr = find(['date', 'payment date', 'scheduled date', 'created']);
+  // Try to normalize date
+  if (dateStr) {
+    var d = new Date(dateStr);
+    if (!isNaN(d.getTime())) {
+      dateStr = (d.getMonth() + 1) + '/' + d.getDate() + '/' + d.getFullYear();
+    }
+  }
+
+  return {
+    date: dateStr || todayStr(),
+    contractor: find(['vendor', 'vendor name', 'payee', 'recipient', 'contractor', 'name']),
+    category: find(['category', 'bill category', 'type', 'account']),
+    desc: find(['description', 'memo', 'note', 'notes', 'invoice', 'invoice number', 'bill', 'reference']),
+    amount: amount,
+    status: find(['status', 'payment status'])
+  };
+}
+
+function showCSVPreview(payments) {
+  var wrap = document.getElementById('melio-preview');
+  // Filter out zero-amount and failed/voided
+  var valid = payments.filter(function(p) {
+    if (p.amount <= 0) return false;
+    var s = (p.status || '').toLowerCase();
+    if (s === 'failed' || s === 'voided' || s === 'cancelled' || s === 'canceled') return false;
+    return true;
+  });
+  pendingCSVPayments = valid;
+
+  if (valid.length === 0) {
+    wrap.innerHTML = '<div class="csv-preview"><div class="csv-title">No valid payments found in CSV</div>' +
+      '<div class="csv-btns"><button class="btn btn-outline btn-sm" id="csv-cancel">Close</button></div></div>';
+    wrap.classList.remove('hidden');
+    document.getElementById('csv-cancel').addEventListener('click', function() { wrap.innerHTML = ''; wrap.classList.add('hidden'); });
+    return;
+  }
+
+  var total = 0;
+  var html = '<div class="csv-preview"><div class="csv-title">Import Preview — ' + valid.length + ' payment' + (valid.length !== 1 ? 's' : '') + ' found</div>';
+  for (var i = 0; i < valid.length; i++) {
+    var p = valid[i];
+    total += p.amount;
+    html += '<div class="csv-row">' +
+      '<span class="csv-date">' + esc(p.date) + '</span>' +
+      '<span class="csv-vendor">' + esc(p.contractor || p.desc || 'Unknown') + '</span>' +
+      '<span class="csv-amt">$' + fmt(p.amount) + '</span>' +
+    '</div>';
+  }
+  html += '<div class="csv-row" style="font-weight:800;border-top:2px solid var(--green);padding-top:8px;"><span>Total</span><span class="csv-amt">$' + fmt(total) + '</span></div>';
+  html += '<div class="csv-btns">' +
+    '<button class="btn btn-green btn-sm" id="csv-confirm">Import All</button>' +
+    '<button class="btn btn-outline btn-sm" id="csv-cancel">Cancel</button>' +
+  '</div></div>';
+
+  wrap.innerHTML = html;
+  wrap.classList.remove('hidden');
+
+  document.getElementById('csv-confirm').addEventListener('click', function() {
+    for (var i = 0; i < pendingCSVPayments.length; i++) {
+      var p = pendingCSVPayments[i];
+      D.payments.push({
+        id: D.nextPayId++,
+        date: p.date,
+        contractor: p.contractor,
+        category: p.category,
+        desc: p.desc,
+        amount: p.amount
+      });
+    }
+    pendingCSVPayments = [];
+    wrap.innerHTML = '';
+    wrap.classList.add('hidden');
+    renderPayments(); scheduleSave();
+    alert(pendingCSVPayments.length ? '' : 'Payments imported successfully!');
+  });
+
+  document.getElementById('csv-cancel').addEventListener('click', function() {
+    pendingCSVPayments = [];
+    wrap.innerHTML = '';
+    wrap.classList.add('hidden');
+  });
+}
+
+document.getElementById('btnMelioCSV').addEventListener('change', function(e) {
+  var file = e.target.files[0];
+  if (!file) return;
+  var reader = new FileReader();
+  reader.onload = function(ev) {
+    try {
+      var rows = parseCSV(ev.target.result);
+      if (rows.length === 0) { alert('No data found in CSV.'); return; }
+      var payments = rows.map(mapCSVRow);
+      showCSVPreview(payments);
+    } catch(err) {
+      alert('Error reading CSV: ' + err.message);
+    }
+  };
+  reader.readAsText(file);
+  e.target.value = '';
 });
 
 /* ═══════════════════════════════════════════

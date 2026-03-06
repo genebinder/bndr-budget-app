@@ -2365,10 +2365,10 @@ document.getElementById('btnSharePassword').addEventListener('click', function()
           'var json=new TextDecoder().decode(dec);var obj=JSON.parse(json);' +
           'if(Date.now()>obj.expires){' +
             'document.getElementById("lockBox").innerHTML=' +
-            '"<div class=\\'lock-icon\\'>⏰</div>' +
-            '<div class=\\'lock-title lock-expired\\'>EXPIRED</div>' +
-            '<div class=\\'lock-sub\\'>This shared budget has expired.</div>' +
-            '<div style=\\'margin-top:16px;font-size:.78rem;color:#888;\\'>Contact the sender for a new link.</div>";' +
+            '"<div class=\\\"lock-icon\\\">\\u23F0</div>' +
+            '<div class=\\\"lock-title lock-expired\\\">EXPIRED</div>' +
+            '<div class=\\\"lock-sub\\\">This shared budget has expired.</div>' +
+            '<div style=\\\"margin-top:16px;font-size:.78rem;color:#888;\\\">Contact the sender for a new link.</div>";' +
             'return;}' +
           'document.open();document.write(obj.html);document.close();' +
         '})' +

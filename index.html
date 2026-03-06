@@ -1252,8 +1252,8 @@ function updateRehabCost() {
   var purchase = D.project.purchasePrice || 0;
   var arv = D.project.arv || 0;
   if (rehabEl) {
-    rehabEl.textContent = '$' + fmt(rehab);
-    rehabEl.style.color = rehab > 0 ? 'var(--green)' : 'var(--muted)';
+    rehabEl.textContent = rehab > 0 ? '($' + fmt(rehab) + ')' : '$0';
+    rehabEl.style.color = rehab > 0 ? '#c0392b' : 'var(--muted)';
   }
   // Net Profit (Cash Sale) — uses full Finance tab calculation
   if (profitEl) {

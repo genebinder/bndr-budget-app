@@ -239,6 +239,25 @@
       border: none; color: var(--red); font-size: .72rem; cursor: pointer;
       padding: 4px 6px; font-family: inherit;
     }
+    .pay-edit-btn {
+      font-size: .68rem; padding: 3px 10px; border-radius: 4px; border: 1px solid var(--border);
+      background: var(--card); color: var(--muted); cursor: pointer; font-family: inherit; margin-right: 6px;
+    }
+    .pay-save-btn {
+      font-size: .68rem; padding: 3px 10px; border-radius: 4px; border: none;
+      background: var(--green); color: #fff; cursor: pointer; font-family: inherit; margin-right: 6px;
+    }
+    .pay-edit-row { display: flex; gap: 6px; margin-bottom: 6px; }
+    .pay-edit-row input, .pay-edit-row select {
+      flex: 1; font-size: .75rem; padding: 5px 8px; border: 1px solid var(--border);
+      border-radius: 4px; font-family: inherit; background: #fff;
+    }
+    .pay-edit-row input[type="text"].pay-inp-date { max-width: 90px; }
+    .pay-edit-row input[type="text"].pay-inp-amt { max-width: 80px; text-align: right; }
+    .pay-cat-badge {
+      display: inline-block; font-size: .6rem; font-weight: 700; padding: 1px 6px;
+      border-radius: 8px; background: #e0e7ff; color: #3730a3; margin-left: 4px;
+    }
 
     /* ── Export buttons ── */
     .export-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
@@ -1843,6 +1862,7 @@ document.getElementById('btnAddDeliveredMat').addEventListener('click', function
    ═══════════════════════════════════════════ */
 var showPayForm = false;
 var editingPayId = null;
+var editingPayId = null;
 
 function renderPayments() {
   renderPaySummary();
@@ -1902,6 +1922,12 @@ function renderPayList() {
     return;
   }
 
+  // Build category options for dropdowns
+  var catOpts = '<option value="">— Category —</option>';
+  for (var c = 0; c < D.categories.length; c++) {
+    catOpts += '<option value="' + escAttr(D.categories[c].name) + '">' + esc(D.categories[c].name) + '</option>';
+  }
+
   // Track running paid totals per contractor
   var paidByContractor = {};
   var html = '';
@@ -1910,9 +1936,9 @@ function renderPayList() {
     var p = D.payments[i];
     var con = (p.contractor || '').trim();
     var conKey = con.toLowerCase();
+    var isEditing = (editingPayId === p.id);
 
     if (con) {
-      // Per-contractor balance
       if (!paidByContractor[conKey]) paidByContractor[conKey] = 0;
       paidByContractor[conKey] += (p.amount || 0);
       var conBudget = getContractorBudget(con);
@@ -1921,22 +1947,52 @@ function renderPayList() {
       var balClass = isNeg ? 'negative' : '';
       var balText = esc(con) + ' Balance: $' + fmt(Math.abs(conBal)) + (isNeg ? ' over' : '');
     } else {
-      // No contractor — show nothing or generic
       var balText = '';
       var balClass = '';
     }
 
-    html +=
-      '<div class="pay-entry" data-pay-id="' + p.id + '">' +
-        '<button class="pay-del no-print" data-pay-id="' + p.id + '">&times;</button>' +
-        '<div class="pay-top">' +
-          '<span class="pay-date">' + esc(p.date) + '</span>' +
-          '<span class="pay-amount">$' + fmt(p.amount || 0) + '</span>' +
-        '</div>' +
-        (con ? '<div class="pay-contractor" style="font-size:.72rem;font-weight:700;color:var(--green);margin-top:2px;">' + esc(con) + '</div>' : '') +
-        '<div class="pay-desc">' + esc(p.category || '') + (p.desc ? ' — ' + esc(p.desc) : '') + '</div>' +
-        (balText ? '<div class="pay-bal ' + balClass + '">' + balText + '</div>' : '') +
+    html += '<div class="pay-entry" data-pay-id="' + p.id + '">';
+
+    if (isEditing) {
+      // Edit mode
+      html += '<button class="pay-del no-print" data-pay-id="' + p.id + '">&times;</button>';
+      html += '<div class="pay-edit-row">' +
+        '<input type="text" class="pay-inp-date" data-field="date" data-pay-id="' + p.id + '" value="' + escAttr(p.date || '') + '" placeholder="Date">' +
+        '<input type="text" class="pay-inp-amt" data-field="amount" data-pay-id="' + p.id + '" value="' + (p.amount || 0) + '" placeholder="Amount">' +
       '</div>';
+      html += '<div class="pay-edit-row">' +
+        '<input type="text" data-field="contractor" data-pay-id="' + p.id + '" value="' + escAttr(con) + '" placeholder="Contractor">' +
+      '</div>';
+      html += '<div class="pay-edit-row">' +
+        '<input type="text" data-field="desc" data-pay-id="' + p.id + '" value="' + escAttr(p.desc || '') + '" placeholder="Description">' +
+      '</div>';
+      // Category dropdown
+      var catSelect = catOpts.replace('value="' + escAttr(p.category || '') + '"', 'value="' + escAttr(p.category || '') + '" selected');
+      html += '<div class="pay-edit-row">' +
+        '<select class="pay-cat-sel" data-pay-id="' + p.id + '">' + catSelect + '</select>' +
+      '</div>';
+      html += '<div style="margin-top:4px;">' +
+        '<button class="pay-save-btn" data-pay-action="save" data-pay-id="' + p.id + '">Done</button>' +
+      '</div>';
+    } else {
+      // Display mode
+      html += '<button class="pay-del no-print" data-pay-id="' + p.id + '">&times;</button>';
+      html += '<div class="pay-top">' +
+        '<span class="pay-date">' + esc(p.date) + '</span>' +
+        '<span class="pay-amount">$' + fmt(p.amount || 0) + '</span>' +
+      '</div>';
+      if (con) html += '<div class="pay-contractor" style="font-size:.72rem;font-weight:700;color:var(--green);margin-top:2px;">' + esc(con) + '</div>';
+      html += '<div class="pay-desc">';
+      if (p.category) html += '<span class="pay-cat-badge">' + esc(p.category) + '</span> ';
+      html += (p.desc ? esc(p.desc) : '<span style="color:var(--muted);">No description</span>');
+      html += '</div>';
+      if (balText) html += '<div class="pay-bal ' + balClass + '">' + balText + '</div>';
+      html += '<div style="margin-top:4px;">' +
+        '<button class="pay-edit-btn" data-pay-action="edit" data-pay-id="' + p.id + '">Edit</button>' +
+      '</div>';
+    }
+
+    html += '</div>';
   }
   wrap.innerHTML = html;
 }
@@ -2034,12 +2090,64 @@ document.getElementById('btnAddPay').addEventListener('click', function() {
   renderPayForm();
 });
 
+function savePayInlineEdits(payId) {
+  var p = null;
+  for (var i = 0; i < D.payments.length; i++) {
+    if (D.payments[i].id === payId) { p = D.payments[i]; break; }
+  }
+  if (!p) return;
+  var wrap = document.getElementById('pay-list');
+  var dateInp = wrap.querySelector('input[data-field="date"][data-pay-id="' + payId + '"]');
+  var amtInp = wrap.querySelector('input[data-field="amount"][data-pay-id="' + payId + '"]');
+  var conInp = wrap.querySelector('input[data-field="contractor"][data-pay-id="' + payId + '"]');
+  var descInp = wrap.querySelector('input[data-field="desc"][data-pay-id="' + payId + '"]');
+  var catSel = wrap.querySelector('select.pay-cat-sel[data-pay-id="' + payId + '"]');
+  if (dateInp) p.date = dateInp.value.trim();
+  if (amtInp) p.amount = parseMoney(amtInp.value);
+  if (conInp) p.contractor = conInp.value.trim();
+  if (descInp) p.desc = descInp.value.trim();
+  if (catSel) p.category = catSel.value;
+  scheduleSave();
+}
+
 document.getElementById('pay-list').addEventListener('click', function(e) {
+  // Delete button
   if (e.target.classList.contains('pay-del')) {
     var payId = parseInt(e.target.getAttribute('data-pay-id'));
     if (confirm('Delete this payment?')) {
       D.payments = D.payments.filter(function(p) { return p.id !== payId; });
+      editingPayId = null;
       renderPayments(); scheduleSave();
+    }
+    return;
+  }
+  // Edit / Save toggle
+  var actionBtn = e.target.closest('[data-pay-action]');
+  if (actionBtn) {
+    var action = actionBtn.getAttribute('data-pay-action');
+    var payId = parseInt(actionBtn.getAttribute('data-pay-id'));
+    if (action === 'edit') {
+      if (editingPayId !== null && editingPayId !== payId) savePayInlineEdits(editingPayId);
+      editingPayId = payId;
+      renderPayList();
+    } else if (action === 'save') {
+      savePayInlineEdits(payId);
+      editingPayId = null;
+      renderPayments();
+    }
+    return;
+  }
+});
+
+document.getElementById('pay-list').addEventListener('change', function(e) {
+  if (e.target.classList.contains('pay-cat-sel')) {
+    var payId = parseInt(e.target.getAttribute('data-pay-id'));
+    for (var i = 0; i < D.payments.length; i++) {
+      if (D.payments[i].id === payId) {
+        D.payments[i].category = e.target.value;
+        scheduleSave();
+        break;
+      }
     }
   }
 });

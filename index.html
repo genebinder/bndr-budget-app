@@ -354,14 +354,23 @@
     .hidden { display: none !important; }
 
     /* ── CSV Import Preview ── */
-    .csv-preview { background: var(--card); border-radius: var(--radius); padding: 16px; margin-bottom: 12px; box-shadow: 0 1px 3px rgba(0,0,0,.06); }
-    .csv-preview .csv-title { font-size: .78rem; font-weight: 700; color: var(--green); margin-bottom: 8px; }
+    .csv-preview { background: var(--card); border-radius: var(--radius); padding: 16px; margin-bottom: 12px; box-shadow: 0 1px 3px rgba(0,0,0,.06); max-height: 70vh; overflow-y: auto; -webkit-overflow-scrolling: touch; }
+    .csv-preview .csv-title { font-size: .78rem; font-weight: 700; color: var(--green); margin-bottom: 4px; }
+    .csv-preview .csv-subtitle { font-size: .68rem; color: var(--muted); margin-bottom: 10px; }
+    .csv-preview .csv-filter-bar { display: flex; gap: 6px; margin-bottom: 10px; flex-wrap: wrap; }
+    .csv-preview .csv-filter-btn { font-size: .65rem; padding: 4px 10px; border-radius: 20px; border: 1px solid var(--border); background: var(--card); color: var(--muted); cursor: pointer; white-space: nowrap; transition: all .15s; }
+    .csv-preview .csv-filter-btn.active { background: var(--green); color: #fff; border-color: var(--green); }
     .csv-preview .csv-count { font-size: .72rem; color: var(--muted); margin-bottom: 10px; }
-    .csv-preview .csv-row { font-size: .72rem; padding: 6px 0; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; gap: 8px; }
+    .csv-preview .csv-row { font-size: .72rem; padding: 8px 0; border-bottom: 1px solid var(--border); }
     .csv-preview .csv-row:last-of-type { border-bottom: none; }
+    .csv-preview .csv-row-top { display: flex; justify-content: space-between; gap: 8px; align-items: center; }
+    .csv-preview .csv-row-bottom { font-size: .65rem; color: var(--muted); margin-top: 2px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
     .csv-preview .csv-row .csv-vendor { font-weight: 700; color: var(--text); flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
     .csv-preview .csv-row .csv-amt { font-weight: 700; white-space: nowrap; }
-    .csv-preview .csv-row .csv-date { color: var(--muted); white-space: nowrap; }
+    .csv-preview .csv-row .csv-date { color: var(--muted); white-space: nowrap; font-size: .65rem; }
+    .csv-preview .csv-row .csv-dup { font-size: .6rem; color: #c0392b; font-weight: 700; margin-left: 4px; }
+    .csv-preview .csv-row .csv-check { margin-right: 6px; width: 16px; height: 16px; accent-color: var(--green); }
+    .csv-preview .csv-total-row { font-weight: 800; border-top: 2px solid var(--green); padding-top: 8px; margin-top: 4px; display: flex; justify-content: space-between; font-size: .78rem; }
     .csv-btns { display: flex; gap: 8px; margin-top: 12px; }
     .csv-btns .btn { flex: 1; }
 
@@ -2038,13 +2047,20 @@ function mapCSVRow(row) {
     }
     return '';
   };
+  // Exact key lookup (case-insensitive, already lowercase from parseCSV)
+  var exact = function(key) { return row[key] || ''; };
 
-  var amountStr = find(['amount', 'payment amount', 'total', 'sum', 'paid']);
+  // ── Amount: prefer "payment amount" over generic "amount" to avoid fees column
+  var amountStr = exact('payment amount (usd)') || exact('payment amount') || find(['payment amount', 'amount', 'total', 'sum', 'paid']);
   var amount = parseFloat(amountStr.replace(/[^0-9.\-]/g, '')) || 0;
   if (amount < 0) amount = Math.abs(amount);
 
-  var dateStr = find(['date', 'payment date', 'scheduled date', 'created']);
-  // Try to normalize date
+  // ── Fees
+  var feeStr = exact('associated fees amount (usd)') || find(['fee', 'fees']);
+  var fees = parseFloat(feeStr.replace(/[^0-9.\-]/g, '')) || 0;
+
+  // ── Date: prefer delivery date (when contractor received) over collection date
+  var dateStr = exact('delivery date') || exact('collection date') || find(['date', 'payment date', 'scheduled date', 'created']);
   if (dateStr) {
     var d = new Date(dateStr);
     if (!isNaN(d.getTime())) {
@@ -2052,14 +2068,58 @@ function mapCSVRow(row) {
     }
   }
 
+  // ── Contractor
+  var contractor = exact('vendor company name') || find(['vendor', 'payee', 'recipient', 'contractor']);
+  // Clean trailing whitespace from vendor names
+  contractor = contractor.replace(/\s+$/, '');
+
+  // ── Description: build from multiple fields for richness
+  var noteToSelf = exact('note to self');
+  var memoToVendor = exact('memo to vendor');
+  var invoiceNum = exact('invoice number') || find(['invoice', 'invoice number', 'reference']);
+  var description = find(['description', 'memo', 'note', 'notes']);
+
+  // For Melio: "note to self" is the most detailed field, use it as primary desc
+  // Fallback to memo to vendor, then generic description
+  var desc = noteToSelf || memoToVendor || description;
+  // If we have an invoice number and it's not already in the desc, prepend it
+  if (invoiceNum && desc.indexOf(invoiceNum) === -1) {
+    desc = 'Inv #' + invoiceNum + (desc ? ' — ' + desc : '');
+  }
+
+  // ── Payment method & delivery method (for display)
+  var payMethod = exact('payment method') || find(['payment method', 'method']);
+  var payId = exact('payment id') || find(['payment id', 'transaction id', 'id']);
+
   return {
     date: dateStr || todayStr(),
-    contractor: find(['vendor', 'vendor name', 'payee', 'recipient', 'contractor', 'name']),
+    contractor: contractor,
     category: find(['category', 'bill category', 'type', 'account']),
-    desc: find(['description', 'memo', 'note', 'notes', 'invoice', 'invoice number', 'bill', 'reference']),
+    desc: desc,
     amount: amount,
-    status: find(['status', 'payment status'])
+    fees: fees,
+    status: find(['status', 'payment status']),
+    payMethod: payMethod,
+    payId: payId,
+    invoiceNum: invoiceNum,
+    noteToSelf: noteToSelf
   };
+}
+
+function isDuplicatePayment(p) {
+  // Check if this payment already exists (same amount + date + contractor)
+  var pAmt = p.amount;
+  var pDate = (p.date || '').trim();
+  var pCon = (p.contractor || '').toLowerCase().trim();
+  for (var i = 0; i < D.payments.length; i++) {
+    var ex = D.payments[i];
+    if (Math.abs((ex.amount || 0) - pAmt) < 0.01 &&
+        (ex.date || '').trim() === pDate &&
+        (ex.contractor || '').toLowerCase().trim() === pCon) {
+      return true;
+    }
+  }
+  return false;
 }
 
 function showCSVPreview(payments) {
@@ -2071,6 +2131,23 @@ function showCSVPreview(payments) {
     if (s === 'failed' || s === 'voided' || s === 'cancelled' || s === 'canceled') return false;
     return true;
   });
+
+  // Mark duplicates
+  for (var i = 0; i < valid.length; i++) {
+    valid[i]._isDuplicate = isDuplicatePayment(valid[i]);
+    valid[i]._checked = !valid[i]._isDuplicate; // uncheck duplicates by default
+    valid[i]._idx = i;
+  }
+
+  // Collect unique vendor names for filter buttons
+  var vendors = {};
+  for (var i = 0; i < valid.length; i++) {
+    var vn = (valid[i].contractor || 'Unknown').trim();
+    if (!vendors[vn]) vendors[vn] = 0;
+    vendors[vn]++;
+  }
+  var vendorList = Object.keys(vendors).sort();
+
   pendingCSVPayments = valid;
 
   if (valid.length === 0) {
@@ -2081,50 +2158,140 @@ function showCSVPreview(payments) {
     return;
   }
 
-  var total = 0;
-  var html = '<div class="csv-preview"><div class="csv-title">Import Preview — ' + valid.length + ' payment' + (valid.length !== 1 ? 's' : '') + ' found</div>';
-  for (var i = 0; i < valid.length; i++) {
-    var p = valid[i];
-    total += p.amount;
-    html += '<div class="csv-row">' +
-      '<span class="csv-date">' + esc(p.date) + '</span>' +
-      '<span class="csv-vendor">' + esc(p.contractor || p.desc || 'Unknown') + '</span>' +
-      '<span class="csv-amt">$' + fmt(p.amount) + '</span>' +
+  var dupCount = valid.filter(function(p) { return p._isDuplicate; }).length;
+
+  function buildPreviewHTML(filterVendor) {
+    var shown = filterVendor ? valid.filter(function(p) { return (p.contractor || 'Unknown').trim() === filterVendor; }) : valid;
+
+    var html = '<div class="csv-preview">';
+    html += '<div class="csv-title">Melio Import — ' + valid.length + ' payment' + (valid.length !== 1 ? 's' : '') + '</div>';
+    if (dupCount > 0) {
+      html += '<div class="csv-subtitle">⚠️ ' + dupCount + ' duplicate' + (dupCount !== 1 ? 's' : '') + ' detected (unchecked). Already in your payment log.</div>';
+    }
+
+    // Vendor filter buttons
+    html += '<div class="csv-filter-bar">';
+    html += '<span class="csv-filter-btn' + (!filterVendor ? ' active' : '') + '" data-filter="">All (' + valid.length + ')</span>';
+    for (var v = 0; v < vendorList.length; v++) {
+      var isActive = filterVendor === vendorList[v];
+      html += '<span class="csv-filter-btn' + (isActive ? ' active' : '') + '" data-filter="' + escAttr(vendorList[v]) + '">' + esc(vendorList[v]) + ' (' + vendors[vendorList[v]] + ')</span>';
+    }
+    html += '</div>';
+
+    // Select All / None links
+    html += '<div style="font-size:.65rem;margin-bottom:6px;display:flex;gap:10px;">' +
+      '<a href="#" id="csv-sel-all" style="color:var(--green);text-decoration:underline;">Select All</a>' +
+      '<a href="#" id="csv-sel-none" style="color:var(--green);text-decoration:underline;">Select None</a>' +
+      '<a href="#" id="csv-sel-new" style="color:var(--green);text-decoration:underline;">Select Non-Duplicates</a>' +
     '</div>';
+
+    var total = 0;
+    var totalFees = 0;
+    var checkedCount = 0;
+    for (var i = 0; i < shown.length; i++) {
+      var p = shown[i];
+      if (p._checked) { total += p.amount; totalFees += (p.fees || 0); checkedCount++; }
+      var descText = p.desc || '';
+      // Shorten the desc for display
+      if (descText.length > 80) descText = descText.substring(0, 77) + '...';
+      html += '<div class="csv-row">' +
+        '<div class="csv-row-top">' +
+          '<input type="checkbox" class="csv-check" data-pidx="' + p._idx + '"' + (p._checked ? ' checked' : '') + '>' +
+          '<span class="csv-date">' + esc(p.date) + '</span>' +
+          '<span class="csv-vendor">' + esc(p.contractor || 'Unknown') + '</span>' +
+          '<span class="csv-amt">$' + fmt(p.amount) + '</span>' +
+          (p._isDuplicate ? '<span class="csv-dup">DUP</span>' : '') +
+        '</div>' +
+        (descText ? '<div class="csv-row-bottom">' + esc(descText) + '</div>' : '') +
+      '</div>';
+    }
+
+    html += '<div class="csv-total-row"><span>' + checkedCount + ' selected</span><span>$' + fmt(total) + (totalFees > 0 ? ' <span style="font-size:.65rem;color:var(--muted);">(+$' + fmt(totalFees) + ' fees)</span>' : '') + '</span></div>';
+
+    html += '<div class="csv-btns">' +
+      '<button class="btn btn-green btn-sm" id="csv-confirm">Import Selected (' + checkedCount + ')</button>' +
+      '<button class="btn btn-outline btn-sm" id="csv-cancel">Cancel</button>' +
+    '</div></div>';
+    return html;
   }
-  html += '<div class="csv-row" style="font-weight:800;border-top:2px solid var(--green);padding-top:8px;"><span>Total</span><span class="csv-amt">$' + fmt(total) + '</span></div>';
-  html += '<div class="csv-btns">' +
-    '<button class="btn btn-green btn-sm" id="csv-confirm">Import All</button>' +
-    '<button class="btn btn-outline btn-sm" id="csv-cancel">Cancel</button>' +
-  '</div></div>';
 
-  wrap.innerHTML = html;
-  wrap.classList.remove('hidden');
+  var currentFilter = '';
 
-  document.getElementById('csv-confirm').addEventListener('click', function() {
-    for (var i = 0; i < pendingCSVPayments.length; i++) {
-      var p = pendingCSVPayments[i];
-      D.payments.push({
-        id: D.nextPayId++,
-        date: p.date,
-        contractor: p.contractor,
-        category: p.category,
-        desc: p.desc,
-        amount: p.amount
+  function renderPreview() {
+    wrap.innerHTML = buildPreviewHTML(currentFilter);
+    wrap.classList.remove('hidden');
+
+    // Vendor filter click handlers
+    var filterBtns = wrap.querySelectorAll('.csv-filter-btn');
+    for (var f = 0; f < filterBtns.length; f++) {
+      filterBtns[f].addEventListener('click', function() {
+        currentFilter = this.getAttribute('data-filter') || '';
+        renderPreview();
       });
     }
-    pendingCSVPayments = [];
-    wrap.innerHTML = '';
-    wrap.classList.add('hidden');
-    renderPayments(); scheduleSave();
-    alert(pendingCSVPayments.length ? '' : 'Payments imported successfully!');
-  });
 
-  document.getElementById('csv-cancel').addEventListener('click', function() {
-    pendingCSVPayments = [];
-    wrap.innerHTML = '';
-    wrap.classList.add('hidden');
-  });
+    // Checkbox handlers
+    var checks = wrap.querySelectorAll('.csv-check');
+    for (var c = 0; c < checks.length; c++) {
+      checks[c].addEventListener('change', function() {
+        var idx = parseInt(this.getAttribute('data-pidx'));
+        pendingCSVPayments[idx]._checked = this.checked;
+        renderPreview();
+      });
+    }
+
+    // Select All / None / Non-Duplicates
+    var selAll = document.getElementById('csv-sel-all');
+    var selNone = document.getElementById('csv-sel-none');
+    var selNew = document.getElementById('csv-sel-new');
+    if (selAll) selAll.addEventListener('click', function(e) {
+      e.preventDefault();
+      for (var i = 0; i < pendingCSVPayments.length; i++) pendingCSVPayments[i]._checked = true;
+      renderPreview();
+    });
+    if (selNone) selNone.addEventListener('click', function(e) {
+      e.preventDefault();
+      for (var i = 0; i < pendingCSVPayments.length; i++) pendingCSVPayments[i]._checked = false;
+      renderPreview();
+    });
+    if (selNew) selNew.addEventListener('click', function(e) {
+      e.preventDefault();
+      for (var i = 0; i < pendingCSVPayments.length; i++) pendingCSVPayments[i]._checked = !pendingCSVPayments[i]._isDuplicate;
+      renderPreview();
+    });
+
+    // Import button
+    document.getElementById('csv-confirm').addEventListener('click', function() {
+      var imported = 0;
+      for (var i = 0; i < pendingCSVPayments.length; i++) {
+        var p = pendingCSVPayments[i];
+        if (!p._checked) continue;
+        D.payments.push({
+          id: D.nextPayId++,
+          date: p.date,
+          contractor: p.contractor,
+          category: p.category,
+          desc: p.desc,
+          amount: p.amount
+        });
+        imported++;
+      }
+      pendingCSVPayments = [];
+      wrap.innerHTML = '';
+      wrap.classList.add('hidden');
+      renderPayments(); scheduleSave();
+      alert(imported + ' payment' + (imported !== 1 ? 's' : '') + ' imported successfully!');
+    });
+
+    // Cancel button
+    document.getElementById('csv-cancel').addEventListener('click', function() {
+      pendingCSVPayments = [];
+      wrap.innerHTML = '';
+      wrap.classList.add('hidden');
+    });
+  }
+
+  renderPreview();
 }
 
 document.getElementById('btnMelioCSV').addEventListener('change', function(e) {

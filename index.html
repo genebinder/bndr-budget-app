@@ -477,6 +477,10 @@
       <div class="fg"><label>Purchase Price ($)</label><input type="text" id="f-purchase-price" inputmode="decimal" placeholder="$0"></div>
       <div class="fg"><label>Total Rehab Cost</label><div id="f-rehab-cost" style="font-size:.95rem;font-weight:700;padding:8px 0;color:var(--green);">$0</div></div>
     </div>
+    <div class="row2">
+      <div class="fg"><label>ARV ($)</label><input type="text" id="f-arv" inputmode="decimal" placeholder="$0"></div>
+      <div class="fg"><label>Gross Profit</label><div id="f-gross-profit" style="font-size:.95rem;font-weight:700;padding:8px 0;">$0</div></div>
+    </div>
   </div>
   <div class="card">
     <div class="card-title">Bonus</div>
@@ -1172,6 +1176,7 @@ function syncProjectFields() {
   D.project.startDate = document.getElementById('f-start').value;
   D.project.endDate = document.getElementById('f-end').value;
   D.project.purchasePrice = parseMoney(document.getElementById('f-purchase-price').value);
+  D.project.arv = parseMoney(document.getElementById('f-arv').value);
   D.project.bonusAmount = parseMoney(document.getElementById('f-bonus').value);
   D.project.bonusDate = document.getElementById('f-bonus-date').value;
   D.project.notes = document.getElementById('f-notes').value;
@@ -1185,17 +1190,26 @@ function populateProjectFields() {
   document.getElementById('f-start').value = D.project.startDate || '';
   document.getElementById('f-end').value = D.project.endDate || '';
   document.getElementById('f-purchase-price').value = D.project.purchasePrice ? fmt(D.project.purchasePrice) : '';
+  document.getElementById('f-arv').value = D.project.arv ? fmt(D.project.arv) : '';
   document.getElementById('f-bonus').value = D.project.bonusAmount ? fmt(D.project.bonusAmount) : '';
   document.getElementById('f-bonus-date').value = D.project.bonusDate || '';
   document.getElementById('f-notes').value = D.project.notes || '';
   updateRehabCost();
 }
 function updateRehabCost() {
-  var el = document.getElementById('f-rehab-cost');
-  if (el) {
-    var total = getTotalEstimated();
-    el.textContent = '$' + fmt(total);
-    el.style.color = total > 0 ? 'var(--green)' : 'var(--muted)';
+  var rehabEl = document.getElementById('f-rehab-cost');
+  var profitEl = document.getElementById('f-gross-profit');
+  var rehab = getTotalEstimated();
+  if (rehabEl) {
+    rehabEl.textContent = '$' + fmt(rehab);
+    rehabEl.style.color = rehab > 0 ? 'var(--green)' : 'var(--muted)';
+  }
+  if (profitEl) {
+    var purchase = parseMoney(document.getElementById('f-purchase-price').value);
+    var arv = parseMoney(document.getElementById('f-arv').value);
+    var profit = arv - purchase - rehab;
+    profitEl.textContent = (profit >= 0 ? '$' : '-$') + fmt(Math.abs(profit));
+    profitEl.style.color = profit > 0 ? 'var(--green)' : profit < 0 ? '#c0392b' : 'var(--muted)';
   }
 }
 
@@ -3334,6 +3348,12 @@ document.getElementById('tab-project').addEventListener('input', function() { sc
 document.getElementById('f-purchase-price').addEventListener('blur', function() {
   var n = parseMoney(this.value);
   this.value = n > 0 ? fmt(n) : '';
+  updateRehabCost();
+});
+document.getElementById('f-arv').addEventListener('blur', function() {
+  var n = parseMoney(this.value);
+  this.value = n > 0 ? fmt(n) : '';
+  updateRehabCost();
 });
 document.getElementById('f-bonus').addEventListener('blur', function() {
   var n = parseMoney(this.value);

@@ -58,13 +58,13 @@
     }
     .tab-btn {
       flex: 1; display: flex; flex-direction: column; align-items: center;
-      justify-content: center; gap: 2px; border: none; background: none;
-      color: var(--muted); font-size: .58rem; font-weight: 600; cursor: pointer;
-      font-family: inherit; padding: 4px 0; transition: color .15s;
+      justify-content: center; gap: 1px; border: none; background: none;
+      color: var(--muted); font-size: .55rem; font-weight: 600; cursor: pointer;
+      font-family: inherit; padding: 3px 0; transition: color .15s;
       -webkit-appearance: none;
     }
     .tab-btn.active { color: var(--green); }
-    .tab-btn svg { width: 20px; height: 20px; }
+    .tab-btn svg { width: 18px; height: 18px; }
     .tab-btn.active svg { stroke: var(--green); }
 
     /* ── Tab Panels ── */
@@ -340,7 +340,7 @@
       body { padding: 0; background: #fff; }
       .app-header, .tab-bar, .no-print { display: none !important; }
       .tab-panel { display: block !important; padding: 0; }
-      #tab-project, #tab-budget, #tab-payments, #tab-scope { display: none !important; }
+      #tab-project, #tab-budget, #tab-payments, #tab-scope, #tab-imports { display: none !important; }
       #tab-export { display: block !important; }
       .card { box-shadow: none; break-inside: avoid; }
       .print-page { display: block !important; }
@@ -373,6 +373,35 @@
     .csv-preview .csv-total-row { font-weight: 800; border-top: 2px solid var(--green); padding-top: 8px; margin-top: 4px; display: flex; justify-content: space-between; font-size: .78rem; }
     .csv-btns { display: flex; gap: 8px; margin-top: 12px; }
     .csv-btns .btn { flex: 1; }
+
+    /* ── Import Queue ── */
+    .iq-entry { background: var(--card); border-radius: var(--radius); padding: 14px 16px; margin-bottom: 8px; box-shadow: 0 1px 3px rgba(0,0,0,.06); position: relative; border-left: 4px solid var(--border); }
+    .iq-entry.iq-assigned { border-left-color: var(--green); }
+    .iq-entry.iq-unassigned { border-left-color: #d97706; }
+    .iq-entry.iq-committed { border-left-color: var(--muted); opacity: .6; }
+    .iq-top { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 2px; }
+    .iq-date { font-size: .72rem; color: var(--muted); font-weight: 600; }
+    .iq-amount { font-size: .95rem; font-weight: 800; color: var(--text); }
+    .iq-contractor { font-size: .78rem; font-weight: 700; color: var(--green); margin-top: 2px; }
+    .iq-desc { font-size: .72rem; color: var(--muted); margin-top: 2px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .iq-badges { margin-top: 6px; display: flex; gap: 4px; flex-wrap: wrap; align-items: center; }
+    .iq-project-badge { display: inline-block; font-size: .6rem; font-weight: 700; background: rgba(107,122,89,.12); color: var(--green); padding: 2px 8px; border-radius: 10px; }
+    .iq-cat-badge { display: inline-block; font-size: .6rem; font-weight: 700; background: rgba(59,130,246,.1); color: #2563eb; padding: 2px 8px; border-radius: 10px; }
+    .iq-status-badge { display: inline-block; font-size: .58rem; font-weight: 700; padding: 2px 6px; border-radius: 8px; }
+    .iq-status-badge.unassigned { background: #fef3c7; color: #92400e; }
+    .iq-status-badge.assigned { background: rgba(107,122,89,.12); color: var(--green); }
+    .iq-actions { display: flex; gap: 6px; margin-top: 8px; flex-wrap: wrap; }
+    .iq-actions select { flex: 1; min-width: 0; border: 1.5px solid var(--border); border-radius: 6px; padding: 6px 8px; font-size: 13px; font-family: inherit; color: var(--text); background: #fafbfa; outline: none; -webkit-appearance: none; }
+    .iq-actions select:focus { border-color: var(--green); }
+    .iq-edit-row { display: flex; gap: 6px; margin-top: 6px; }
+    .iq-edit-row input { flex: 1; border: 1.5px solid var(--border); border-radius: 6px; padding: 6px 8px; font-size: 14px; font-family: inherit; background: #fafbfa; outline: none; color: var(--text); -webkit-appearance: none; }
+    .iq-edit-row input:focus { border-color: var(--green); }
+    .iq-del { position: absolute; top: 8px; right: 8px; background: none; border: none; color: #c0392b; font-size: .78rem; cursor: pointer; padding: 4px 6px; font-family: inherit; }
+    .iq-expand-btn { border: none; background: rgba(107,122,89,.12); color: var(--green); font-size: .65rem; font-weight: 700; padding: 5px 12px; border-radius: 6px; cursor: pointer; font-family: inherit; }
+    .iq-commit-btn { border: none; background: var(--green); color: #fff; font-size: .65rem; font-weight: 700; padding: 5px 12px; border-radius: 6px; cursor: pointer; font-family: inherit; }
+    .iq-filter-bar { display: flex; gap: 6px; margin-bottom: 10px; flex-wrap: wrap; }
+    .iq-filter-btn { font-size: .65rem; padding: 4px 10px; border-radius: 20px; border: 1px solid var(--border); background: var(--card); color: var(--muted); cursor: pointer; white-space: nowrap; font-family: inherit; }
+    .iq-filter-btn.active { background: var(--green); color: #fff; border-color: var(--green); }
 
     /* ── Project Selector Bar ── */
     .project-bar {
@@ -551,6 +580,21 @@
   <div id="export-preview"></div>
 </div>
 
+<!-- ══════ Tab: Imports ══════ -->
+<div id="tab-imports" class="tab-panel">
+  <div id="import-summary"></div>
+  <div class="no-print" style="display:flex;gap:8px;margin-bottom:12px;">
+    <label class="btn btn-green" id="btnImportCSVLabel" style="flex:1;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:4px;">
+      <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" style="width:16px;height:16px;"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M17 8l-5-5-5 5M12 3v12"/></svg>
+      Import CSV
+      <input type="file" id="btnImportCSVFile" accept=".csv" style="display:none;">
+    </label>
+    <button class="btn btn-outline" id="btnCommitAll" style="flex:1;">Commit All Assigned</button>
+  </div>
+  <div id="import-filter-bar"></div>
+  <div id="import-list"></div>
+</div>
+
 <!-- ══════ Tab Bar ══════ -->
 <nav class="tab-bar">
   <button class="tab-btn active" data-tab="tab-project">
@@ -568,6 +612,10 @@
   <button class="tab-btn" data-tab="tab-payments">
     <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M12 1v22M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6"/></svg>
     Payments
+  </button>
+  <button class="tab-btn" data-tab="tab-imports">
+    <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M17 8l-5-5-5 5M12 3v12"/></svg>
+    Imports
   </button>
   <button class="tab-btn" data-tab="tab-export">
     <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
@@ -948,6 +996,9 @@ function findCat(id) { for (var i = 0; i < D.categories.length; i++) if (D.categ
    ═══════════════════════════════════════════ */
 var saveTimer;
 var currentProjectId = null;
+var importQueue = { items: [], nextId: 1 };
+var editingImportId = null;
+var importFilterStatus = '';
 
 // Project index: [{id, name, created, lastModified}]
 function getProjectIndex() {
@@ -959,6 +1010,17 @@ function getProjectIndex() {
 }
 function saveProjectIndex(index) {
   try { localStorage.setItem('bndr-projects-index', JSON.stringify(index)); } catch(e) {}
+}
+
+function loadImportQueue() {
+  try {
+    var raw = localStorage.getItem('bndr-import-queue');
+    if (raw) { var obj = JSON.parse(raw); if (obj && obj.items) { importQueue = obj; return; } }
+  } catch(e) {}
+  importQueue = { items: [], nextId: 1 };
+}
+function saveImportQueue() {
+  try { localStorage.setItem('bndr-import-queue', JSON.stringify(importQueue)); } catch(e) {}
 }
 
 function scheduleSave() { clearTimeout(saveTimer); saveTimer = setTimeout(saveState, 400); }
@@ -1157,6 +1219,7 @@ function switchTab(tabId) {
   if (tabId === 'tab-budget') renderBudget();
   if (tabId === 'tab-scope') renderScope();
   if (tabId === 'tab-payments') renderPayments();
+  if (tabId === 'tab-imports') renderImports();
   if (tabId === 'tab-export') renderExportPreview();
   window.scrollTo(0, 0);
 }
@@ -2368,14 +2431,461 @@ document.getElementById('btnMelioCSV').addEventListener('change', function(e) {
   if (!file) return;
   var reader = new FileReader();
   reader.onload = function(ev) {
+    try { importCSVToQueue(ev.target.result); } catch(err) { alert('Error reading CSV: ' + err.message); }
+  };
+  reader.readAsText(file);
+  e.target.value = '';
+});
+
+/* ═══════════════════════════════════════════
+   IMPORT QUEUE SYSTEM
+   ═══════════════════════════════════════════ */
+
+function autoClassifyImportedPayments(payments) {
+  var index = getProjectIndex();
+  var projectKeywordMap = [];
+  for (var p = 0; p < index.length; p++) {
+    var projData = null;
     try {
-      var rows = parseCSV(ev.target.result);
-      if (rows.length === 0) { alert('No data found in CSV.'); return; }
-      var payments = rows.map(mapCSVRow);
-      showCSVPreview(payments);
-    } catch(err) {
-      alert('Error reading CSV: ' + err.message);
+      var raw = localStorage.getItem('bndr-project-' + index[p].id);
+      if (raw) projData = JSON.parse(raw);
+    } catch(e) {}
+    if (!projData || !projData.project || !projData.project.address) continue;
+    var addr = projData.project.address.trim();
+    if (!addr) continue;
+    var words = addr.toLowerCase().split(/[\s,]+/);
+    var skip = ['st','ave','rd','dr','ln','ct','blvd','way','pl','n','s','e','w','ne','nw','se','sw','street','avenue','road','drive','lane','court','boulevard','place','circle','the','and','city','state'];
+    var keywords = [];
+    for (var w = 0; w < words.length; w++) {
+      var word = words[w].replace(/[^a-z0-9]/g, '');
+      if (word.length >= 3 && skip.indexOf(word) === -1) keywords.push(word);
     }
+    if (keywords.length > 0) {
+      projectKeywordMap.push({ id: index[p].id, name: addr, keywords: keywords });
+    }
+  }
+  for (var i = 0; i < payments.length; i++) {
+    var pay = payments[i];
+    var searchText = ((pay.noteToSelf || '') + ' ' + (pay.desc || '') + ' ' + (pay.invoiceNum || '')).toLowerCase();
+    pay.assignedProjectId = null;
+    pay.assignedProjectName = '';
+    for (var j = 0; j < projectKeywordMap.length; j++) {
+      var proj = projectKeywordMap[j];
+      for (var k = 0; k < proj.keywords.length; k++) {
+        if (searchText.indexOf(proj.keywords[k]) > -1) {
+          pay.assignedProjectId = proj.id;
+          pay.assignedProjectName = proj.name;
+          break;
+        }
+      }
+      if (pay.assignedProjectId) break;
+    }
+    pay.status = pay.assignedProjectId ? 'assigned' : 'unassigned';
+  }
+  return payments;
+}
+
+function isDuplicatePaymentGlobal(pay) {
+  // Check import queue
+  for (var i = 0; i < importQueue.items.length; i++) {
+    var q = importQueue.items[i];
+    if (q.payId && pay.payId && q.payId === pay.payId) return true;
+  }
+  // Check all project payment lists
+  var index = getProjectIndex();
+  for (var p = 0; p < index.length; p++) {
+    try {
+      var raw = localStorage.getItem('bndr-project-' + index[p].id);
+      if (!raw) continue;
+      var projData = JSON.parse(raw);
+      if (!projData || !projData.payments) continue;
+      for (var j = 0; j < projData.payments.length; j++) {
+        var ex = projData.payments[j];
+        if (pay.payId && ex.payId && ex.payId === pay.payId) return true;
+        if (Math.abs((ex.amount || 0) - pay.amount) < 0.01 &&
+            (ex.date || '').trim() === (pay.date || '').trim() &&
+            (ex.contractor || '').toLowerCase().trim() === (pay.contractor || '').toLowerCase().trim()) {
+          return true;
+        }
+      }
+    } catch(e) {}
+  }
+  return false;
+}
+
+function importCSVToQueue(csvText) {
+  var rows = parseCSV(csvText);
+  if (rows.length === 0) { alert('No data found in CSV.'); return; }
+  var payments = rows.map(mapCSVRow);
+  var valid = payments.filter(function(p) {
+    if (p.amount <= 0) return false;
+    var s = (p.status || '').toLowerCase();
+    if (s === 'failed' || s === 'voided' || s === 'cancelled' || s === 'canceled') return false;
+    return true;
+  });
+  valid = autoClassifyImportedPayments(valid);
+  var added = 0;
+  var dupes = 0;
+  var classified = 0;
+  for (var i = 0; i < valid.length; i++) {
+    if (isDuplicatePaymentGlobal(valid[i])) { dupes++; continue; }
+    var item = {
+      id: 'iq_' + Date.now() + '_' + (importQueue.nextId++),
+      date: valid[i].date,
+      contractor: valid[i].contractor,
+      category: valid[i].category || '',
+      desc: valid[i].desc,
+      amount: valid[i].amount,
+      fees: valid[i].fees || 0,
+      payMethod: valid[i].payMethod || '',
+      payId: valid[i].payId || '',
+      invoiceNum: valid[i].invoiceNum || '',
+      noteToSelf: valid[i].noteToSelf || '',
+      status: valid[i].status || 'unassigned',
+      assignedProjectId: valid[i].assignedProjectId || null,
+      assignedProjectName: valid[i].assignedProjectName || '',
+      assignedCategoryName: '',
+      importedAt: new Date().toISOString(),
+      committedAt: null
+    };
+    importQueue.items.push(item);
+    if (item.assignedProjectId) classified++;
+    added++;
+  }
+  saveImportQueue();
+  switchTab('tab-imports');
+  var msg = added + ' payment' + (added !== 1 ? 's' : '') + ' added to import queue.';
+  if (classified > 0) msg += ' ' + classified + ' auto-classified to projects.';
+  if (dupes > 0) msg += ' ' + dupes + ' duplicate' + (dupes !== 1 ? 's' : '') + ' skipped.';
+  alert(msg);
+}
+
+// ── Import Queue Render ──
+
+function renderImports() {
+  renderImportSummary();
+  renderImportFilterBar();
+  renderImportList();
+}
+
+function renderImportSummary() {
+  var unassigned = 0, assigned = 0, committed = 0, pendingAmount = 0;
+  for (var i = 0; i < importQueue.items.length; i++) {
+    var item = importQueue.items[i];
+    if (item.status === 'unassigned') { unassigned++; pendingAmount += item.amount; }
+    else if (item.status === 'assigned') { assigned++; pendingAmount += item.amount; }
+    else if (item.status === 'committed') committed++;
+  }
+  var pending = unassigned + assigned;
+  var html =
+    '<div class="summary-card">' +
+      '<div class="summary-row"><span class="summary-label">Import Queue</span><span class="summary-value">' + pending + ' pending</span></div>' +
+      '<div class="summary-row"><span class="summary-label">Unassigned</span><span class="summary-value" style="color:' + (unassigned > 0 ? '#d97706' : '') + ';">' + unassigned + '</span></div>' +
+      '<div class="summary-row"><span class="summary-label">Ready to Commit</span><span class="summary-value" style="color:var(--green);">' + assigned + '</span></div>' +
+      '<div class="summary-divider"></div>' +
+      '<div class="summary-row"><span class="summary-label">Pending Total</span><span class="summary-big">$' + fmt(pendingAmount) + '</span></div>' +
+    '</div>';
+  document.getElementById('import-summary').innerHTML = html;
+}
+
+function renderImportFilterBar() {
+  var counts = { all: 0, unassigned: 0, assigned: 0, committed: 0 };
+  for (var i = 0; i < importQueue.items.length; i++) {
+    var s = importQueue.items[i].status;
+    if (s === 'unassigned') { counts.unassigned++; counts.all++; }
+    else if (s === 'assigned') { counts.assigned++; counts.all++; }
+    else if (s === 'committed') counts.committed++;
+  }
+  var html = '<div class="iq-filter-bar">' +
+    '<span class="iq-filter-btn' + (importFilterStatus === '' ? ' active' : '') + '" data-iq-filter="">Pending (' + counts.all + ')</span>' +
+    '<span class="iq-filter-btn' + (importFilterStatus === 'unassigned' ? ' active' : '') + '" data-iq-filter="unassigned">Unassigned (' + counts.unassigned + ')</span>' +
+    '<span class="iq-filter-btn' + (importFilterStatus === 'assigned' ? ' active' : '') + '" data-iq-filter="assigned">Ready (' + counts.assigned + ')</span>' +
+    '<span class="iq-filter-btn' + (importFilterStatus === 'committed' ? ' active' : '') + '" data-iq-filter="committed">History (' + counts.committed + ')</span>' +
+  '</div>';
+  document.getElementById('import-filter-bar').innerHTML = html;
+}
+
+function buildCategoryOptions(projectId, selectedCatName) {
+  var html = '<option value="">— Category —</option>';
+  try {
+    var raw = localStorage.getItem('bndr-project-' + projectId);
+    if (raw) {
+      var projData = JSON.parse(raw);
+      if (projData && projData.categories) {
+        for (var c = 0; c < projData.categories.length; c++) {
+          var catName = projData.categories[c].name;
+          var sel = (catName === selectedCatName) ? ' selected' : '';
+          html += '<option value="' + escAttr(catName) + '"' + sel + '>' + esc(catName) + '</option>';
+        }
+      }
+    }
+  } catch(e) {}
+  return html;
+}
+
+function renderImportList() {
+  var wrap = document.getElementById('import-list');
+  var items = importQueue.items.filter(function(item) {
+    if (importFilterStatus === '') return item.status !== 'committed';
+    return item.status === importFilterStatus;
+  });
+
+  if (items.length === 0) {
+    var emptyMsg = importFilterStatus === 'committed' ? 'No committed imports yet.' : 'No pending imports. Use "Import CSV" to add payments from Melio.';
+    wrap.innerHTML = '<div class="empty-msg">' + emptyMsg + '</div>';
+    return;
+  }
+
+  var index = getProjectIndex();
+  var projectOptions = '<option value="">— Select Project —</option>';
+  for (var p = 0; p < index.length; p++) {
+    projectOptions += '<option value="' + escAttr(index[p].id) + '">' + esc(index[p].name || 'Untitled') + '</option>';
+  }
+
+  var html = '';
+  for (var i = 0; i < items.length; i++) {
+    var item = items[i];
+    var isEditing = (editingImportId === item.id);
+    html += '<div class="iq-entry iq-' + item.status + '" data-iq-id="' + escAttr(item.id) + '">';
+    if (item.status !== 'committed') {
+      html += '<button class="iq-del" data-iq-action="delete" data-iq-id="' + escAttr(item.id) + '">&times;</button>';
+    }
+
+    if (isEditing) {
+      html += '<div class="iq-edit-row"><input data-field="date" value="' + escAttr(item.date) + '" placeholder="Date" style="max-width:100px;">';
+      html += '<input data-field="amount" value="' + item.amount + '" placeholder="Amount" inputmode="decimal" style="max-width:100px;"></div>';
+      html += '<div class="iq-edit-row"><input data-field="contractor" value="' + escAttr(item.contractor) + '" placeholder="Contractor"></div>';
+      html += '<div class="iq-edit-row"><input data-field="desc" value="' + escAttr(item.desc) + '" placeholder="Description"></div>';
+    } else {
+      html += '<div class="iq-top"><span class="iq-date">' + esc(item.date) + '</span><span class="iq-amount">$' + fmt(item.amount) + '</span></div>';
+      if (item.contractor) html += '<div class="iq-contractor">' + esc(item.contractor) + '</div>';
+      if (item.desc) {
+        var descDisplay = item.desc.length > 70 ? item.desc.substring(0, 67) + '...' : item.desc;
+        html += '<div class="iq-desc">' + esc(descDisplay) + '</div>';
+      }
+    }
+
+    // Badges
+    html += '<div class="iq-badges">';
+    html += '<span class="iq-status-badge ' + item.status + '">' + item.status.toUpperCase() + '</span>';
+    if (item.assignedProjectName) html += '<span class="iq-project-badge">' + esc(item.assignedProjectName) + '</span>';
+    if (item.assignedCategoryName) html += '<span class="iq-cat-badge">' + esc(item.assignedCategoryName) + '</span>';
+    html += '</div>';
+
+    // Assignment dropdowns (non-committed only)
+    if (item.status !== 'committed') {
+      html += '<div class="iq-actions">';
+      var projOpts = projectOptions;
+      if (item.assignedProjectId) {
+        projOpts = projOpts.replace('value="' + escAttr(item.assignedProjectId) + '"', 'value="' + escAttr(item.assignedProjectId) + '" selected');
+      }
+      html += '<select class="iq-project-sel" data-iq-id="' + escAttr(item.id) + '">' + projOpts + '</select>';
+      if (item.assignedProjectId) {
+        var catOpts = buildCategoryOptions(item.assignedProjectId, item.assignedCategoryName);
+        html += '<select class="iq-cat-sel" data-iq-id="' + escAttr(item.id) + '">' + catOpts + '</select>';
+      }
+      html += '</div>';
+      html += '<div class="iq-actions" style="margin-top:4px;">';
+      html += '<button class="iq-expand-btn" data-iq-action="edit" data-iq-id="' + escAttr(item.id) + '">' + (isEditing ? 'Done' : 'Edit') + '</button>';
+      if (item.assignedProjectId) {
+        html += '<button class="iq-commit-btn" data-iq-action="commit" data-iq-id="' + escAttr(item.id) + '">Commit</button>';
+      }
+      html += '</div>';
+    }
+    html += '</div>';
+  }
+  wrap.innerHTML = html;
+}
+
+// ── Import Queue Helpers ──
+
+function findImportItem(iqId) {
+  for (var i = 0; i < importQueue.items.length; i++) {
+    if (importQueue.items[i].id === iqId) return importQueue.items[i];
+  }
+  return null;
+}
+
+function saveInlineEdits(iqId) {
+  var entry = document.querySelector('.iq-entry[data-iq-id="' + iqId + '"]');
+  if (!entry) return;
+  var item = findImportItem(iqId);
+  if (!item) return;
+  var inputs = entry.querySelectorAll('[data-field]');
+  for (var i = 0; i < inputs.length; i++) {
+    var field = inputs[i].getAttribute('data-field');
+    if (field === 'amount') {
+      item.amount = parseMoney(inputs[i].value);
+    } else {
+      item[field] = inputs[i].value;
+    }
+  }
+  saveImportQueue();
+}
+
+function commitImportItem(iqId) {
+  var item = findImportItem(iqId);
+  if (!item || !item.assignedProjectId) {
+    alert('Assign a project before committing.');
+    return;
+  }
+  var projId = item.assignedProjectId;
+  var projData = null;
+  try {
+    var raw = localStorage.getItem('bndr-project-' + projId);
+    if (raw) projData = JSON.parse(raw);
+  } catch(e) {}
+  if (!projData || !projData.payments) {
+    alert('Could not load target project.');
+    return;
+  }
+  if (!projData.nextPayId) projData.nextPayId = 1;
+  projData.payments.push({
+    id: projData.nextPayId++,
+    date: item.date,
+    contractor: item.contractor,
+    category: item.assignedCategoryName || item.category || '',
+    desc: item.desc,
+    amount: item.amount,
+    fees: item.fees || 0,
+    payMethod: item.payMethod || '',
+    payId: item.payId || ''
+  });
+  try { localStorage.setItem('bndr-project-' + projId, JSON.stringify(projData)); } catch(e) { alert('Error saving to project.'); return; }
+  item.status = 'committed';
+  item.committedAt = new Date().toISOString();
+  saveImportQueue();
+  if (projId === currentProjectId) {
+    loadProject(currentProjectId);
+    ensureFields();
+  }
+  renderImports();
+}
+
+// ── Import Queue Event Handlers ──
+
+document.getElementById('import-filter-bar').addEventListener('click', function(e) {
+  if (e.target.classList.contains('iq-filter-btn')) {
+    importFilterStatus = e.target.getAttribute('data-iq-filter') || '';
+    renderImports();
+  }
+});
+
+document.getElementById('import-list').addEventListener('click', function(e) {
+  var target = e.target.closest('[data-iq-action]');
+  if (!target) return;
+  var iqId = target.getAttribute('data-iq-id');
+  var action = target.getAttribute('data-iq-action');
+
+  if (action === 'delete') {
+    if (confirm('Remove this imported payment?')) {
+      importQueue.items = importQueue.items.filter(function(item) { return item.id !== iqId; });
+      saveImportQueue();
+      renderImports();
+    }
+    return;
+  }
+  if (action === 'edit') {
+    if (editingImportId === iqId) {
+      saveInlineEdits(iqId);
+      editingImportId = null;
+    } else {
+      if (editingImportId) saveInlineEdits(editingImportId);
+      editingImportId = iqId;
+    }
+    renderImportList();
+    return;
+  }
+  if (action === 'commit') {
+    commitImportItem(iqId);
+    return;
+  }
+});
+
+document.getElementById('import-list').addEventListener('change', function(e) {
+  var target = e.target;
+  var iqId = target.getAttribute('data-iq-id');
+  if (!iqId) return;
+  var item = findImportItem(iqId);
+  if (!item) return;
+
+  if (target.classList.contains('iq-project-sel')) {
+    var projId = target.value;
+    item.assignedProjectId = projId || null;
+    if (projId) {
+      var index = getProjectIndex();
+      for (var i = 0; i < index.length; i++) {
+        if (index[i].id === projId) { item.assignedProjectName = index[i].name; break; }
+      }
+      item.status = 'assigned';
+    } else {
+      item.assignedProjectName = '';
+      item.assignedCategoryName = '';
+      item.status = 'unassigned';
+    }
+    saveImportQueue();
+    renderImports();
+    return;
+  }
+  if (target.classList.contains('iq-cat-sel')) {
+    item.assignedCategoryName = target.value || '';
+    saveImportQueue();
+    return;
+  }
+});
+
+document.getElementById('btnCommitAll').addEventListener('click', function() {
+  var assignedItems = importQueue.items.filter(function(item) { return item.status === 'assigned'; });
+  if (assignedItems.length === 0) { alert('No assigned payments to commit.'); return; }
+  if (!confirm('Commit ' + assignedItems.length + ' payment' + (assignedItems.length !== 1 ? 's' : '') + ' to their assigned projects?')) return;
+
+  var byProject = {};
+  for (var i = 0; i < assignedItems.length; i++) {
+    var pid = assignedItems[i].assignedProjectId;
+    if (!byProject[pid]) byProject[pid] = [];
+    byProject[pid].push(assignedItems[i]);
+  }
+  var committed = 0;
+  for (var pid in byProject) {
+    var projData = null;
+    try { var raw = localStorage.getItem('bndr-project-' + pid); if (raw) projData = JSON.parse(raw); } catch(e) {}
+    if (!projData || !projData.payments) continue;
+    if (!projData.nextPayId) projData.nextPayId = 1;
+    var items = byProject[pid];
+    for (var j = 0; j < items.length; j++) {
+      projData.payments.push({
+        id: projData.nextPayId++,
+        date: items[j].date,
+        contractor: items[j].contractor,
+        category: items[j].assignedCategoryName || items[j].category || '',
+        desc: items[j].desc,
+        amount: items[j].amount,
+        fees: items[j].fees || 0,
+        payMethod: items[j].payMethod || '',
+        payId: items[j].payId || ''
+      });
+      items[j].status = 'committed';
+      items[j].committedAt = new Date().toISOString();
+      committed++;
+    }
+    try { localStorage.setItem('bndr-project-' + pid, JSON.stringify(projData)); } catch(e) {}
+  }
+  saveImportQueue();
+  if (byProject[currentProjectId]) {
+    loadProject(currentProjectId);
+    ensureFields();
+  }
+  renderImports();
+  alert(committed + ' payment' + (committed !== 1 ? 's' : '') + ' committed successfully!');
+});
+
+// Import CSV file handler on Imports tab
+document.getElementById('btnImportCSVFile').addEventListener('change', function(e) {
+  var file = e.target.files[0];
+  if (!file) return;
+  var reader = new FileReader();
+  reader.onload = function(ev) {
+    try { importCSVToQueue(ev.target.result); } catch(err) { alert('Error reading CSV: ' + err.message); }
   };
   reader.readAsText(file);
   e.target.value = '';
@@ -2904,6 +3414,7 @@ if (typeof caches !== 'undefined') {
     createNewProject();
   }
 
+  loadImportQueue();
   ensureFields();
   populateProjectFields();
   updateProjectSelector();

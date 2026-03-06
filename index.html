@@ -1281,6 +1281,22 @@ function renderBudgetSummary() {
 function renderBudgetCategories() {
   var wrap = document.getElementById('budget-cats');
   wrap.innerHTML = '';
+  var needsSaveAfterRender = false;
+
+  // Auto-fill: default estimated to paid amount when estimated is blank
+  for (var af = 0; af < D.categories.length; af++) {
+    var afCat = D.categories[af];
+    for (var ai = 0; ai < afCat.items.length; ai++) {
+      var afItem = afCat.items[ai];
+      if (!afItem.estimated && afItem.desc) {
+        var afPaid = getItemPaid(afCat.name, afItem.desc);
+        if (afPaid > 0) {
+          afItem.estimated = afPaid;
+          needsSaveAfterRender = true;
+        }
+      }
+    }
+  }
 
   for (var c = 0; c < D.categories.length; c++) {
     var cat = D.categories[c];
@@ -1368,6 +1384,11 @@ function renderBudgetCategories() {
       '</div>';
 
     wrap.appendChild(div);
+  }
+  // If any estimated values were auto-filled from paid, save and refresh summary
+  if (needsSaveAfterRender) {
+    scheduleSave();
+    renderBudgetSummary();
   }
 }
 

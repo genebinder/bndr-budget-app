@@ -2107,7 +2107,13 @@ function mapCSVRow(row) {
 }
 
 function isDuplicatePayment(p) {
-  // Check if this payment already exists (same amount + date + contractor)
+  // First check by Melio Payment ID (most reliable)
+  if (p.payId) {
+    for (var i = 0; i < D.payments.length; i++) {
+      if (D.payments[i].payId && D.payments[i].payId === p.payId) return true;
+    }
+  }
+  // Fallback: check by amount + date + contractor
   var pAmt = p.amount;
   var pDate = (p.date || '').trim();
   var pCon = (p.contractor || '').toLowerCase().trim();
@@ -2122,6 +2128,35 @@ function isDuplicatePayment(p) {
   return false;
 }
 
+function getProjectMatchKeywords() {
+  // Extract searchable keywords from current project address
+  // e.g. "7401 E 102nd St" → ["7401", "102nd"]
+  // e.g. "11214 Herrick Ave" → ["11214", "herrick"]
+  var addr = (D.project.address || '').trim();
+  if (!addr) return [];
+  var words = addr.toLowerCase().split(/[\s,]+/);
+  // Keep meaningful words (skip common street suffixes and short words)
+  var skip = ['st', 'ave', 'rd', 'dr', 'ln', 'ct', 'blvd', 'way', 'pl', 'n', 's', 'e', 'w', 'ne', 'nw', 'se', 'sw', 'street', 'avenue', 'road', 'drive', 'lane', 'court', 'boulevard', 'place', 'circle', 'the', 'and', 'city', 'state'];
+  var keywords = [];
+  for (var i = 0; i < words.length; i++) {
+    var w = words[i].replace(/[^a-z0-9]/g, '');
+    if (w.length >= 3 && skip.indexOf(w) === -1) {
+      keywords.push(w);
+    }
+  }
+  return keywords;
+}
+
+function paymentMatchesProject(p, keywords) {
+  if (!keywords || keywords.length === 0) return false;
+  // Search in noteToSelf, desc, and invoiceNum
+  var searchText = ((p.noteToSelf || '') + ' ' + (p.desc || '') + ' ' + (p.invoiceNum || '')).toLowerCase();
+  for (var i = 0; i < keywords.length; i++) {
+    if (searchText.indexOf(keywords[i]) > -1) return true;
+  }
+  return false;
+}
+
 function showCSVPreview(payments) {
   var wrap = document.getElementById('melio-preview');
   // Filter out zero-amount and failed/voided
@@ -2132,11 +2167,29 @@ function showCSVPreview(payments) {
     return true;
   });
 
-  // Mark duplicates
+  // Project matching keywords from current address
+  var projKeywords = getProjectMatchKeywords();
+  var hasProjectAddr = projKeywords.length > 0;
+  var matchCount = 0;
+
+  // Mark duplicates and project matches
   for (var i = 0; i < valid.length; i++) {
     valid[i]._isDuplicate = isDuplicatePayment(valid[i]);
-    valid[i]._checked = !valid[i]._isDuplicate; // uncheck duplicates by default
+    valid[i]._matchesProject = hasProjectAddr ? paymentMatchesProject(valid[i], projKeywords) : false;
+    if (valid[i]._matchesProject) matchCount++;
     valid[i]._idx = i;
+  }
+
+  // Default selection: if project has address with matches, only check those; else check all non-dupes
+  var useProjectFilter = hasProjectAddr && matchCount > 0;
+  for (var i = 0; i < valid.length; i++) {
+    if (valid[i]._isDuplicate) {
+      valid[i]._checked = false;
+    } else if (useProjectFilter) {
+      valid[i]._checked = valid[i]._matchesProject;
+    } else {
+      valid[i]._checked = true;
+    }
   }
 
   // Collect unique vendor names for filter buttons
@@ -2165,6 +2218,11 @@ function showCSVPreview(payments) {
 
     var html = '<div class="csv-preview">';
     html += '<div class="csv-title">Melio Import — ' + valid.length + ' payment' + (valid.length !== 1 ? 's' : '') + '</div>';
+    if (hasProjectAddr && matchCount > 0) {
+      html += '<div class="csv-subtitle" style="color:var(--green);">📍 ' + matchCount + ' payment' + (matchCount !== 1 ? 's' : '') + ' match "' + esc(D.project.address) + '" (auto-selected)</div>';
+    } else if (hasProjectAddr && matchCount === 0) {
+      html += '<div class="csv-subtitle">📍 No payments match "' + esc(D.project.address) + '". All non-duplicates selected.</div>';
+    }
     if (dupCount > 0) {
       html += '<div class="csv-subtitle">⚠️ ' + dupCount + ' duplicate' + (dupCount !== 1 ? 's' : '') + ' detected (unchecked). Already in your payment log.</div>';
     }
@@ -2179,10 +2237,11 @@ function showCSVPreview(payments) {
     html += '</div>';
 
     // Select All / None links
-    html += '<div style="font-size:.65rem;margin-bottom:6px;display:flex;gap:10px;">' +
+    html += '<div style="font-size:.65rem;margin-bottom:6px;display:flex;gap:10px;flex-wrap:wrap;">' +
       '<a href="#" id="csv-sel-all" style="color:var(--green);text-decoration:underline;">Select All</a>' +
       '<a href="#" id="csv-sel-none" style="color:var(--green);text-decoration:underline;">Select None</a>' +
       '<a href="#" id="csv-sel-new" style="color:var(--green);text-decoration:underline;">Select Non-Duplicates</a>' +
+      (hasProjectAddr && matchCount > 0 ? '<a href="#" id="csv-sel-match" style="color:var(--green);text-decoration:underline;">Match Project Only</a>' : '') +
     '</div>';
 
     var total = 0;
@@ -2201,6 +2260,7 @@ function showCSVPreview(payments) {
           '<span class="csv-vendor">' + esc(p.contractor || 'Unknown') + '</span>' +
           '<span class="csv-amt">$' + fmt(p.amount) + '</span>' +
           (p._isDuplicate ? '<span class="csv-dup">DUP</span>' : '') +
+          (p._matchesProject && !p._isDuplicate ? '<span style="font-size:.6rem;color:var(--green);font-weight:700;margin-left:4px;">📍</span>' : '') +
         '</div>' +
         (descText ? '<div class="csv-row-bottom">' + esc(descText) + '</div>' : '') +
       '</div>';
@@ -2259,6 +2319,14 @@ function showCSVPreview(payments) {
       for (var i = 0; i < pendingCSVPayments.length; i++) pendingCSVPayments[i]._checked = !pendingCSVPayments[i]._isDuplicate;
       renderPreview();
     });
+    var selMatch = document.getElementById('csv-sel-match');
+    if (selMatch) selMatch.addEventListener('click', function(e) {
+      e.preventDefault();
+      for (var i = 0; i < pendingCSVPayments.length; i++) {
+        pendingCSVPayments[i]._checked = pendingCSVPayments[i]._matchesProject && !pendingCSVPayments[i]._isDuplicate;
+      }
+      renderPreview();
+    });
 
     // Import button
     document.getElementById('csv-confirm').addEventListener('click', function() {
@@ -2272,7 +2340,8 @@ function showCSVPreview(payments) {
           contractor: p.contractor,
           category: p.category,
           desc: p.desc,
-          amount: p.amount
+          amount: p.amount,
+          payId: p.payId || ''
         });
         imported++;
       }

@@ -3684,32 +3684,24 @@ document.getElementById('btnImportJSON').addEventListener('change', function(e) 
       // Version 2: multi-project export
       if (loaded._bndrExportVersion === 2 && loaded.index && loaded.projects) {
         var count = 0;
-        var existingIndex = getProjectIndex();
-        var existingIds = {};
-        for (var e2 = 0; e2 < existingIndex.length; e2++) existingIds[existingIndex[e2].id] = true;
+        var firstImportedId = null;
+        // Replace the entire project index with the imported one
         for (var i = 0; i < loaded.index.length; i++) {
           var pid = loaded.index[i].id;
           var projData = loaded.projects[pid];
           if (projData) {
+            if (!firstImportedId) firstImportedId = pid;
             try { localStorage.setItem('bndr-project-' + pid, JSON.stringify(projData)); } catch(e3) {}
-            if (!existingIds[pid]) {
-              existingIndex.push(loaded.index[i]);
-            } else {
-              // Update existing entry
-              for (var j = 0; j < existingIndex.length; j++) {
-                if (existingIndex[j].id === pid) { existingIndex[j] = loaded.index[i]; break; }
-              }
-            }
             count++;
           }
         }
-        saveProjectIndex(existingIndex);
+        // Save the imported index (replaces existing)
+        saveProjectIndex(loaded.index);
         // Restore import queue if present
         if (loaded.importQueue) { importQueue = loaded.importQueue; saveImportQueue(); }
-        // Reload current or first project
-        if (existingIndex.length > 0) {
-          var targetId = currentProjectId && existingIds[currentProjectId] ? currentProjectId : existingIndex[0].id;
-          switchToProject(targetId);
+        // Switch to first imported project
+        if (firstImportedId) {
+          switchToProject(firstImportedId);
         }
         alert(count + ' project(s) imported successfully!');
         return;
@@ -3719,6 +3711,9 @@ document.getElementById('btnImportJSON').addEventListener('change', function(e) 
       if (loaded && loaded.project && loaded.categories) {
         // Create a new project slot for the import
         var id = 'p' + Date.now() + Math.random().toString(36).substr(2, 4);
+        if (!loaded.scope) loaded.scope = initDefaultScope();
+        if (!loaded.materials) loaded.materials = {};
+        if (!loaded.deliveredMats) loaded.deliveredMats = [];
         var name = loaded.project.address || 'Imported Project';
         var index2 = getProjectIndex();
         index2.unshift({ id: id, name: name, created: new Date().toISOString(), lastModified: new Date().toISOString() });

@@ -257,6 +257,7 @@
     }
     .pay-edit-row input[type="text"].pay-inp-date { max-width: 90px; }
     .pay-edit-row input[type="text"].pay-inp-amt { max-width: 80px; text-align: right; }
+    .pay-edit-row .pay-markup-btn { flex: none; align-self: center; }
     .pay-cat-badge {
       display: inline-block; font-size: .6rem; font-weight: 700; padding: 1px 6px;
       border-radius: 8px; background: #e0e7ff; color: #3730a3; margin-left: 4px;
@@ -2142,6 +2143,7 @@ function renderPayList() {
       html += '<div class="pay-edit-row">' +
         '<input type="text" class="pay-inp-date" data-field="date" data-pay-id="' + p.id + '" value="' + escAttr(p.date || '') + '" placeholder="Date">' +
         '<input type="text" class="pay-inp-amt" data-field="amount" data-pay-id="' + p.id + '" value="' + (p.amount || 0) + '" placeholder="Amount">' +
+        '<button class="markup-btn pay-markup-btn" data-pay-id="' + p.id + '">+ 15%</button>' +
       '</div>';
       html += '<div class="pay-edit-row">' +
         '<input type="text" data-field="contractor" data-pay-id="' + p.id + '" value="' + escAttr(con) + '" placeholder="Contractor">' +
@@ -2241,7 +2243,7 @@ function renderPayForm() {
       '<div class="card-title" style="color:var(--dark);">New Payment</div>' +
       '<div class="row2">' +
         '<div class="fg"><label>Date</label><input type="text" id="pf-date" value="' + todayStr() + '"></div>' +
-        '<div class="fg"><label>Amount ($)</label><input type="text" id="pf-amount" inputmode="decimal" placeholder="0"></div>' +
+        '<div class="fg"><label>Amount ($)</label><input type="text" id="pf-amount" inputmode="decimal" placeholder="0"><div class="markup-row"><button class="markup-btn" id="pf-markup">+ 15%</button></div></div>' +
       '</div>' +
       '<div class="fg"><label>Contractor</label><select id="pf-contractor">' + contractorOptions + '</select></div>' +
       '<div class="fg hidden" id="pf-contractor-other-wrap"><label>Contractor Name</label><input type="text" id="pf-contractor-other" placeholder="Enter contractor name..."></div>' +
@@ -2287,6 +2289,14 @@ function renderPayForm() {
     showPayForm = false; renderPayForm();
   });
 
+  document.getElementById('pf-markup').addEventListener('click', function() {
+    var inp = document.getElementById('pf-amount');
+    var val = parseMoney(inp.value);
+    if (val > 0) {
+      inp.value = (Math.round(val * 1.15 * 100) / 100);
+    }
+  });
+
   document.getElementById('pf-amount').focus();
 }
 
@@ -2325,6 +2335,18 @@ document.getElementById('pay-list').addEventListener('click', function(e) {
       D.payments = D.payments.filter(function(p) { return p.id !== payId; });
       editingPayId = null;
       renderPayments(); scheduleSave();
+    }
+    return;
+  }
+  // Markup +15% on inline payment edit
+  if (e.target.classList.contains('pay-markup-btn')) {
+    var payId = parseInt(e.target.getAttribute('data-pay-id'));
+    var amtInp = e.currentTarget.querySelector('input[data-field="amount"][data-pay-id="' + payId + '"]');
+    if (amtInp) {
+      var val = parseMoney(amtInp.value);
+      if (val > 0) {
+        amtInp.value = (Math.round(val * 1.15 * 100) / 100);
+      }
     }
     return;
   }

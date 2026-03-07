@@ -7,7 +7,7 @@
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="apple-mobile-web-app-title" content="BNDR Budget">
-  <meta name="theme-color" content="#2D2D2D">
+  <meta name="theme-color" content="#ffffff">
   <meta name="description" content="BNDR Capital — Scope of Work & Budget Tracker">
   <link rel="manifest" href="manifest.json">
   <link rel="apple-touch-icon" id="appIcon" href="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPj/HwADBwIAMCbHYQAAAABJRU5ErkJggg==">
@@ -19,7 +19,7 @@
       --red: #dc2626; --red-light: #fef2f2; --red-text: #b91c1c;
       --blue: #2563eb; --blue-light: #eff6ff;
       --amber: #f59e0b; --amber-light: #fffbeb;
-      --radius: 12px; --tab-h: 56px; --hdr-h: 52px;
+      --radius: 12px; --tab-h: 56px; --hdr-h: 72px;
     }
     * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
     body {
@@ -34,17 +34,18 @@
     /* ── Header ── */
     .app-header {
       position: fixed; top: 0; left: 0; right: 0; z-index: 100;
-      background: var(--dark); color: #fff;
-      padding: env(safe-area-inset-top, 0px) 16px 0;
+      background: #fff; color: var(--dark);
+      border-bottom: 1px solid var(--border);
+      padding: env(safe-area-inset-top, 0px) 16px 4px;
       height: calc(var(--hdr-h) + env(safe-area-inset-top, 0px));
       display: flex; align-items: center; gap: 10px;
     }
-    .app-header svg { width: 28px; height: 31px; flex-shrink: 0; }
-    .app-header .hdr-title { font-size: .95rem; font-weight: 800; letter-spacing: 3px; }
-    .app-header .hdr-sub { font-size: .6rem; color: var(--light-text); letter-spacing: 1px; }
+    .app-header .hdr-logo { width: 70px; height: auto; flex-shrink: 0; }
+    .app-header .hdr-title { font-size: .95rem; font-weight: 800; letter-spacing: 3px; color: var(--dark); }
+    .app-header .hdr-sub { font-size: .6rem; color: var(--muted); letter-spacing: 1px; }
     .hdr-right { margin-left: auto; display: flex; gap: 8px; }
     .hdr-btn {
-      background: rgba(255,255,255,.12); border: none; color: #fff;
+      background: rgba(0,0,0,.06); border: none; color: var(--dark);
       border-radius: 8px; padding: 6px 10px; font-size: .7rem; font-weight: 600;
       cursor: pointer; font-family: inherit;
     }
@@ -127,8 +128,9 @@
       font-size: .62rem; font-weight: 700; background: var(--green-light);
       color: var(--green); padding: 2px 8px; border-radius: 10px;
     }
-    .cat-totals { width: 100%; display: flex; gap: 6px; font-size: .72rem; color: var(--muted); margin-top: 2px; }
+    .cat-totals { width: 100%; display: flex; gap: 6px; font-size: .72rem; color: var(--muted); margin-top: 2px; align-items: center; }
     .cat-totals span { white-space: nowrap; }
+    .cat-est-input { width: 70px; padding: 2px 4px; border: 1px solid var(--border); border-radius: 4px; font-size: .72rem; font-family: inherit; font-weight: 600; text-align: right; background: var(--card); }
     .cat-chevron { font-size: .7rem; color: var(--muted); transition: transform .2s; margin-left: 4px; }
     .cat-chevron.open { transform: rotate(180deg); }
     .cat-body { padding: 0 14px 14px; display: none; }
@@ -469,15 +471,31 @@
 
 <!-- ══════ Header ══════ -->
 <header class="app-header">
-  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 220">
-    <rect x="0" y="0" width="20" height="220" fill="#fff"/>
-    <rect x="18" y="0" width="88" height="20" fill="#fff"/>
-    <path d="M106,0 C150,0 190,16 190,50 C190,84 150,100 106,100 L106,80 C140,80 170,68 170,50 C170,32 140,20 106,20 Z" fill="#fff"/>
-    <path d="M100,92 L20,182 L44,182 L100,118 L156,182 L180,182 Z" fill="#6B7A59"/>
-    <rect x="18" y="200" width="164" height="20" fill="#fff"/>
+  <svg class="hdr-logo" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 305.62 278.15">
+    <g>
+      <g>
+        <path fill="#000" d="M0,223.41v-65.73h23.77c5.19,0,9.52,1.6,13.01,4.81,3.58,3.11,5.38,7.17,5.38,11.98,0,6.32-3.11,11.22-8.4,13.2,8.4,1.51,13.2,7.93,13.2,16.32,0,5.56-1.89,10.28-5.75,13.96-3.77,3.68-8.49,5.47-14.24,5.47H0ZM11.79,184.18h10.37c5,0,8.49-3.3,8.49-8.11,0-4.44-3.49-7.73-8.4-7.73h-10.47v15.84ZM11.79,212.75h13.2c5.94,0,10.28-4.06,10.28-9.43s-4.34-9.24-10.37-9.24h-13.11v18.67Z"/>
+        <path fill="#000" d="M76.79,223.41v-68.19l44.8,43.95v-41.49h11.79v68.19l-44.8-43.76v41.31h-11.79Z"/>
+        <path fill="#000" d="M166.78,223.41v-65.73h23.48c10.84,0,19.33,3.01,25.37,9.15,6.13,6.04,9.15,13.95,9.15,23.86s-3.02,17.82-9.05,23.76c-6.04,5.94-14.52,8.96-25.37,8.96h-23.58ZM178.57,212.75h10.94c16.31,0,23.48-8.58,23.48-22.07s-7.07-22.35-23.58-22.35h-10.84v44.42Z"/>
+        <path fill="#000" d="M254.79,223.41v-65.73h25.56c5.94,0,10.94,1.98,15.09,6.04,4.15,3.96,6.23,8.87,6.23,14.8,0,8.58-4.81,15.66-11.98,18.67l15.94,26.22h-13.3l-14.05-23.39h-11.69v23.39h-11.79ZM266.58,189.45h12.54c6.41,0,10.84-4.43,10.84-10.75s-4.24-10.37-9.9-10.37h-13.48v21.12Z"/>
+      </g>
+      <g>
+        <path fill="#000" d="M75.27,265.53h-1.66c-.41-1.22-1.11-2.23-2.1-3.04-1.01-.81-2.22-1.22-3.62-1.22-1.85,0-3.36.65-4.53,1.96-1.2,1.29-1.79,2.98-1.79,5.08s.6,3.76,1.79,5.04c1.17,1.31,2.68,1.96,4.53,1.96,1.4,0,2.6-.41,3.62-1.22.99-.81,1.69-1.83,2.1-3.04h3.48c-.52,2.03-1.57,3.72-3.14,5.07-1.56,1.35-3.58,2.03-6.06,2.03-3,0-5.4-.94-7.21-2.84-1.83-1.92-2.74-4.25-2.74-7s.91-5.12,2.74-7.04c1.81-1.89,4.21-2.84,7.21-2.84,2.48,0,4.5.67,6.06,2.03,1.58,1.35,2.63,3.04,3.14,5.07h-1.82Z"/>
+        <path fill="#000" d="M100.7,258.93h.1c2.01,4.15,5.02,10.39,9.03,18.7h-3.86c-.46-1.03-1.07-2.39-1.84-4.09h-10.13c-.6,1.3-1.22,2.67-1.87,4.09h-3.62c1.49-3.11,4.49-9.35,9-18.7h3.18ZM95.19,270.94h7.76c-1.07-2.38-2.36-5.22-3.86-8.53-1.1,2.39-2.4,5.24-3.91,8.53Z"/>
+        <path fill="#000" d="M129.54,270.71h-3.01v6.93h-3.45v-18.7h9.51c2.44,0,4.32.52,5.65,1.55,1.33,1.04,2,2.47,2,4.3v.03c-.02,1.85-.7,3.3-2.03,4.33-1.31,1.04-3.18,1.56-5.62,1.56h-3.04ZM135.52,262.38c-.68-.45-1.66-.68-2.94-.68h-6.06v6.22h6.06c1.29,0,2.26-.22,2.94-.67.7-.47,1.05-1.29,1.05-2.44s-.35-1.96-1.05-2.43Z"/>
+        <path fill="#000" d="M154.36,269.45v-10.52h3.45v18.7h-3.45v-8.19Z"/>
+        <path fill="#000" d="M179.03,271.04v-9.34h-7.44v-2.77h18.37v2.77h-7.44v15.93h-3.48v-6.59Z"/>
+        <path fill="#000" d="M211.09,258.93h.1c2.01,4.15,5.02,10.39,9.03,18.7h-3.86c-.46-1.03-1.07-2.39-1.84-4.09h-10.13c-.6,1.3-1.22,2.67-1.87,4.09h-3.62c1.49-3.11,4.49-9.35,9-18.7h3.18ZM205.58,270.94h7.76c-1.07-2.38-2.36-5.22-3.86-8.53-1.1,2.39-2.4,5.24-3.91,8.53Z"/>
+        <path fill="#000" d="M247.67,274.87v2.77h-14.21v-18.7h3.45v15.94h10.76Z"/>
+      </g>
+      <g>
+        <path fill="#000" d="M165.45,0h-61.43v3.48h-.03v77.94l13.62-13.62V14.16h47.85c10.64,0,19.27,8.63,19.27,19.27,0,5.11-2.03,10.01-5.64,13.63l-6.31,6.31c.43.35.87.7,1.3,1.06.62.52,1.25,1.04,1.89,1.55.02.01.01,0,.02.02.18.13.36.27.54.4.35.24.72.46,1.08.69,2.35,1.47,4.69,2.93,6.9,4.59l4.59-4.59c6.27-6.27,9.79-14.77,9.79-23.64h0c0-18.46-14.97-33.43-33.43-33.43Z"/>
+        <polygon fill="#000" points="155.64 29.73 117.6 67.8 103.98 81.42 103.98 81.58 123.81 81.58 155.64 49.73 187.47 81.58 187.47 100.57 187.47 100.63 105.17 100.63 105.17 114.78 201.64 114.78 201.64 75.7 155.64 29.73"/>
+      </g>
+    </g>
   </svg>
   <div>
-    <div class="hdr-title">BNDR BUDGET</div>
+    <div class="hdr-title">BUDGET</div>
     <div class="hdr-sub">Scope &amp; Budget Tracker</div>
   </div>
 </header>
@@ -1022,8 +1040,7 @@ function todayStr() { var d = new Date(); return (d.getMonth()+1) + '/' + d.getD
 function getTotalEstimated() {
   var t = 0;
   for (var c = 0; c < D.categories.length; c++)
-    for (var i = 0; i < D.categories[c].items.length; i++)
-      t += (D.categories[c].items[i].estimated || 0);
+    t += getCatEstimated(D.categories[c]);
   return t;
 }
 function getTotalActual() {
@@ -1034,6 +1051,10 @@ function getTotalActual() {
   return t;
 }
 function getCatEstimated(cat) {
+  if (cat.totalEstimate) return cat.totalEstimate;
+  var t = 0; for (var i = 0; i < cat.items.length; i++) t += (cat.items[i].estimated || 0); return t;
+}
+function getCatItemsSum(cat) {
   var t = 0; for (var i = 0; i < cat.items.length; i++) t += (cat.items[i].estimated || 0); return t;
 }
 function getCatActual(cat) {
@@ -1486,7 +1507,7 @@ function renderBudgetCategories() {
         '<span class="cat-badge">' + cat.items.length + '</span>' +
         '<span class="cat-chevron ' + (isOpen ? 'open' : '') + '">&#9660;</span>' +
         '<div class="cat-totals">' +
-          '<span>Est: $' + fmt(catEst) + '</span>' +
+          '<span>Est: <input type="text" inputmode="decimal" class="cat-est-input" value="' + (catEst ? fmt(catEst) : '') + '" data-cat-id="' + cat.id + '" placeholder="$0"></span>' +
           '<span class="' + varClass + '">' + varText + '</span>' +
         '</div>' +
         contractorSummary +
@@ -1515,7 +1536,7 @@ document.getElementById('tab-budget').addEventListener('click', function(e) {
 
   // Toggle category
   var header = target.closest('.cat-header');
-  if (header && !target.closest('button')) {
+  if (header && !target.closest('button') && !target.closest('input')) {
     var catId = parseInt(header.getAttribute('data-cat-id'));
     var cat = findCat(catId);
     if (cat) { cat.collapsed = !cat.collapsed; renderBudgetCategories(); scheduleSave(); }
@@ -1593,6 +1614,22 @@ document.getElementById('tab-budget').addEventListener('input', function(e) {
   var catId = parseInt(catCard.getAttribute('data-cat-id'));
   var cat = findCat(catId);
   if (!cat) return;
+
+  // Handle category total estimate override
+  if (target.classList.contains('cat-est-input')) {
+    var val = parseMoney(target.value);
+    var itemsSum = getCatItemsSum(cat);
+    cat.totalEstimate = (val && val !== itemsSum) ? val : 0;
+    var ce = getCatEstimated(cat), ca = getCatActual(cat), cv = ce - ca;
+    var varEl = catCard.querySelector('.cat-totals .positive, .cat-totals .negative');
+    if (varEl) {
+      varEl.className = (cv >= 0 ? 'positive' : 'negative');
+      varEl.textContent = (cv >= 0 ? '-' : '+') + '$' + fmt(Math.abs(cv));
+    }
+    renderBudgetSummary();
+    scheduleSave();
+    return;
+  }
 
   // Handle contractor/phone fields
   var catField = target.getAttribute('data-cat-field');
@@ -3388,9 +3425,27 @@ function renderExportPreview() {
 
   var html = '<div class="card" style="margin-top:12px;">' +
     '<div class="card-title">Document Preview</div>' +
-    '<div style="border-bottom:2px solid var(--green);padding-bottom:10px;margin-bottom:12px;">' +
-      '<div style="font-size:1.1rem;font-weight:900;letter-spacing:4px;color:var(--dark);">BNDR CAPITAL</div>' +
-      '<div style="font-size:.65rem;color:var(--muted);">9229 Ward Pkwy, Ste 380 | Kansas City, MO 64114 | (913) 219-8906</div>' +
+    '<div style="background:#fff;border:1px solid #e0e0e0;border-radius:8px;padding:12px 16px;margin-bottom:12px;display:flex;align-items:center;gap:12px;">' +
+      '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 305.62 278.15" style="width:60px;height:auto;">' +
+        '<g><g>' +
+          '<path fill="#000" d="M0,223.41v-65.73h23.77c5.19,0,9.52,1.6,13.01,4.81,3.58,3.11,5.38,7.17,5.38,11.98,0,6.32-3.11,11.22-8.4,13.2,8.4,1.51,13.2,7.93,13.2,16.32,0,5.56-1.89,10.28-5.75,13.96-3.77,3.68-8.49,5.47-14.24,5.47H0ZM11.79,184.18h10.37c5,0,8.49-3.3,8.49-8.11,0-4.44-3.49-7.73-8.4-7.73h-10.47v15.84ZM11.79,212.75h13.2c5.94,0,10.28-4.06,10.28-9.43s-4.34-9.24-10.37-9.24h-13.11v18.67Z"/>' +
+          '<path fill="#000" d="M76.79,223.41v-68.19l44.8,43.95v-41.49h11.79v68.19l-44.8-43.76v41.31h-11.79Z"/>' +
+          '<path fill="#000" d="M166.78,223.41v-65.73h23.48c10.84,0,19.33,3.01,25.37,9.15,6.13,6.04,9.15,13.95,9.15,23.86s-3.02,17.82-9.05,23.76c-6.04,5.94-14.52,8.96-25.37,8.96h-23.58ZM178.57,212.75h10.94c16.31,0,23.48-8.58,23.48-22.07s-7.07-22.35-23.58-22.35h-10.84v44.42Z"/>' +
+          '<path fill="#000" d="M254.79,223.41v-65.73h25.56c5.94,0,10.94,1.98,15.09,6.04,4.15,3.96,6.23,8.87,6.23,14.8,0,8.58-4.81,15.66-11.98,18.67l15.94,26.22h-13.3l-14.05-23.39h-11.69v23.39h-11.79ZM266.58,189.45h12.54c6.41,0,10.84-4.43,10.84-10.75s-4.24-10.37-9.9-10.37h-13.48v21.12Z"/>' +
+        '</g><g>' +
+          '<path fill="#000" d="M75.27,265.53h-1.66c-.41-1.22-1.11-2.23-2.1-3.04-1.01-.81-2.22-1.22-3.62-1.22-1.85,0-3.36.65-4.53,1.96-1.2,1.29-1.79,2.98-1.79,5.08s.6,3.76,1.79,5.04c1.17,1.31,2.68,1.96,4.53,1.96,1.4,0,2.6-.41,3.62-1.22.99-.81,1.69-1.83,2.1-3.04h3.48c-.52,2.03-1.57,3.72-3.14,5.07-1.56,1.35-3.58,2.03-6.06,2.03-3,0-5.4-.94-7.21-2.84-1.83-1.92-2.74-4.25-2.74-7s.91-5.12,2.74-7.04c1.81-1.89,4.21-2.84,7.21-2.84,2.48,0,4.5.67,6.06,2.03,1.58,1.35,2.63,3.04,3.14,5.07h-1.82Z"/>' +
+          '<path fill="#000" d="M100.7,258.93h.1c2.01,4.15,5.02,10.39,9.03,18.7h-3.86c-.46-1.03-1.07-2.39-1.84-4.09h-10.13c-.6,1.3-1.22,2.67-1.87,4.09h-3.62c1.49-3.11,4.49-9.35,9-18.7h3.18ZM95.19,270.94h7.76c-1.07-2.38-2.36-5.22-3.86-8.53-1.1,2.39-2.4,5.24-3.91,8.53Z"/>' +
+          '<path fill="#000" d="M129.54,270.71h-3.01v6.93h-3.45v-18.7h9.51c2.44,0,4.32.52,5.65,1.55,1.33,1.04,2,2.47,2,4.3v.03c-.02,1.85-.7,3.3-2.03,4.33-1.31,1.04-3.18,1.56-5.62,1.56h-3.04ZM135.52,262.38c-.68-.45-1.66-.68-2.94-.68h-6.06v6.22h6.06c1.29,0,2.26-.22,2.94-.67.7-.47,1.05-1.29,1.05-2.44s-.35-1.96-1.05-2.43Z"/>' +
+          '<path fill="#000" d="M154.36,269.45v-10.52h3.45v18.7h-3.45v-8.19Z"/>' +
+          '<path fill="#000" d="M179.03,271.04v-9.34h-7.44v-2.77h18.37v2.77h-7.44v15.93h-3.48v-6.59Z"/>' +
+          '<path fill="#000" d="M211.09,258.93h.1c2.01,4.15,5.02,10.39,9.03,18.7h-3.86c-.46-1.03-1.07-2.39-1.84-4.09h-10.13c-.6,1.3-1.22,2.67-1.87,4.09h-3.62c1.49-3.11,4.49-9.35,9-18.7h3.18ZM205.58,270.94h7.76c-1.07-2.38-2.36-5.22-3.86-8.53-1.1,2.39-2.4,5.24-3.91,8.53Z"/>' +
+          '<path fill="#000" d="M247.67,274.87v2.77h-14.21v-18.7h3.45v15.94h10.76Z"/>' +
+        '</g><g>' +
+          '<path fill="#000" d="M165.45,0h-61.43v3.48h-.03v77.94l13.62-13.62V14.16h47.85c10.64,0,19.27,8.63,19.27,19.27,0,5.11-2.03,10.01-5.64,13.63l-6.31,6.31c.43.35.87.7,1.3,1.06.62.52,1.25,1.04,1.89,1.55.02.01.01,0,.02.02.18.13.36.27.54.4.35.24.72.46,1.08.69,2.35,1.47,4.69,2.93,6.9,4.59l4.59-4.59c6.27-6.27,9.79-14.77,9.79-23.64h0c0-18.46-14.97-33.43-33.43-33.43Z"/>' +
+          '<polygon fill="#000" points="155.64 29.73 117.6 67.8 103.98 81.42 103.98 81.58 123.81 81.58 155.64 49.73 187.47 81.58 187.47 100.57 187.47 100.63 105.17 100.63 105.17 114.78 201.64 114.78 201.64 75.7 155.64 29.73"/>' +
+        '</g></g>' +
+      '</svg>' +
+      '<div style="color:var(--muted);font-size:.65rem;">9229 Ward Pkwy, Ste 380 | Kansas City, MO 64114 | (913) 219-8906</div>' +
     '</div>' +
     '<div style="text-align:center;font-weight:800;font-size:.95rem;letter-spacing:2px;margin-bottom:12px;color:var(--dark);">SCOPE OF WORK &amp; BUDGET</div>';
 
@@ -3779,8 +3834,27 @@ document.getElementById('btnSharePassword').addEventListener('click', function()
       '.lock-expire-info{font-size:.65rem;color:#aaa;margin-top:14px;}' +
       '</style></head><body>' +
       '<div class="lock-box" id="lockBox">' +
-        '<div class="lock-icon">🔒</div>' +
-        '<div class="lock-title">BNDR CAPITAL</div>' +
+        '<div style="background:#fff;border:1px solid #e0e0e0;border-radius:10px;padding:14px;margin-bottom:12px;display:inline-block;">' +
+          '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 305.62 278.15" style="width:100px;height:auto;">' +
+            '<g><g>' +
+              '<path fill="#000" d="M0,223.41v-65.73h23.77c5.19,0,9.52,1.6,13.01,4.81,3.58,3.11,5.38,7.17,5.38,11.98,0,6.32-3.11,11.22-8.4,13.2,8.4,1.51,13.2,7.93,13.2,16.32,0,5.56-1.89,10.28-5.75,13.96-3.77,3.68-8.49,5.47-14.24,5.47H0ZM11.79,184.18h10.37c5,0,8.49-3.3,8.49-8.11,0-4.44-3.49-7.73-8.4-7.73h-10.47v15.84ZM11.79,212.75h13.2c5.94,0,10.28-4.06,10.28-9.43s-4.34-9.24-10.37-9.24h-13.11v18.67Z"/>' +
+              '<path fill="#000" d="M76.79,223.41v-68.19l44.8,43.95v-41.49h11.79v68.19l-44.8-43.76v41.31h-11.79Z"/>' +
+              '<path fill="#000" d="M166.78,223.41v-65.73h23.48c10.84,0,19.33,3.01,25.37,9.15,6.13,6.04,9.15,13.95,9.15,23.86s-3.02,17.82-9.05,23.76c-6.04,5.94-14.52,8.96-25.37,8.96h-23.58ZM178.57,212.75h10.94c16.31,0,23.48-8.58,23.48-22.07s-7.07-22.35-23.58-22.35h-10.84v44.42Z"/>' +
+              '<path fill="#000" d="M254.79,223.41v-65.73h25.56c5.94,0,10.94,1.98,15.09,6.04,4.15,3.96,6.23,8.87,6.23,14.8,0,8.58-4.81,15.66-11.98,18.67l15.94,26.22h-13.3l-14.05-23.39h-11.69v23.39h-11.79ZM266.58,189.45h12.54c6.41,0,10.84-4.43,10.84-10.75s-4.24-10.37-9.9-10.37h-13.48v21.12Z"/>' +
+            '</g><g>' +
+              '<path fill="#000" d="M75.27,265.53h-1.66c-.41-1.22-1.11-2.23-2.1-3.04-1.01-.81-2.22-1.22-3.62-1.22-1.85,0-3.36.65-4.53,1.96-1.2,1.29-1.79,2.98-1.79,5.08s.6,3.76,1.79,5.04c1.17,1.31,2.68,1.96,4.53,1.96,1.4,0,2.6-.41,3.62-1.22.99-.81,1.69-1.83,2.1-3.04h3.48c-.52,2.03-1.57,3.72-3.14,5.07-1.56,1.35-3.58,2.03-6.06,2.03-3,0-5.4-.94-7.21-2.84-1.83-1.92-2.74-4.25-2.74-7s.91-5.12,2.74-7.04c1.81-1.89,4.21-2.84,7.21-2.84,2.48,0,4.5.67,6.06,2.03,1.58,1.35,2.63,3.04,3.14,5.07h-1.82Z"/>' +
+              '<path fill="#000" d="M100.7,258.93h.1c2.01,4.15,5.02,10.39,9.03,18.7h-3.86c-.46-1.03-1.07-2.39-1.84-4.09h-10.13c-.6,1.3-1.22,2.67-1.87,4.09h-3.62c1.49-3.11,4.49-9.35,9-18.7h3.18ZM95.19,270.94h7.76c-1.07-2.38-2.36-5.22-3.86-8.53-1.1,2.39-2.4,5.24-3.91,8.53Z"/>' +
+              '<path fill="#000" d="M129.54,270.71h-3.01v6.93h-3.45v-18.7h9.51c2.44,0,4.32.52,5.65,1.55,1.33,1.04,2,2.47,2,4.3v.03c-.02,1.85-.7,3.3-2.03,4.33-1.31,1.04-3.18,1.56-5.62,1.56h-3.04ZM135.52,262.38c-.68-.45-1.66-.68-2.94-.68h-6.06v6.22h6.06c1.29,0,2.26-.22,2.94-.67.7-.47,1.05-1.29,1.05-2.44s-.35-1.96-1.05-2.43Z"/>' +
+              '<path fill="#000" d="M154.36,269.45v-10.52h3.45v18.7h-3.45v-8.19Z"/>' +
+              '<path fill="#000" d="M179.03,271.04v-9.34h-7.44v-2.77h18.37v2.77h-7.44v15.93h-3.48v-6.59Z"/>' +
+              '<path fill="#000" d="M211.09,258.93h.1c2.01,4.15,5.02,10.39,9.03,18.7h-3.86c-.46-1.03-1.07-2.39-1.84-4.09h-10.13c-.6,1.3-1.22,2.67-1.87,4.09h-3.62c1.49-3.11,4.49-9.35,9-18.7h3.18ZM205.58,270.94h7.76c-1.07-2.38-2.36-5.22-3.86-8.53-1.1,2.39-2.4,5.24-3.91,8.53Z"/>' +
+              '<path fill="#000" d="M247.67,274.87v2.77h-14.21v-18.7h3.45v15.94h10.76Z"/>' +
+            '</g><g>' +
+              '<path fill="#000" d="M165.45,0h-61.43v3.48h-.03v77.94l13.62-13.62V14.16h47.85c10.64,0,19.27,8.63,19.27,19.27,0,5.11-2.03,10.01-5.64,13.63l-6.31,6.31c.43.35.87.7,1.3,1.06.62.52,1.25,1.04,1.89,1.55.02.01.01,0,.02.02.18.13.36.27.54.4.35.24.72.46,1.08.69,2.35,1.47,4.69,2.93,6.9,4.59l4.59-4.59c6.27-6.27,9.79-14.77,9.79-23.64h0c0-18.46-14.97-33.43-33.43-33.43Z"/>' +
+              '<polygon fill="#000" points="155.64 29.73 117.6 67.8 103.98 81.42 103.98 81.58 123.81 81.58 155.64 49.73 187.47 81.58 187.47 100.57 187.47 100.63 105.17 100.63 105.17 114.78 201.64 114.78 201.64 75.7 155.64 29.73"/>' +
+            '</g></g>' +
+          '</svg>' +
+        '</div>' +
         '<div class="lock-sub">Password-Protected Budget</div>' +
         '<div class="lock-addr">' + address.replace(/</g,'&lt;') + '</div>' +
         '<input type="password" class="lock-input" id="pwInput" placeholder="Enter password..." autofocus>' +
@@ -3855,18 +3929,37 @@ document.getElementById('f-bonus').addEventListener('blur', function() {
    ═══════════════════════════════════════════ */
 function generateAppIcon() {
   try {
-    var c = document.createElement('canvas'); c.width = 180; c.height = 180;
-    var ctx = c.getContext('2d');
-    ctx.fillStyle = '#2D2D2D'; ctx.fillRect(0, 0, 180, 180);
-    // Draw simplified logo chevron
-    ctx.fillStyle = '#6B7A59';
-    ctx.beginPath(); ctx.moveTo(90, 50); ctx.lineTo(30, 135); ctx.lineTo(52, 135);
-    ctx.lineTo(90, 78); ctx.lineTo(128, 135); ctx.lineTo(150, 135); ctx.closePath(); ctx.fill();
-    // B letter
-    ctx.fillStyle = '#fff'; ctx.font = 'bold 70px -apple-system, system-ui, sans-serif';
-    ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillText('B', 90, 96);
-    var link = document.getElementById('appIcon');
-    if (link) link.href = c.toDataURL('image/png');
+    var svgStr = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 305.62 278.15" width="160" height="146">' +
+      '<rect x="-20" y="-20" width="345" height="318" fill="#fff"/>' +
+      '<g><g>' +
+        '<path fill="#000" d="M0,223.41v-65.73h23.77c5.19,0,9.52,1.6,13.01,4.81,3.58,3.11,5.38,7.17,5.38,11.98,0,6.32-3.11,11.22-8.4,13.2,8.4,1.51,13.2,7.93,13.2,16.32,0,5.56-1.89,10.28-5.75,13.96-3.77,3.68-8.49,5.47-14.24,5.47H0ZM11.79,184.18h10.37c5,0,8.49-3.3,8.49-8.11,0-4.44-3.49-7.73-8.4-7.73h-10.47v15.84ZM11.79,212.75h13.2c5.94,0,10.28-4.06,10.28-9.43s-4.34-9.24-10.37-9.24h-13.11v18.67Z"/>' +
+        '<path fill="#000" d="M76.79,223.41v-68.19l44.8,43.95v-41.49h11.79v68.19l-44.8-43.76v41.31h-11.79Z"/>' +
+        '<path fill="#000" d="M166.78,223.41v-65.73h23.48c10.84,0,19.33,3.01,25.37,9.15,6.13,6.04,9.15,13.95,9.15,23.86s-3.02,17.82-9.05,23.76c-6.04,5.94-14.52,8.96-25.37,8.96h-23.58ZM178.57,212.75h10.94c16.31,0,23.48-8.58,23.48-22.07s-7.07-22.35-23.58-22.35h-10.84v44.42Z"/>' +
+        '<path fill="#000" d="M254.79,223.41v-65.73h25.56c5.94,0,10.94,1.98,15.09,6.04,4.15,3.96,6.23,8.87,6.23,14.8,0,8.58-4.81,15.66-11.98,18.67l15.94,26.22h-13.3l-14.05-23.39h-11.69v23.39h-11.79ZM266.58,189.45h12.54c6.41,0,10.84-4.43,10.84-10.75s-4.24-10.37-9.9-10.37h-13.48v21.12Z"/>' +
+      '</g><g>' +
+        '<path fill="#000" d="M75.27,265.53h-1.66c-.41-1.22-1.11-2.23-2.1-3.04-1.01-.81-2.22-1.22-3.62-1.22-1.85,0-3.36.65-4.53,1.96-1.2,1.29-1.79,2.98-1.79,5.08s.6,3.76,1.79,5.04c1.17,1.31,2.68,1.96,4.53,1.96,1.4,0,2.6-.41,3.62-1.22.99-.81,1.69-1.83,2.1-3.04h3.48c-.52,2.03-1.57,3.72-3.14,5.07-1.56,1.35-3.58,2.03-6.06,2.03-3,0-5.4-.94-7.21-2.84-1.83-1.92-2.74-4.25-2.74-7s.91-5.12,2.74-7.04c1.81-1.89,4.21-2.84,7.21-2.84,2.48,0,4.5.67,6.06,2.03,1.58,1.35,2.63,3.04,3.14,5.07h-1.82Z"/>' +
+        '<path fill="#000" d="M100.7,258.93h.1c2.01,4.15,5.02,10.39,9.03,18.7h-3.86c-.46-1.03-1.07-2.39-1.84-4.09h-10.13c-.6,1.3-1.22,2.67-1.87,4.09h-3.62c1.49-3.11,4.49-9.35,9-18.7h3.18ZM95.19,270.94h7.76c-1.07-2.38-2.36-5.22-3.86-8.53-1.1,2.39-2.4,5.24-3.91,8.53Z"/>' +
+        '<path fill="#000" d="M129.54,270.71h-3.01v6.93h-3.45v-18.7h9.51c2.44,0,4.32.52,5.65,1.55,1.33,1.04,2,2.47,2,4.3v.03c-.02,1.85-.7,3.3-2.03,4.33-1.31,1.04-3.18,1.56-5.62,1.56h-3.04ZM135.52,262.38c-.68-.45-1.66-.68-2.94-.68h-6.06v6.22h6.06c1.29,0,2.26-.22,2.94-.67.7-.47,1.05-1.29,1.05-2.44s-.35-1.96-1.05-2.43Z"/>' +
+        '<path fill="#000" d="M154.36,269.45v-10.52h3.45v18.7h-3.45v-8.19Z"/>' +
+        '<path fill="#000" d="M179.03,271.04v-9.34h-7.44v-2.77h18.37v2.77h-7.44v15.93h-3.48v-6.59Z"/>' +
+        '<path fill="#000" d="M211.09,258.93h.1c2.01,4.15,5.02,10.39,9.03,18.7h-3.86c-.46-1.03-1.07-2.39-1.84-4.09h-10.13c-.6,1.3-1.22,2.67-1.87,4.09h-3.62c1.49-3.11,4.49-9.35,9-18.7h3.18ZM205.58,270.94h7.76c-1.07-2.38-2.36-5.22-3.86-8.53-1.1,2.39-2.4,5.24-3.91,8.53Z"/>' +
+        '<path fill="#000" d="M247.67,274.87v2.77h-14.21v-18.7h3.45v15.94h10.76L"/>' +
+      '</g><g>' +
+        '<path fill="#000" d="M165.45,0h-61.43v3.48h-.03v77.94l13.62-13.62V14.16h47.85c10.64,0,19.27,8.63,19.27,19.27,0,5.11-2.03,10.01-5.64,13.63l-6.31,6.31c.43.35.87.7,1.3,1.06.62.52,1.25,1.04,1.89,1.55.02.01.01,0,.02.02.18.13.36.27.54.4.35.24.72.46,1.08.69,2.35,1.47,4.69,2.93,6.9,4.59l4.59-4.59c6.27-6.27,9.79-14.77,9.79-23.64h0c0-18.46-14.97-33.43-33.43-33.43Z"/>' +
+        '<polygon fill="#000" points="155.64 29.73 117.6 67.8 103.98 81.42 103.98 81.58 123.81 81.58 155.64 49.73 187.47 81.58 187.47 100.57 187.47 100.63 105.17 100.63 105.17 114.78 201.64 114.78 201.64 75.7 155.64 29.73"/>' +
+      '</g></g></svg>';
+    var img = new Image();
+    img.onload = function() {
+      var c = document.createElement('canvas'); c.width = 180; c.height = 180;
+      var ctx = c.getContext('2d');
+      ctx.fillStyle = '#fff'; ctx.fillRect(0, 0, 180, 180);
+      var s = Math.min(160 / img.width, 160 / img.height);
+      var w = img.width * s, h = img.height * s;
+      ctx.drawImage(img, (180 - w) / 2, (180 - h) / 2, w, h);
+      var link = document.getElementById('appIcon');
+      if (link) link.href = c.toDataURL('image/png');
+    };
+    img.src = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(svgStr);
   } catch(e) {}
 }
 

@@ -3991,6 +3991,27 @@ if (typeof caches !== 'undefined') {
   // Check for old single-project data and migrate
   var migratedId = migrateOldData();
 
+  // Auto-recover orphaned projects not in the index
+  try {
+    var idx = getProjectIndex();
+    var idxIds = {};
+    for (var ri = 0; ri < idx.length; ri++) idxIds[idx[ri].id] = true;
+    for (var rk = 0; rk < localStorage.length; rk++) {
+      var key = localStorage.key(rk);
+      if (key && key.indexOf('bndr-project-p') === 0) {
+        var rid = key.replace('bndr-project-', '');
+        if (!idxIds[rid]) {
+          try {
+            var rd = JSON.parse(localStorage.getItem(key));
+            var rn = (rd && rd.project && rd.project.address) ? rd.project.address : 'Recovered Project';
+            idx.push({ id: rid, name: rn, created: new Date().toISOString(), lastModified: new Date().toISOString() });
+          } catch(re) {}
+        }
+      }
+    }
+    saveProjectIndex(idx);
+  } catch(re2) {}
+
   var index = getProjectIndex();
 
   if (migratedId) {

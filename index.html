@@ -3651,13 +3651,25 @@ document.getElementById('btnShare').addEventListener('click', function() {
 });
 
 document.getElementById('btnExportJSON').addEventListener('click', function() {
+  // Export ALL projects as a single file
   syncProjectFields();
-  var json = JSON.stringify(D, null, 2);
+  try { localStorage.setItem('bndr-project-' + currentProjectId, JSON.stringify(D)); } catch(e) {}
+  var index = getProjectIndex();
+  var allProjects = { _bndrExportVersion: 2, index: index, projects: {} };
+  for (var i = 0; i < index.length; i++) {
+    try {
+      var raw = localStorage.getItem('bndr-project-' + index[i].id);
+      if (raw) allProjects.projects[index[i].id] = JSON.parse(raw);
+    } catch(e) {}
+  }
+  // Also include import queue
+  allProjects.importQueue = importQueue;
+  var json = JSON.stringify(allProjects, null, 2);
   var blob = new Blob([json], { type: 'application/json' });
   var url = URL.createObjectURL(blob);
   var a = document.createElement('a');
   a.href = url;
-  a.download = 'BNDR-Budget-' + (D.project.address || 'project').replace(/[^a-zA-Z0-9]/g, '-').substring(0, 40) + '.json';
+  a.download = 'BNDR-Budget-ALL-PROJECTS-' + new Date().toISOString().slice(0, 10) + '.json';
   a.click(); URL.revokeObjectURL(url);
 });
 
@@ -3668,15 +3680,53 @@ document.getElementById('btnImportJSON').addEventListener('change', function(e) 
   reader.onload = function(ev) {
     try {
       var loaded = JSON.parse(ev.target.result);
+
+      // Version 2: multi-project export
+      if (loaded._bndrExportVersion === 2 && loaded.index && loaded.projects) {
+        var count = 0;
+        var existingIndex = getProjectIndex();
+        var existingIds = {};
+        for (var e2 = 0; e2 < existingIndex.length; e2++) existingIds[existingIndex[e2].id] = true;
+        for (var i = 0; i < loaded.index.length; i++) {
+          var pid = loaded.index[i].id;
+          var projData = loaded.projects[pid];
+          if (projData) {
+            try { localStorage.setItem('bndr-project-' + pid, JSON.stringify(projData)); } catch(e3) {}
+            if (!existingIds[pid]) {
+              existingIndex.push(loaded.index[i]);
+            } else {
+              // Update existing entry
+              for (var j = 0; j < existingIndex.length; j++) {
+                if (existingIndex[j].id === pid) { existingIndex[j] = loaded.index[i]; break; }
+              }
+            }
+            count++;
+          }
+        }
+        saveProjectIndex(existingIndex);
+        // Restore import queue if present
+        if (loaded.importQueue) { importQueue = loaded.importQueue; saveImportQueue(); }
+        // Reload current or first project
+        if (existingIndex.length > 0) {
+          var targetId = currentProjectId && existingIds[currentProjectId] ? currentProjectId : existingIndex[0].id;
+          switchToProject(targetId);
+        }
+        alert(count + ' project(s) imported successfully!');
+        return;
+      }
+
+      // Version 1 / legacy: single project
       if (loaded && loaded.project && loaded.categories) {
-        D = loaded;
-        if (!D.scope) D.scope = initDefaultScope();
-        if (!D.materials) D.materials = {};
-        if (!D.deliveredMats) D.deliveredMats = [];
-        populateProjectFields();
-        renderBudget(); renderPayments();
-        saveState();
-        alert('Project loaded successfully!');
+        // Create a new project slot for the import
+        var id = 'p' + Date.now() + Math.random().toString(36).substr(2, 4);
+        var name = loaded.project.address || 'Imported Project';
+        var index2 = getProjectIndex();
+        index2.unshift({ id: id, name: name, created: new Date().toISOString(), lastModified: new Date().toISOString() });
+        saveProjectIndex(index2);
+        try { localStorage.setItem('bndr-project-' + id, JSON.stringify(loaded)); } catch(e4) {}
+        // Switch to the imported project
+        switchToProject(id);
+        alert('Project "' + name + '" imported successfully!');
       } else { alert('Invalid file format.'); }
     } catch(err) { alert('Error reading file: ' + err.message); }
   };

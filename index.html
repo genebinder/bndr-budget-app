@@ -3982,6 +3982,51 @@ if (typeof caches !== 'undefined') {
 }
 
 /* ═══════════════════════════════════════════
+   AUTO-EXPORT DATA BRIDGE
+   ═══════════════════════════════════════════ */
+// When URL hash is #auto-export, automatically download all project data as JSON
+// This is used to transfer data from the Safari Web App to another browser
+if (window.location.hash.indexOf('#auto-import=') === 0) {
+  try {
+    var importB64 = window.location.hash.substring('#auto-import='.length);
+    var importJSON = decodeURIComponent(atob(importB64));
+    var importData = JSON.parse(importJSON);
+    for (var ik in importData) {
+      if (importData.hasOwnProperty(ik)) {
+        localStorage.setItem(ik, importData[ik]);
+      }
+    }
+    window.location.hash = '';
+    window.location.reload();
+  } catch(e) { console.error('Auto-import failed:', e); }
+}
+
+if (window.location.hash === '#auto-export') {
+  setTimeout(function() {
+    try {
+      var allData = {};
+      for (var i = 0; i < localStorage.length; i++) {
+        var k = localStorage.key(i);
+        if (k && k.indexOf('bndr') === 0) {
+          allData[k] = localStorage.getItem(k);
+        }
+      }
+      var json = JSON.stringify(allData, null, 2);
+      var blob = new Blob([json], { type: 'application/json' });
+      var url = URL.createObjectURL(blob);
+      var a = document.createElement('a');
+      a.href = url;
+      a.download = 'BNDR-DATA-TRANSFER-' + new Date().toISOString().slice(0, 10) + '.json';
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+      window.location.hash = '';
+    } catch(e) { console.error('Auto-export failed:', e); }
+  }, 1500);
+}
+
+/* ═══════════════════════════════════════════
    INIT
    ═══════════════════════════════════════════ */
 // INIT

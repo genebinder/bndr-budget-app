@@ -396,10 +396,19 @@ function getPaymentsForProject(projectId) {
     // If projectId filter provided, only return matching payments
     if (projectId && String(pid) !== String(projectId)) continue;
 
+    // Format date properly (Sheets may return Date objects)
+    var rawDate = data[i][2];
+    var dateStr = '';
+    if (rawDate instanceof Date) {
+      dateStr = (rawDate.getMonth() + 1) + '/' + rawDate.getDate() + '/' + rawDate.getFullYear();
+    } else {
+      dateStr = String(rawDate || '');
+    }
+
     payments.push({
       timestamp: String(data[i][0] || ''),
       projectName: String(data[i][1] || ''),
-      date: String(data[i][2] || ''),
+      date: dateStr,
       amount: Number(data[i][3]) || 0,
       contractor: String(data[i][4] || ''),
       category: String(data[i][5] || ''),

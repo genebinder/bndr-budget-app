@@ -187,7 +187,7 @@ function handlePayment(payload) {
     try {
       receiptUrl = saveReceiptToDrive(receiptImage, projectName, contractor, date);
     } catch (driveErr) {
-      Logger.log('Drive save error: ' + driveErr.message);
+      Logger.log('Drive save error: ' + (driveErr.message || String(driveErr)));
       // Payment still saves even if receipt upload fails
     }
   }

@@ -1648,8 +1648,8 @@ function renderBudgetCategories() {
         '</div>' +
         contractorSummary +
       '</div>' +
-      '<div class="pay-detail-container cat-pay-detail"></div>' +
       '<div class="cat-body ' + (isOpen ? 'open' : '') + '">' +
+        '<div class="pay-detail-container cat-pay-detail"></div>' +
         bodyHTML +
         '<button class="btn btn-outline btn-sm mt no-print" data-action="add-item" data-cat-id="' + cat.id + '">+ Add Item</button>' +
         '<button class="btn btn-red btn-sm mt no-print" style="margin-left:8px;" data-action="del-cat" data-cat-id="' + cat.id + '">Remove Category</button>' +
@@ -1689,6 +1689,18 @@ document.getElementById('tab-budget').addEventListener('click', function(e) {
     if (!container) return;
     // Toggle off if already showing
     if (container.innerHTML) { container.innerHTML = ''; return; }
+    // If clicking the header paid total, ensure the category body is open
+    if (isAll) {
+      var catBody = trigger.closest('.cat-card').querySelector('.cat-body');
+      if (catBody && !catBody.classList.contains('open')) {
+        catBody.classList.add('open');
+        var catId = parseInt(trigger.closest('.cat-header').getAttribute('data-cat-id'));
+        var catObj = findCat(catId);
+        if (catObj) { catObj.collapsed = false; scheduleSave(); }
+        var chevron = trigger.closest('.cat-header').querySelector('.cat-chevron');
+        if (chevron) chevron.classList.add('open');
+      }
+    }
     var payments;
     if (isAll) {
       payments = getCatPayments(pCat);
@@ -1701,10 +1713,11 @@ document.getElementById('tab-budget').addEventListener('click', function(e) {
     var h = '<div class="pay-detail-list">';
     for (var pi = 0; pi < payments.length; pi++) {
       var pp = payments[pi];
+      var subLabel = (isAll && pp.subcategory) ? '<span style="font-size:.6rem;font-weight:700;color:#065f46;background:#d1fae5;padding:1px 5px;border-radius:6px;margin-right:4px;">' + esc(pp.subcategory) + '</span>' : '';
       h += '<div class="pay-detail-row" data-action="go-to-payment" data-pay-id="' + pp.id + '">' +
         '<span class="pay-detail-date">' + esc(pp.date || '') + '</span>' +
         '<span class="pay-detail-amt">$' + fmt(pp.amount || 0) + '</span>' +
-        '<span class="pay-detail-desc">' + esc(pp.desc || pp.contractor || 'No description') + '</span>' +
+        '<span class="pay-detail-desc">' + subLabel + esc(pp.desc || pp.contractor || 'No description') + '</span>' +
         '<span class="pay-detail-go">Edit &rarr;</span>' +
       '</div>';
     }

@@ -269,6 +269,17 @@
       border-radius: 8px; background: #e0e7ff; color: #3730a3; margin-left: 4px;
     }
 
+    /* ── Payment detail popup in budget tab ── */
+    .pay-detail-list { margin-top:6px;border:1px solid var(--border);border-radius:6px;background:#fafafa;overflow:hidden; }
+    .pay-detail-row { display:flex;align-items:center;gap:6px;padding:6px 10px;font-size:.72rem;border-bottom:1px solid var(--border);cursor:pointer;transition:background .15s; }
+    .pay-detail-row:last-child { border-bottom:none; }
+    .pay-detail-row:hover { background:#e8f5e9; }
+    .pay-detail-date { color:var(--muted);min-width:60px; }
+    .pay-detail-amt { font-weight:700;color:var(--green);min-width:60px;text-align:right; }
+    .pay-detail-desc { flex:1;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis; }
+    .pay-detail-go { flex:none;font-size:.6rem;font-weight:700;color:var(--accent);background:none;border:1px solid var(--accent);border-radius:8px;padding:2px 8px;cursor:pointer; }
+    .paid-clickable { cursor:pointer;text-decoration:underline;text-decoration-style:dotted;text-underline-offset:2px; }
+
     /* ── Export buttons ── */
     .export-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
     .export-btn {
@@ -1125,6 +1136,20 @@ function getCatGeneralPaid(catName) {
   }
   return t;
 }
+function getItemPayments(catName, itemDesc) {
+  var out = [];
+  for (var i = 0; i < D.payments.length; i++) {
+    if ((D.payments[i].category || '') === catName && (D.payments[i].subcategory || '') === itemDesc) out.push(D.payments[i]);
+  }
+  return out;
+}
+function getGeneralPayments(catName) {
+  var out = [];
+  for (var i = 0; i < D.payments.length; i++) {
+    if ((D.payments[i].category || '') === catName && !(D.payments[i].subcategory)) out.push(D.payments[i]);
+  }
+  return out;
+}
 function getTotalPaid() {
   var t = 0; for (var i = 0; i < D.payments.length; i++) t += (D.payments[i].amount || 0); return t;
 }
@@ -1463,6 +1488,19 @@ function switchTab(tabId) {
   window.scrollTo(0, 0);
 }
 
+function goToPayment(payId) {
+  editingPayId = payId;
+  switchTab('tab-payments');
+  setTimeout(function() {
+    var el = document.querySelector('.pay-entry[data-pay-id="' + payId + '"]');
+    if (el) {
+      el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      el.style.boxShadow = '0 0 0 2px var(--accent)';
+      setTimeout(function() { el.style.boxShadow = ''; }, 2000);
+    }
+  }, 100);
+}
+
 document.querySelector('.tab-bar').addEventListener('click', function(e) {
   var btn = e.target.closest('.tab-btn');
   if (btn) {
@@ -1545,9 +1583,12 @@ function renderBudgetCategories() {
     var generalPaid = getCatGeneralPaid(cat.name);
     if (generalPaid > 0) {
       bodyHTML +=
+        '<div class="budget-pay-group" data-pay-cat="' + escAttr(cat.name) + '" data-pay-sub="">' +
         '<div style="display:flex;justify-content:space-between;align-items:center;padding:6px 0;border-bottom:1px solid var(--border);font-size:.75rem;">' +
           '<span style="font-weight:600;color:var(--muted);">General (no sub-category)</span>' +
-          '<span style="font-weight:700;color:var(--green);">Paid: $' + fmt(generalPaid) + '</span>' +
+          '<span class="paid-clickable" style="font-weight:700;color:var(--green);" data-action="show-payments" data-pay-cat="' + escAttr(cat.name) + '" data-pay-sub="">Paid: $' + fmt(generalPaid) + '</span>' +
+        '</div>' +
+        '<div class="pay-detail-container"></div>' +
         '</div>';
     }
 
@@ -1573,9 +1614,10 @@ function renderBudgetCategories() {
           '</div>' +
           '<div class="li-amounts">' +
             '<div class="li-field"><label>Estimated</label><input type="text" inputmode="decimal" value="' + (item.estimated ? fmt(item.estimated) : '') + '" data-field="estimated" placeholder="$0"><div class="markup-row"><button class="markup-btn" data-action="markup" data-field="estimated" data-item-id="' + item.id + '">+ 15%</button></div></div>' +
-            '<div class="li-field"><label>Paid</label><div style="font-size:.85rem;font-weight:700;padding:6px 0;color:' + (itemPaid > 0 ? 'var(--green)' : 'var(--muted)') + ';">$' + fmt(itemPaid) + '</div></div>' +
+            '<div class="li-field"><label>Paid</label><div class="' + (itemPaid > 0 ? 'paid-clickable' : '') + '" style="font-size:.85rem;font-weight:700;padding:6px 0;color:' + (itemPaid > 0 ? 'var(--green)' : 'var(--muted)') + ';"' + (itemPaid > 0 ? ' data-action="show-payments" data-pay-cat="' + escAttr(cat.name) + '" data-pay-sub="' + escAttr(item.desc) + '"' : '') + '>$' + fmt(itemPaid) + '</div></div>' +
             '<div class="li-var ' + iVarClass + '">' + iVarText + '</div>' +
           '</div>' +
+          '<div class="pay-detail-container"></div>' +
         '</div>';
     }
 
@@ -1688,6 +1730,41 @@ document.getElementById('tab-budget').addEventListener('click', function(e) {
       D.categories = D.categories.filter(function(c) { return c.id !== catId; });
       renderBudget(); scheduleSave();
     }
+    return;
+  }
+
+  // Show payment details for a paid amount
+  if (target.getAttribute('data-action') === 'show-payments') {
+    var container = target.closest('.li-row') || target.closest('.budget-pay-group');
+    if (!container) return;
+    var detailWrap = container.querySelector('.pay-detail-container');
+    if (!detailWrap) return;
+    // Toggle off if already showing
+    if (detailWrap.innerHTML) { detailWrap.innerHTML = ''; return; }
+    var pCat = target.getAttribute('data-pay-cat') || '';
+    var pSub = target.getAttribute('data-pay-sub');
+    var payments = (pSub !== null && pSub !== '') ? getItemPayments(pCat, pSub) : getGeneralPayments(pCat);
+    if (!payments.length) return;
+    var h = '<div class="pay-detail-list">';
+    for (var pi = 0; pi < payments.length; pi++) {
+      var pp = payments[pi];
+      h += '<div class="pay-detail-row" data-action="go-to-payment" data-pay-id="' + pp.id + '">' +
+        '<span class="pay-detail-date">' + esc(pp.date || '') + '</span>' +
+        '<span class="pay-detail-amt">$' + fmt(pp.amount || 0) + '</span>' +
+        '<span class="pay-detail-desc">' + esc(pp.desc || pp.contractor || 'No description') + '</span>' +
+        '<span class="pay-detail-go">Edit &rarr;</span>' +
+      '</div>';
+    }
+    h += '</div>';
+    detailWrap.innerHTML = h;
+    return;
+  }
+
+  // Navigate to payment in payments tab
+  if (target.closest('[data-action="go-to-payment"]')) {
+    var row = target.closest('[data-action="go-to-payment"]');
+    var payId = parseInt(row.getAttribute('data-pay-id'));
+    goToPayment(payId);
     return;
   }
 });

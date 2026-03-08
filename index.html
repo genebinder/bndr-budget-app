@@ -48,6 +48,7 @@
     .sync-dot.syncing { background: var(--amber, #d97706); opacity: 1; animation: pulse .8s infinite alternate; }
     .sync-dot.synced { background: var(--green); opacity: 1; }
     .sync-dot.error { background: var(--red); opacity: 1; }
+    .sync-dot.loading { background: var(--green); opacity: .5; animation: pulse .8s infinite alternate; }
     @keyframes pulse { from { opacity: .4; } to { opacity: 1; } }
     .hdr-btn {
       background: rgba(0,0,0,.06); border: none; color: var(--dark);
@@ -1139,15 +1140,19 @@ function saveState() {
     localStorage.setItem('bndr-project-' + currentProjectId, JSON.stringify(D));
     // Update index name/lastModified
     var index = getProjectIndex();
+    var indexChanged = false;
     for (var i = 0; i < index.length; i++) {
       if (index[i].id === currentProjectId) {
-        index[i].name = D.project.address || 'Untitled Project';
+        var newName = D.project.address || 'Untitled Project';
+        if (index[i].name !== newName) indexChanged = true;
+        index[i].name = newName;
         index[i].lastModified = new Date().toISOString();
         break;
       }
     }
     saveProjectIndex(index);
     updateProjectSelector();
+    if (indexChanged) scheduleIndexSync();
   } catch(e) {}
   scheduleCloudSync();
 }
@@ -1181,6 +1186,8 @@ function createNewProject() {
   saveProjectIndex(index);
   // Save to its own slot
   try { localStorage.setItem('bndr-project-' + id, JSON.stringify(D)); } catch(e) {}
+  // Push new project + index to cloud
+  if (getGasUrl()) { cloudSaveProject(id, D); cloudSaveIndex(); }
   return id;
 }
 
@@ -1189,6 +1196,8 @@ function deleteProject(projectId) {
   index = index.filter(function(p) { return p.id !== projectId; });
   saveProjectIndex(index);
   try { localStorage.removeItem('bndr-project-' + projectId); } catch(e) {}
+  // Remove from cloud + sync updated index
+  if (getGasUrl()) { cloudDeleteProject(projectId); cloudSaveIndex(); }
   return index;
 }
 
@@ -1197,14 +1206,42 @@ function switchToProject(projectId) {
   if (currentProjectId) { syncProjectFields(); try { localStorage.setItem('bndr-project-' + currentProjectId, JSON.stringify(D)); } catch(e) {} }
   // Sync to cloud before switching
   if (getGasUrl()) { clearTimeout(cloudSyncTimer); doAutoCloudSync(); }
-  if (!loadProject(projectId)) return false;
-  ensureFields();
-  populateProjectFields();
-  renderBudget();
-  renderScope();
-  renderPayments();
-  updateProjectSelector();
-  return true;
+
+  // Try localStorage first (fast path)
+  if (loadProject(projectId)) {
+    ensureFields();
+    populateProjectFields();
+    renderBudget();
+    renderScope();
+    renderPayments();
+    updateProjectSelector();
+    return true;
+  }
+
+  // Cloud fallback (slow path)
+  if (getGasUrl()) {
+    setSyncDot('syncing');
+    cloudLoadProject(projectId).then(function(projData) {
+      if (projData && projData.project) {
+        D = projData;
+        currentProjectId = projectId;
+        try { localStorage.setItem('bndr-project-' + projectId, JSON.stringify(D)); } catch(e) {}
+        ensureFields();
+        populateProjectFields();
+        renderBudget();
+        renderScope();
+        renderPayments();
+        updateProjectSelector();
+        setSyncDot('synced');
+      } else {
+        alert('Could not load project from cloud.');
+        setSyncDot('error');
+      }
+    });
+    return true;
+  }
+
+  return false;
 }
 
 function updateProjectSelector() {
@@ -4024,6 +4061,8 @@ function generateAppIcon() {
    ═══════════════════════════════════════════ */
 var cloudSyncTimer = null;
 var lastSyncedHash = '';
+var lastFullSyncHash = '';
+var indexSyncTimer = null;
 
 function scheduleCloudSync() {
   if (!getGasUrl()) return;
@@ -4032,26 +4071,58 @@ function scheduleCloudSync() {
   setSyncDot('syncing');
 }
 
+function scheduleIndexSync() {
+  if (!getGasUrl()) return;
+  clearTimeout(indexSyncTimer);
+  indexSyncTimer = setTimeout(function() { cloudSaveIndex(); }, 15000);
+}
+
+function simpleHash(str) {
+  var h = 0;
+  for (var i = 0; i < str.length; i++) { h = ((h << 5) - h) + str.charCodeAt(i); h |= 0; }
+  return h.toString(36);
+}
+
 function doAutoCloudSync() {
   var gasUrl = getGasUrl();
   if (!gasUrl || !currentProjectId) return;
 
   syncProjectFields();
+  var promises = [];
+
+  // 1. Summary sync for payment portal (existing Projects sheet)
   var payload = buildSyncPayload();
   var hash = JSON.stringify(payload);
-  if (hash === lastSyncedHash) { setSyncDot('synced'); return; }
+  if (hash !== lastSyncedHash) {
+    promises.push(
+      fetch(gasUrl, {
+        method: 'POST',
+        headers: { 'Content-Type': 'text/plain' },
+        body: JSON.stringify({ action: 'sync', projects: payload })
+      })
+      .then(function(r) { return r.json(); })
+      .then(function(data) { if (data.success) lastSyncedHash = hash; return data.success; })
+      .catch(function() { return false; })
+    );
+  }
 
-  fetch(gasUrl, {
-    method: 'POST',
-    headers: { 'Content-Type': 'text/plain' },
-    body: JSON.stringify({ action: 'sync', projects: payload })
-  })
-  .then(function(r) { return r.json(); })
-  .then(function(data) {
-    if (data.success) { lastSyncedHash = hash; setSyncDot('synced'); }
-    else { setSyncDot('error'); }
-  })
-  .catch(function() { setSyncDot('error'); });
+  // 2. Full project data sync (ProjectData sheet)
+  var fullJson = JSON.stringify(D);
+  var fullHash = currentProjectId + '-' + fullJson.length + '-' + simpleHash(fullJson);
+  if (fullHash !== lastFullSyncHash) {
+    promises.push(
+      cloudSaveProject(currentProjectId, D).then(function(ok) {
+        if (ok) lastFullSyncHash = fullHash;
+        return ok;
+      })
+    );
+  }
+
+  if (promises.length === 0) { setSyncDot('synced'); return; }
+
+  Promise.all(promises).then(function(results) {
+    setSyncDot(results.every(function(r) { return r; }) ? 'synced' : 'error');
+  });
 }
 
 function buildSyncPayload() {
@@ -4095,16 +4166,178 @@ function setSyncDot(state) {
   if (!dot) return;
   dot.style.display = getGasUrl() ? '' : 'none';
   dot.className = 'sync-dot ' + state;
-  dot.title = state === 'synced' ? 'Cloud synced' : state === 'syncing' ? 'Syncing...' : 'Sync error';
+  var titles = { synced:'Cloud synced', syncing:'Syncing...', error:'Sync error — click Sync Projects to retry', loading:'Loading from cloud...' };
+  dot.title = titles[state] || 'Cloud sync idle';
 }
 
 // Sync when user leaves the tab or closes
 document.addEventListener('visibilitychange', function() {
   if (document.visibilityState === 'hidden' && getGasUrl() && currentProjectId) {
     clearTimeout(cloudSyncTimer);
+    clearTimeout(indexSyncTimer);
     doAutoCloudSync();
+    cloudSaveIndex();
   }
 });
+
+/* ═══════════════════════════════════════════
+   FULL CLOUD DATA FUNCTIONS
+   ═══════════════════════════════════════════ */
+function cloudSaveProject(id, dObj) {
+  var gasUrl = getGasUrl();
+  if (!gasUrl || !id) return Promise.resolve(false);
+  return fetch(gasUrl, {
+    method: 'POST',
+    headers: { 'Content-Type': 'text/plain' },
+    body: JSON.stringify({ action: 'syncFull', projectId: id, dataJson: JSON.stringify(dObj), lastModified: new Date().toISOString() })
+  })
+  .then(function(r) { return r.json(); })
+  .then(function(data) { return data.success; })
+  .catch(function() { return false; });
+}
+
+function cloudSaveIndex() {
+  var gasUrl = getGasUrl();
+  if (!gasUrl) return Promise.resolve(false);
+  return fetch(gasUrl, {
+    method: 'POST',
+    headers: { 'Content-Type': 'text/plain' },
+    body: JSON.stringify({ action: 'syncIndex', index: getProjectIndex() })
+  })
+  .then(function(r) { return r.json(); })
+  .then(function(data) { return data.success; })
+  .catch(function() { return false; });
+}
+
+function cloudLoadAll() {
+  var gasUrl = getGasUrl();
+  if (!gasUrl) return Promise.resolve(null);
+  return fetch(gasUrl + '?action=loadAll')
+    .then(function(r) { return r.json(); })
+    .then(function(data) { return data.success ? data : null; })
+    .catch(function() { return null; });
+}
+
+function cloudLoadProject(projectId) {
+  var gasUrl = getGasUrl();
+  if (!gasUrl) return Promise.resolve(null);
+  return fetch(gasUrl + '?action=loadProject&id=' + encodeURIComponent(projectId))
+    .then(function(r) { return r.json(); })
+    .then(function(data) {
+      if (!data.success || !data.dataJson) return null;
+      try { return JSON.parse(data.dataJson); } catch(e) { return null; }
+    })
+    .catch(function() { return null; });
+}
+
+function cloudDeleteProject(projectId) {
+  var gasUrl = getGasUrl();
+  if (!gasUrl) return Promise.resolve(false);
+  return fetch(gasUrl, {
+    method: 'POST',
+    headers: { 'Content-Type': 'text/plain' },
+    body: JSON.stringify({ action: 'deleteProject', projectId: projectId })
+  })
+  .then(function(r) { return r.json(); })
+  .then(function(data) { return data.success; })
+  .catch(function() { return false; });
+}
+
+function backgroundCloudRefresh() {
+  setSyncDot('syncing');
+  cloudLoadAll().then(function(cloudData) {
+    if (!cloudData || !cloudData.index || cloudData.index.length === 0) {
+      // Cloud has nothing — push all local data up (first-time setup)
+      doFullCloudPush();
+      return;
+    }
+    var cloudIndex = cloudData.index;
+    var localIndex = getProjectIndex();
+    var localIds = {};
+    for (var i = 0; i < localIndex.length; i++) localIds[localIndex[i].id] = localIndex[i];
+
+    var changed = false;
+    for (var ci = 0; ci < cloudIndex.length; ci++) {
+      var cp = cloudIndex[ci];
+      if (!localIds[cp.id]) {
+        // Cloud has a project we don't have locally — pull it
+        localIndex.push(cp);
+        if (cloudData.projects[cp.id]) {
+          try { localStorage.setItem('bndr-project-' + cp.id, cloudData.projects[cp.id].dataJson); } catch(e) {}
+        }
+        changed = true;
+      } else {
+        // Both have it — take the newer version
+        var localMod = new Date(localIds[cp.id].lastModified || 0).getTime();
+        var cloudMod = new Date(cp.lastModified || (cloudData.projects[cp.id] ? cloudData.projects[cp.id].lastModified : 0) || 0).getTime();
+        if (cloudMod > localMod && cloudData.projects[cp.id]) {
+          try { localStorage.setItem('bndr-project-' + cp.id, cloudData.projects[cp.id].dataJson); } catch(e) {}
+          localIds[cp.id].lastModified = cp.lastModified;
+          changed = true;
+        }
+      }
+    }
+
+    // Push any local-only projects to cloud
+    var cloudIds = {};
+    for (var ci = 0; ci < cloudIndex.length; ci++) cloudIds[cloudIndex[ci].id] = true;
+    for (var li = 0; li < localIndex.length; li++) {
+      if (!cloudIds[localIndex[li].id]) {
+        var pid = localIndex[li].id;
+        try {
+          var raw = localStorage.getItem('bndr-project-' + pid);
+          if (raw) cloudSaveProject(pid, JSON.parse(raw));
+        } catch(e) {}
+      }
+    }
+
+    if (changed) {
+      saveProjectIndex(localIndex);
+      // Reload current project if it was updated from cloud
+      if (currentProjectId && cloudData.projects[currentProjectId]) {
+        var localRaw = localStorage.getItem('bndr-project-' + currentProjectId);
+        if (localRaw) {
+          try {
+            D = JSON.parse(localRaw);
+            ensureFields();
+            populateProjectFields();
+            renderBudget();
+            renderScope();
+            renderPayments();
+            updateProjectSelector();
+          } catch(e) {}
+        }
+      }
+    }
+    cloudSaveIndex();
+    setSyncDot('synced');
+  }).catch(function() { setSyncDot('error'); });
+}
+
+function doFullCloudPush() {
+  var index = getProjectIndex();
+  var promises = [];
+  for (var i = 0; i < index.length; i++) {
+    var pid = index[i].id;
+    var projData;
+    if (pid === currentProjectId) { syncProjectFields(); projData = D; }
+    else { try { var raw = localStorage.getItem('bndr-project-' + pid); projData = raw ? JSON.parse(raw) : null; } catch(e) { continue; } }
+    if (projData && projData.project) promises.push(cloudSaveProject(pid, projData));
+  }
+  promises.push(cloudSaveIndex());
+  // Also push summary for portal
+  var summaryPayload = buildSyncPayload();
+  var gasUrl = getGasUrl();
+  if (gasUrl) {
+    promises.push(
+      fetch(gasUrl, { method:'POST', headers:{'Content-Type':'text/plain'}, body:JSON.stringify({action:'sync',projects:summaryPayload}) })
+      .then(function(r){return r.json();}).then(function(d){if(d.success)lastSyncedHash=JSON.stringify(summaryPayload);return d.success;}).catch(function(){return false;})
+    );
+  }
+  Promise.all(promises).then(function(results) {
+    setSyncDot(results.every(function(r){return r;}) ? 'synced' : 'error');
+  });
+}
 
 /* ═══════════════════════════════════════════
    CLOUD SYNC — Google Apps Script
@@ -4155,75 +4388,44 @@ document.getElementById('btnSyncCloud').addEventListener('click', function() {
   }
 
   var statusEl = document.getElementById('sync-status');
-  statusEl.innerHTML = '<span style="color:var(--green);">Syncing...</span>';
+  statusEl.innerHTML = '<span style="color:var(--green);">Syncing all projects (full data)...</span>';
+  setSyncDot('syncing');
 
   syncProjectFields();
   try { localStorage.setItem('bndr-project-' + currentProjectId, JSON.stringify(D)); } catch(e) {}
 
-  var index = getProjectIndex();
-  var projectsPayload = [];
+  // Build summary payload for payment portal
+  var summaryPayload = buildSyncPayload();
+  var summaryPromise = fetch(gasUrl, {
+    method: 'POST',
+    headers: { 'Content-Type': 'text/plain' },
+    body: JSON.stringify({ action: 'sync', projects: summaryPayload })
+  }).then(function(r) { return r.json(); }).then(function(d) { if (d.success) lastSyncedHash = JSON.stringify(summaryPayload); return d.success; }).catch(function() { return false; });
 
+  // Full data push for all projects
+  var index = getProjectIndex();
+  var fullPromises = [summaryPromise];
   for (var i = 0; i < index.length; i++) {
     var pid = index[i].id;
     var projData;
-    if (pid === currentProjectId) {
-      projData = D;
-    } else {
-      try { var raw = localStorage.getItem('bndr-project-' + pid); projData = raw ? JSON.parse(raw) : null; } catch(e) { continue; }
-    }
-    if (!projData || !projData.project) continue;
-
-    var contractors = [];
-    var seenCon = {};
-    for (var c = 0; c < projData.categories.length; c++) {
-      var cat = projData.categories[c];
-      var cName = (cat.contractor || '').trim();
-      if (cName && !seenCon[cName.toLowerCase()]) { contractors.push(cName); seenCon[cName.toLowerCase()] = true; }
-      for (var ci = 0; ci < cat.items.length; ci++) {
-        var iName = (cat.items[ci].contractor || '').trim();
-        if (iName && !seenCon[iName.toLowerCase()]) { contractors.push(iName); seenCon[iName.toLowerCase()] = true; }
-      }
-    }
-    // Also pull contractors from existing payments
-    for (var pi = 0; pi < (projData.payments || []).length; pi++) {
-      var pCon = (projData.payments[pi].contractor || '').trim();
-      if (pCon && !seenCon[pCon.toLowerCase()]) { contractors.push(pCon); seenCon[pCon.toLowerCase()] = true; }
-    }
-
-    var cats = [];
-    var totalEst = 0;
-    for (var c = 0; c < projData.categories.length; c++) {
-      var cat = projData.categories[c];
-      var catEst = cat.totalEstimate || 0;
-      if (!catEst) { for (var ci = 0; ci < cat.items.length; ci++) catEst += (cat.items[ci].estimated || 0); }
-      cats.push({ name: cat.name, estimated: catEst, contractor: cat.contractor || '' });
-      totalEst += catEst;
-    }
-
-    projectsPayload.push({
-      id: pid,
-      name: projData.project.address || 'Untitled Project',
-      categories: cats,
-      contractors: contractors,
-      totalEstimated: totalEst
-    });
+    if (pid === currentProjectId) { projData = D; }
+    else { try { var raw = localStorage.getItem('bndr-project-' + pid); projData = raw ? JSON.parse(raw) : null; } catch(e) { continue; } }
+    if (projData && projData.project) fullPromises.push(cloudSaveProject(pid, projData));
   }
+  fullPromises.push(cloudSaveIndex());
 
-  fetch(gasUrl, {
-    method: 'POST',
-    headers: { 'Content-Type': 'text/plain' },
-    body: JSON.stringify({ action: 'sync', projects: projectsPayload })
-  })
-  .then(function(r) { return r.json(); })
-  .then(function(data) {
-    if (data.success) {
-      statusEl.innerHTML = '<span style="color:var(--green);">&#10003; Synced ' + projectsPayload.length + ' project(s) at ' + new Date().toLocaleTimeString() + '</span>';
+  Promise.all(fullPromises).then(function(results) {
+    var allOk = results.every(function(r) { return r === true || (r && r.success); });
+    if (allOk) {
+      statusEl.innerHTML = '<span style="color:var(--green);">&#10003; Fully synced ' + index.length + ' project(s) at ' + new Date().toLocaleTimeString() + '</span>';
+      setSyncDot('synced');
     } else {
-      statusEl.innerHTML = '<span style="color:var(--red);">Error: ' + (data.error || 'Unknown') + '</span>';
+      statusEl.innerHTML = '<span style="color:var(--red);">Some projects failed to sync. Try again.</span>';
+      setSyncDot('error');
     }
-  })
-  .catch(function(err) {
+  }).catch(function(err) {
     statusEl.innerHTML = '<span style="color:var(--red);">Sync failed: ' + err.message + '</span>';
+    setSyncDot('error');
   });
 });
 
@@ -4249,6 +4451,11 @@ if (typeof caches !== 'undefined') {
 (function() {
   generateAppIcon();
 
+  // Check for GAS URL in query params (for new browser setup)
+  var urlParams = new URLSearchParams(window.location.search);
+  var gasParam = urlParams.get('gas');
+  if (gasParam && !getGasUrl()) { saveGasUrl(gasParam); }
+
   // Check for old single-project data and migrate
   var migratedId = migrateOldData();
 
@@ -4273,27 +4480,81 @@ if (typeof caches !== 'undefined') {
     saveProjectIndex(idx);
   } catch(re2) {}
 
-  var index = getProjectIndex();
+  var localIndex = getProjectIndex();
 
-  if (migratedId) {
-    // Load the migrated project
-    loadProject(migratedId);
-  } else if (index.length > 0) {
-    // Load the first (most recent) project
-    loadProject(index[0].id);
+  if (localIndex.length > 0) {
+    // === FAST PATH: localStorage has data — load instantly, background refresh ===
+    if (migratedId) { loadProject(migratedId); }
+    else { loadProject(localIndex[0].id); }
+
+    loadImportQueue();
+    ensureFields();
+    populateProjectFields();
+    updateProjectSelector();
+    renderBudget();
+
+    // Background refresh from cloud after 2s
+    if (getGasUrl()) { setTimeout(backgroundCloudRefresh, 2000); }
+
+  } else if (getGasUrl()) {
+    // === CLOUD PATH: localStorage empty but GAS URL is set — fetch from cloud ===
+    document.body.insertAdjacentHTML('afterbegin',
+      '<div id="cloud-loading-overlay" style="position:fixed;inset:0;background:rgba(255,255,255,.95);z-index:9999;display:flex;align-items:center;justify-content:center;flex-direction:column;">' +
+      '<div style="font-size:1.1rem;color:#6B7A59;font-weight:600;margin-bottom:12px;">Loading from cloud...</div>' +
+      '<div style="width:28px;height:28px;border:3px solid #e0e0e0;border-top-color:#6B7A59;border-radius:50%;animation:spin .6s linear infinite;"></div>' +
+      '<style>@keyframes spin{to{transform:rotate(360deg)}}</style></div>'
+    );
+
+    cloudLoadAll().then(function(cloudData) {
+      var overlay = document.getElementById('cloud-loading-overlay');
+      if (overlay) overlay.remove();
+
+      if (cloudData && cloudData.index && cloudData.index.length > 0) {
+        // Populate localStorage from cloud
+        saveProjectIndex(cloudData.index);
+        for (var pid in cloudData.projects) {
+          if (pid === '__INDEX__') continue;
+          try { localStorage.setItem('bndr-project-' + pid, cloudData.projects[pid].dataJson); } catch(e) {}
+        }
+        loadProject(cloudData.index[0].id);
+        loadImportQueue();
+        ensureFields();
+        populateProjectFields();
+        updateProjectSelector();
+        renderBudget();
+        renderScope();
+        renderPayments();
+        setSyncDot('synced');
+      } else {
+        // No cloud data either — create fresh project
+        createNewProject();
+        loadImportQueue();
+        ensureFields();
+        populateProjectFields();
+        updateProjectSelector();
+        renderBudget();
+      }
+    }).catch(function() {
+      var overlay = document.getElementById('cloud-loading-overlay');
+      if (overlay) overlay.remove();
+      createNewProject();
+      loadImportQueue();
+      ensureFields();
+      populateProjectFields();
+      updateProjectSelector();
+      renderBudget();
+    });
+
   } else {
-    // No projects at all — create a fresh one
-    createNewProject();
+    // === FRESH PATH: No local data, no GAS URL ===
+    if (migratedId) { loadProject(migratedId); }
+    else { createNewProject(); }
+    loadImportQueue();
+    ensureFields();
+    populateProjectFields();
+    updateProjectSelector();
+    renderBudget();
   }
-
-  loadImportQueue();
-  ensureFields();
-  populateProjectFields();
-  updateProjectSelector();
-  renderBudget();
-
-  // Auto-sync to cloud on startup if configured
-  if (getGasUrl()) { setTimeout(doAutoCloudSync, 2000); }
 })();
 </script>
 </body>

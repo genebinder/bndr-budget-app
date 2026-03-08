@@ -7,17 +7,18 @@
  *    A: projectId | B: name | C: categories | D: contractors | E: totalEstimated | F: lastSynced
  * 3. Add a second sheet tab named "Payments" with headers in row 1:
  *    A: timestamp | B: project | C: date | D: amount | E: contractor | F: category | G: description | H: projectId
- * 4. Go to Extensions > Apps Script
- * 5. Delete any existing code and paste this entire file
- * 6. Click Deploy > New deployment
+ * 4. (Optional) "ProjectData" tab is auto-created on first full sync
+ * 5. Go to Extensions > Apps Script
+ * 6. Delete any existing code and paste this entire file
+ * 7. Click Deploy > New deployment
  *    - Type: Web app
  *    - Execute as: Me
  *    - Who has access: Anyone
- * 7. Click Deploy, authorize when prompted
- * 8. Copy the Web app URL
- * 9. Paste it into the BNDR app's Export tab > Cloud Sync Settings
- * 10. Click "Sync Projects" to push your project data
- * 11. Share the Payment Portal link with your operations manager
+ * 8. Click Deploy, authorize when prompted
+ * 9. Copy the Web app URL
+ * 10. Paste it into the BNDR app's Export tab > Cloud Sync Settings
+ * 11. Click "Sync Projects" to push your project data
+ * 12. Share the Payment Portal link with your operations manager
  */
 
 var NOTIFICATION_EMAIL = 'genebinder@bndrcapital.com';
@@ -27,6 +28,12 @@ function doGet(e) {
 
   if (action === 'projects') {
     return getProjects();
+  }
+  if (action === 'loadAll') {
+    return loadAllProjects();
+  }
+  if (action === 'loadProject') {
+    return loadSingleProject(e.parameter.id);
   }
 
   return jsonResponse({ success: false, error: 'Unknown action' });
@@ -48,11 +55,31 @@ function doPost(e) {
   if (action === 'sync') {
     return handleSync(payload);
   }
+  if (action === 'syncFull') {
+    return handleFullSync(payload);
+  }
+  if (action === 'syncIndex') {
+    return handleIndexSync(payload);
+  }
+  if (action === 'deleteProject') {
+    return handleDeleteProject(payload);
+  }
 
   return jsonResponse({ success: false, error: 'Unknown action' });
 }
 
-/* ── Get Projects (with payment totals) ── */
+/* ── Get or create ProjectData sheet ── */
+function getProjectDataSheet() {
+  var ss = SpreadsheetApp.getActiveSpreadsheet();
+  var sheet = ss.getSheetByName('ProjectData');
+  if (!sheet) {
+    sheet = ss.insertSheet('ProjectData');
+    sheet.appendRow(['projectId', 'data_chunk_1', 'data_chunk_2', 'data_chunk_3', 'lastModified']);
+  }
+  return sheet;
+}
+
+/* ── Get Projects (with payment totals) — for Payment Portal ── */
 function getProjects() {
   var ss = SpreadsheetApp.getActiveSpreadsheet();
   var projectsSheet = ss.getSheetByName('Projects');
@@ -156,7 +183,7 @@ function handlePayment(payload) {
   return jsonResponse({ success: true });
 }
 
-/* ── Handle Project Sync ── */
+/* ── Handle Project Summary Sync (for Payment Portal) ── */
 function handleSync(payload) {
   var ss = SpreadsheetApp.getActiveSpreadsheet();
   var sheet = ss.getSheetByName('Projects');
@@ -188,6 +215,122 @@ function handleSync(payload) {
   }
 
   return jsonResponse({ success: true, count: projects.length });
+}
+
+/* ── Handle Full Project Data Sync (single project) ── */
+function handleFullSync(payload) {
+  var sheet = getProjectDataSheet();
+  var projectId = payload.projectId;
+  var dataJson = payload.dataJson || '';
+  var lastModified = payload.lastModified || new Date().toISOString();
+
+  // Chunk the JSON string (49000 chars per chunk to stay under 50K cell limit)
+  var CHUNK_SIZE = 49000;
+  var chunks = [];
+  for (var i = 0; i < dataJson.length; i += CHUNK_SIZE) {
+    chunks.push(dataJson.substring(i, i + CHUNK_SIZE));
+  }
+  while (chunks.length < 3) chunks.push('');
+
+  // Find existing row for this projectId
+  var data = sheet.getDataRange().getValues();
+  var rowIndex = -1;
+  for (var r = 1; r < data.length; r++) {
+    if (data[r][0] === projectId) { rowIndex = r + 1; break; }
+  }
+
+  if (rowIndex > 0) {
+    sheet.getRange(rowIndex, 1, 1, 5).setValues([[projectId, chunks[0], chunks[1], chunks[2], lastModified]]);
+  } else {
+    sheet.appendRow([projectId, chunks[0], chunks[1], chunks[2], lastModified]);
+  }
+
+  return jsonResponse({ success: true, projectId: projectId });
+}
+
+/* ── Handle Project Index Sync ── */
+function handleIndexSync(payload) {
+  var sheet = getProjectDataSheet();
+  var indexJson = JSON.stringify(payload.index || []);
+  var now = new Date().toISOString();
+
+  var data = sheet.getDataRange().getValues();
+  var rowIndex = -1;
+  for (var r = 1; r < data.length; r++) {
+    if (data[r][0] === '__INDEX__') { rowIndex = r + 1; break; }
+  }
+
+  if (rowIndex > 0) {
+    sheet.getRange(rowIndex, 1, 1, 5).setValues([['__INDEX__', indexJson, '', '', now]]);
+  } else {
+    sheet.appendRow(['__INDEX__', indexJson, '', '', now]);
+  }
+
+  return jsonResponse({ success: true });
+}
+
+/* ── Handle Project Deletion ── */
+function handleDeleteProject(payload) {
+  var ss = SpreadsheetApp.getActiveSpreadsheet();
+  var sheet = ss.getSheetByName('ProjectData');
+  if (!sheet) return jsonResponse({ success: true });
+
+  var data = sheet.getDataRange().getValues();
+  for (var r = data.length - 1; r >= 1; r--) {
+    if (data[r][0] === payload.projectId) {
+      sheet.deleteRow(r + 1);
+      break;
+    }
+  }
+
+  return jsonResponse({ success: true });
+}
+
+/* ── Load All Projects (full data) ── */
+function loadAllProjects() {
+  var ss = SpreadsheetApp.getActiveSpreadsheet();
+  var sheet = ss.getSheetByName('ProjectData');
+  if (!sheet) {
+    return jsonResponse({ success: true, projects: {}, index: [] });
+  }
+
+  var data = sheet.getDataRange().getValues();
+  var projects = {};
+  var index = null;
+
+  for (var r = 1; r < data.length; r++) {
+    var pid = data[r][0];
+    if (!pid) continue;
+
+    var json = String(data[r][1] || '') + String(data[r][2] || '') + String(data[r][3] || '');
+    var lastMod = data[r][4] || '';
+
+    if (pid === '__INDEX__') {
+      try { index = JSON.parse(json); } catch(e) { index = []; }
+    } else {
+      projects[pid] = { dataJson: json, lastModified: String(lastMod) };
+    }
+  }
+
+  return jsonResponse({ success: true, projects: projects, index: index || [] });
+}
+
+/* ── Load Single Project (full data) ── */
+function loadSingleProject(projectId) {
+  var ss = SpreadsheetApp.getActiveSpreadsheet();
+  var sheet = ss.getSheetByName('ProjectData');
+  if (!sheet) {
+    return jsonResponse({ success: false, error: 'No ProjectData sheet' });
+  }
+
+  var data = sheet.getDataRange().getValues();
+  for (var r = 1; r < data.length; r++) {
+    if (data[r][0] === projectId) {
+      var json = String(data[r][1] || '') + String(data[r][2] || '') + String(data[r][3] || '');
+      return jsonResponse({ success: true, projectId: projectId, dataJson: json, lastModified: String(data[r][4] || '') });
+    }
+  }
+  return jsonResponse({ success: false, error: 'Project not found' });
 }
 
 /* ── Helper ── */

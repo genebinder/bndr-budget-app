@@ -279,6 +279,7 @@
     .pay-detail-desc { flex:1;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis; }
     .pay-detail-go { flex:none;font-size:.6rem;font-weight:700;color:var(--accent);background:none;border:1px solid var(--accent);border-radius:8px;padding:2px 8px;cursor:pointer; }
     .paid-clickable { cursor:pointer;text-decoration:underline;text-decoration-style:dotted;text-underline-offset:2px; }
+    .cat-pay-detail:not(:empty) { padding:0 12px 8px; }
 
     /* ── Export buttons ── */
     .export-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
@@ -1136,6 +1137,13 @@ function getCatGeneralPaid(catName) {
   }
   return t;
 }
+function getCatPayments(catName) {
+  var out = [];
+  for (var i = 0; i < D.payments.length; i++) {
+    if ((D.payments[i].category || '') === catName) out.push(D.payments[i]);
+  }
+  return out;
+}
 function getItemPayments(catName, itemDesc) {
   var out = [];
   for (var i = 0; i < D.payments.length; i++) {
@@ -1631,7 +1639,7 @@ function renderBudgetCategories() {
     div.innerHTML =
       '<div class="cat-header" data-cat-id="' + cat.id + '">' +
         '<span class="cat-name">' + esc(cat.name) + '</span>' +
-        '<span class="cat-paid">' + (catAct > 0 ? '$' + fmt(catAct) + ' paid' : '') + '</span>' +
+        '<span class="cat-paid' + (catAct > 0 ? ' paid-clickable' : '') + '"' + (catAct > 0 ? ' data-action="show-payments" data-pay-cat="' + escAttr(cat.name) + '" data-pay-all="1"' : '') + '>' + (catAct > 0 ? '$' + fmt(catAct) + ' paid' : '') + '</span>' +
         '<span class="cat-badge">' + cat.items.length + '</span>' +
         '<span class="cat-chevron ' + (isOpen ? 'open' : '') + '">&#9660;</span>' +
         '<div class="cat-totals">' +
@@ -1640,6 +1648,7 @@ function renderBudgetCategories() {
         '</div>' +
         contractorSummary +
       '</div>' +
+      '<div class="pay-detail-container cat-pay-detail"></div>' +
       '<div class="cat-body ' + (isOpen ? 'open' : '') + '">' +
         bodyHTML +
         '<button class="btn btn-outline btn-sm mt no-print" data-action="add-item" data-cat-id="' + cat.id + '">+ Add Item</button>' +
@@ -1661,6 +1670,56 @@ function esc(s) { return String(s || '').replace(/&/g, '&amp;').replace(/</g, '&
 /* ── Budget event delegation ── */
 document.getElementById('tab-budget').addEventListener('click', function(e) {
   var target = e.target;
+
+  // Show payment details for a paid amount (must come before header toggle)
+  if (target.getAttribute('data-action') === 'show-payments' || target.closest('[data-action="show-payments"]')) {
+    var trigger = target.getAttribute('data-action') === 'show-payments' ? target : target.closest('[data-action="show-payments"]');
+    var pCat = trigger.getAttribute('data-pay-cat') || '';
+    var pSub = trigger.getAttribute('data-pay-sub');
+    var isAll = trigger.getAttribute('data-pay-all') === '1';
+    // Find the detail container
+    var container;
+    if (isAll) {
+      container = trigger.closest('.cat-card');
+      if (container) container = container.querySelector('.cat-pay-detail');
+    } else {
+      container = trigger.closest('.li-row') || trigger.closest('.budget-pay-group');
+      if (container) container = container.querySelector('.pay-detail-container');
+    }
+    if (!container) return;
+    // Toggle off if already showing
+    if (container.innerHTML) { container.innerHTML = ''; return; }
+    var payments;
+    if (isAll) {
+      payments = getCatPayments(pCat);
+    } else if (pSub !== null && pSub !== '') {
+      payments = getItemPayments(pCat, pSub);
+    } else {
+      payments = getGeneralPayments(pCat);
+    }
+    if (!payments.length) return;
+    var h = '<div class="pay-detail-list">';
+    for (var pi = 0; pi < payments.length; pi++) {
+      var pp = payments[pi];
+      h += '<div class="pay-detail-row" data-action="go-to-payment" data-pay-id="' + pp.id + '">' +
+        '<span class="pay-detail-date">' + esc(pp.date || '') + '</span>' +
+        '<span class="pay-detail-amt">$' + fmt(pp.amount || 0) + '</span>' +
+        '<span class="pay-detail-desc">' + esc(pp.desc || pp.contractor || 'No description') + '</span>' +
+        '<span class="pay-detail-go">Edit &rarr;</span>' +
+      '</div>';
+    }
+    h += '</div>';
+    container.innerHTML = h;
+    return;
+  }
+
+  // Navigate to payment in payments tab
+  if (target.closest('[data-action="go-to-payment"]')) {
+    var row = target.closest('[data-action="go-to-payment"]');
+    var payId = parseInt(row.getAttribute('data-pay-id'));
+    goToPayment(payId);
+    return;
+  }
 
   // Toggle category
   var header = target.closest('.cat-header');
@@ -1733,40 +1792,6 @@ document.getElementById('tab-budget').addEventListener('click', function(e) {
     return;
   }
 
-  // Show payment details for a paid amount
-  if (target.getAttribute('data-action') === 'show-payments') {
-    var container = target.closest('.li-row') || target.closest('.budget-pay-group');
-    if (!container) return;
-    var detailWrap = container.querySelector('.pay-detail-container');
-    if (!detailWrap) return;
-    // Toggle off if already showing
-    if (detailWrap.innerHTML) { detailWrap.innerHTML = ''; return; }
-    var pCat = target.getAttribute('data-pay-cat') || '';
-    var pSub = target.getAttribute('data-pay-sub');
-    var payments = (pSub !== null && pSub !== '') ? getItemPayments(pCat, pSub) : getGeneralPayments(pCat);
-    if (!payments.length) return;
-    var h = '<div class="pay-detail-list">';
-    for (var pi = 0; pi < payments.length; pi++) {
-      var pp = payments[pi];
-      h += '<div class="pay-detail-row" data-action="go-to-payment" data-pay-id="' + pp.id + '">' +
-        '<span class="pay-detail-date">' + esc(pp.date || '') + '</span>' +
-        '<span class="pay-detail-amt">$' + fmt(pp.amount || 0) + '</span>' +
-        '<span class="pay-detail-desc">' + esc(pp.desc || pp.contractor || 'No description') + '</span>' +
-        '<span class="pay-detail-go">Edit &rarr;</span>' +
-      '</div>';
-    }
-    h += '</div>';
-    detailWrap.innerHTML = h;
-    return;
-  }
-
-  // Navigate to payment in payments tab
-  if (target.closest('[data-action="go-to-payment"]')) {
-    var row = target.closest('[data-action="go-to-payment"]');
-    var payId = parseInt(row.getAttribute('data-pay-id'));
-    goToPayment(payId);
-    return;
-  }
 });
 
 /* ── Budget input handling (event delegation) ── */

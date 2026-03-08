@@ -66,6 +66,9 @@ function doGet(e) {
   if (action === 'loadProject') {
     return loadSingleProject(e.parameter.id);
   }
+  if (action === 'getPayments') {
+    return getPaymentsForProject(e.parameter.id);
+  }
 
   return jsonResponse({ success: false, error: 'Unknown action' });
 }
@@ -375,6 +378,38 @@ function loadSingleProject(projectId) {
     }
   }
   return jsonResponse({ success: false, error: 'Project not found' });
+}
+
+/* ── Get Payments for a Project (for main app import) ── */
+function getPaymentsForProject(projectId) {
+  var ss = SpreadsheetApp.getActiveSpreadsheet();
+  var sheet = ss.getSheetByName('Payments');
+  if (!sheet) {
+    return jsonResponse({ success: true, payments: [] });
+  }
+
+  var data = sheet.getDataRange().getValues();
+  var payments = [];
+  for (var i = 1; i < data.length; i++) {
+    var pid = data[i][7];  // column H: projectId
+    if (!pid) continue;
+    // If projectId filter provided, only return matching payments
+    if (projectId && String(pid) !== String(projectId)) continue;
+
+    payments.push({
+      timestamp: String(data[i][0] || ''),
+      projectName: String(data[i][1] || ''),
+      date: String(data[i][2] || ''),
+      amount: Number(data[i][3]) || 0,
+      contractor: String(data[i][4] || ''),
+      category: String(data[i][5] || ''),
+      description: String(data[i][6] || ''),
+      projectId: String(pid),
+      receiptUrl: String(data[i][8] || '')
+    });
+  }
+
+  return jsonResponse({ success: true, payments: payments });
 }
 
 /* ── Helper ── */

@@ -2215,6 +2215,7 @@ function renderPayList() {
     var con = (p.contractor || '').trim();
     var conKey = con.toLowerCase();
     var isEditing = (editingPayId === p.id);
+    var isPortal = (p.source === 'portal');
 
     if (con) {
       if (!paidByContractor[conKey]) paidByContractor[conKey] = 0;
@@ -2231,8 +2232,8 @@ function renderPayList() {
 
     html += '<div class="pay-entry" data-pay-id="' + p.id + '">';
 
-    if (isEditing) {
-      // Edit mode
+    if (isEditing && !isPortal) {
+      // Edit mode (not available for portal payments)
       html += '<button class="pay-del no-print" data-pay-id="' + p.id + '">&times;</button>';
       html += '<div class="pay-edit-row">' +
         '<input type="text" class="pay-inp-date" data-field="date" data-pay-id="' + p.id + '" value="' + escAttr(p.date || '') + '" placeholder="Date">' +
@@ -2274,23 +2275,27 @@ function renderPayList() {
       '</div>';
     } else {
       // Display mode
-      html += '<button class="pay-del no-print" data-pay-id="' + p.id + '">&times;</button>';
+      if (!isPortal) html += '<button class="pay-del no-print" data-pay-id="' + p.id + '">&times;</button>';
       html += '<div class="pay-top">' +
         '<span class="pay-date">' + esc(p.date) + '</span>' +
         '<span class="pay-amount">$' + fmt(p.amount || 0) + '</span>' +
       '</div>';
       if (con) html += '<div class="pay-contractor" style="font-size:.72rem;font-weight:700;color:var(--green);margin-top:2px;">' + esc(con) + '</div>';
       html += '<div class="pay-desc">';
+      if (isPortal) html += '<span class="pay-cat-badge" style="background:#dbeafe;color:#1e40af;font-size:.6rem;">Portal</span> ';
       if (p.category) {
         html += '<span class="pay-cat-badge">' + esc(p.category) + '</span> ';
         if (p.subcategory) html += '<span class="pay-cat-badge" style="background:#d1fae5;color:#065f46;">' + esc(p.subcategory) + '</span> ';
       }
       html += (p.desc ? esc(p.desc) : '<span style="color:var(--muted);">No description</span>');
       html += '</div>';
+      if (p.receiptUrl) html += '<div style="margin-top:2px;"><a href="' + escAttr(p.receiptUrl) + '" target="_blank" style="font-size:.65rem;color:var(--accent);">View Receipt</a></div>';
       if (balText) html += '<div class="pay-bal ' + balClass + '">' + balText + '</div>';
-      html += '<div style="margin-top:4px;">' +
-        '<button class="pay-edit-btn" data-pay-action="edit" data-pay-id="' + p.id + '">Edit</button>' +
-      '</div>';
+      if (!isPortal) {
+        html += '<div style="margin-top:4px;">' +
+          '<button class="pay-edit-btn" data-pay-action="edit" data-pay-id="' + p.id + '">Edit</button>' +
+        '</div>';
+      }
     }
 
     html += '</div>';
@@ -4144,6 +4149,19 @@ function doAutoCloudSync() {
     );
   }
 
+  // 3. Pull portal payments from cloud
+  promises.push(
+    cloudFetchPayments(currentProjectId).then(function(cloudPayments) {
+      var changed = importPortalPayments(cloudPayments);
+      if (changed) {
+        scheduleSave();
+        renderPayments();
+        renderBudget();
+      }
+      return true;
+    }).catch(function() { return false; })
+  );
+
   if (promises.length === 0) { setSyncDot('synced'); return; }
 
   Promise.all(promises).then(function(results) {
@@ -4269,6 +4287,51 @@ function cloudDeleteProject(projectId) {
   .catch(function() { return false; });
 }
 
+/* ── Fetch portal payments from cloud for a project ── */
+function cloudFetchPayments(projectId) {
+  var gasUrl = getGasUrl();
+  if (!gasUrl || !projectId) return Promise.resolve([]);
+  return fetch(gasUrl + '?action=getPayments&id=' + encodeURIComponent(projectId))
+    .then(function(r) { return r.json(); })
+    .then(function(data) { return data.success ? (data.payments || []) : []; })
+    .catch(function() { return []; });
+}
+
+/* ── Import portal payments into D.payments ── */
+function importPortalPayments(cloudPayments) {
+  if (!cloudPayments || cloudPayments.length === 0) {
+    // Remove any stale portal payments if cloud has none
+    var hadPortal = false;
+    for (var i = D.payments.length - 1; i >= 0; i--) {
+      if (D.payments[i].source === 'portal') { D.payments.splice(i, 1); hadPortal = true; }
+    }
+    return hadPortal;
+  }
+
+  // Remove existing portal-sourced payments (will be replaced with fresh data)
+  for (var i = D.payments.length - 1; i >= 0; i--) {
+    if (D.payments[i].source === 'portal') D.payments.splice(i, 1);
+  }
+
+  // Add cloud payments
+  for (var j = 0; j < cloudPayments.length; j++) {
+    var cp = cloudPayments[j];
+    D.payments.push({
+      id: D.nextPayId++,
+      date: cp.date || '',
+      contractor: cp.contractor || '',
+      category: cp.category || '',
+      desc: cp.description || '',
+      amount: Number(cp.amount) || 0,
+      source: 'portal',
+      receiptUrl: cp.receiptUrl || '',
+      portalTimestamp: cp.timestamp || ''
+    });
+  }
+
+  return true; // data changed
+}
+
 function backgroundCloudRefresh() {
   setSyncDot('syncing');
   cloudLoadAll().then(function(cloudData) {
@@ -4336,7 +4399,21 @@ function backgroundCloudRefresh() {
       }
     }
     cloudSaveIndex();
-    setSyncDot('synced');
+
+    // Pull portal payments for current project
+    if (currentProjectId) {
+      cloudFetchPayments(currentProjectId).then(function(cloudPayments) {
+        var payChanged = importPortalPayments(cloudPayments);
+        if (payChanged) {
+          scheduleSave();
+          renderPayments();
+          renderBudget();
+        }
+        setSyncDot('synced');
+      }).catch(function() { setSyncDot('synced'); });
+    } else {
+      setSyncDot('synced');
+    }
   }).catch(function() { setSyncDot('error'); });
 }
 

@@ -493,6 +493,7 @@
     <div class="hdr-sub">FinMod</div>
   </div>
   <div class="hdr-right">
+    <button id="auto-sync-btn" onclick="toggleAutoSync()" style="display:none;background:none;border:1px solid var(--green);color:var(--green);font-size:.6rem;font-weight:700;padding:3px 8px;border-radius:10px;cursor:pointer;margin-right:6px;letter-spacing:.03em;opacity:.5;">AUTO</button>
     <button id="sync-now-btn" onclick="manualSyncNow()" style="display:none;background:none;border:1px solid var(--green);color:var(--green);font-size:.6rem;font-weight:700;padding:3px 8px;border-radius:10px;cursor:pointer;margin-right:6px;letter-spacing:.03em;">SYNC</button>
     <div id="sync-dot" class="sync-dot" title="Cloud sync idle" style="display:none;"></div>
   </div>
@@ -4095,16 +4096,38 @@ var cloudSyncTimer = null;
 var lastSyncedHash = '';
 var lastFullSyncHash = '';
 var indexSyncTimer = null;
+var autoSyncEnabled = localStorage.getItem('bndr-auto-sync') !== 'off';
+
+function toggleAutoSync() {
+  autoSyncEnabled = !autoSyncEnabled;
+  localStorage.setItem('bndr-auto-sync', autoSyncEnabled ? 'on' : 'off');
+  updateAutoSyncBtn();
+  if (!autoSyncEnabled) {
+    clearTimeout(cloudSyncTimer);
+    clearTimeout(indexSyncTimer);
+  }
+}
+
+function updateAutoSyncBtn() {
+  var btn = document.getElementById('auto-sync-btn');
+  if (!btn) return;
+  var hasGas = !!getGasUrl();
+  btn.style.display = hasGas ? '' : 'none';
+  btn.style.opacity = autoSyncEnabled ? '1' : '.5';
+  btn.style.background = autoSyncEnabled ? 'var(--green)' : 'none';
+  btn.style.color = autoSyncEnabled ? '#fff' : 'var(--green)';
+  btn.title = autoSyncEnabled ? 'Auto-sync ON — click to disable' : 'Auto-sync OFF — click to enable';
+}
 
 function scheduleCloudSync() {
-  if (!getGasUrl()) return;
+  if (!getGasUrl() || !autoSyncEnabled) return;
   clearTimeout(cloudSyncTimer);
   cloudSyncTimer = setTimeout(doAutoCloudSync, 2000);
   setSyncDot('syncing');
 }
 
 function scheduleIndexSync() {
-  if (!getGasUrl()) return;
+  if (!getGasUrl() || !autoSyncEnabled) return;
   clearTimeout(indexSyncTimer);
   indexSyncTimer = setTimeout(function() { cloudSaveIndex(); }, 15000);
 }
@@ -4220,6 +4243,7 @@ function setSyncDot(state) {
     syncBtn.disabled = (state === 'syncing' || state === 'loading');
     syncBtn.textContent = (state === 'syncing' || state === 'loading') ? 'SYNCING...' : 'SYNC';
   }
+  updateAutoSyncBtn();
 }
 
 /* ── Manual Sync Now — full push + pull ── */
@@ -4293,7 +4317,7 @@ function manualSyncNow() {
 
 // Sync when user leaves the tab or closes
 document.addEventListener('visibilitychange', function() {
-  if (document.visibilityState === 'hidden' && getGasUrl() && currentProjectId) {
+  if (document.visibilityState === 'hidden' && getGasUrl() && currentProjectId && autoSyncEnabled) {
     clearTimeout(cloudSyncTimer);
     clearTimeout(indexSyncTimer);
     doAutoCloudSync();
@@ -4664,8 +4688,8 @@ if (typeof caches !== 'undefined') {
     updateProjectSelector();
     renderBudget();
 
-    // Background refresh from cloud after 2s
-    if (getGasUrl()) { setTimeout(backgroundCloudRefresh, 2000); }
+    // Background refresh from cloud after 2s (only if auto-sync is on)
+    if (getGasUrl() && autoSyncEnabled) { setTimeout(backgroundCloudRefresh, 2000); }
 
   } else if (getGasUrl()) {
     // === CLOUD PATH: localStorage empty but GAS URL is set — fetch from cloud ===

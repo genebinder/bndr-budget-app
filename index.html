@@ -2232,8 +2232,8 @@ function renderPayList() {
 
     html += '<div class="pay-entry" data-pay-id="' + p.id + '">';
 
-    if (isEditing && !isPortal) {
-      // Edit mode (not available for portal payments)
+    if (isEditing) {
+      // Edit mode
       html += '<button class="pay-del no-print" data-pay-id="' + p.id + '">&times;</button>';
       html += '<div class="pay-edit-row">' +
         '<input type="text" class="pay-inp-date" data-field="date" data-pay-id="' + p.id + '" value="' + escAttr(p.date || '') + '" placeholder="Date">' +
@@ -2275,7 +2275,7 @@ function renderPayList() {
       '</div>';
     } else {
       // Display mode
-      if (!isPortal) html += '<button class="pay-del no-print" data-pay-id="' + p.id + '">&times;</button>';
+      html += '<button class="pay-del no-print" data-pay-id="' + p.id + '">&times;</button>';
       html += '<div class="pay-top">' +
         '<span class="pay-date">' + esc(p.date) + '</span>' +
         '<span class="pay-amount">$' + fmt(p.amount || 0) + '</span>' +
@@ -2291,11 +2291,9 @@ function renderPayList() {
       html += '</div>';
       if (p.receiptUrl) html += '<div style="margin-top:2px;"><a href="' + escAttr(p.receiptUrl) + '" target="_blank" style="font-size:.65rem;color:var(--accent);">View Receipt</a></div>';
       if (balText) html += '<div class="pay-bal ' + balClass + '">' + balText + '</div>';
-      if (!isPortal) {
-        html += '<div style="margin-top:4px;">' +
-          '<button class="pay-edit-btn" data-pay-action="edit" data-pay-id="' + p.id + '">Edit</button>' +
-        '</div>';
-      }
+      html += '<div style="margin-top:4px;">' +
+        '<button class="pay-edit-btn" data-pay-action="edit" data-pay-id="' + p.id + '">Edit</button>' +
+      '</div>';
     }
 
     html += '</div>';

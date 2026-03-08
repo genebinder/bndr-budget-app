@@ -6,7 +6,7 @@
  * 2. Rename "Sheet1" to "Projects" and add headers in row 1:
  *    A: projectId | B: name | C: categories | D: contractors | E: totalEstimated | F: lastSynced
  * 3. Add a second sheet tab named "Payments" with headers in row 1:
- *    A: timestamp | B: project | C: date | D: amount | E: contractor | F: category | G: description | H: projectId
+ *    A: timestamp | B: project | C: date | D: amount | E: contractor | F: category | G: description | H: projectId | I: receiptUrl
  * 4. (Optional) "ProjectData" tab is auto-created on first full sync
  * 5. Go to Extensions > Apps Script
  * 6. Delete any existing code and paste this entire file
@@ -22,6 +22,37 @@
  */
 
 var NOTIFICATION_EMAIL = 'genebinder@bndrcapital.com';
+var RECEIPT_FOLDER_NAME = 'BNDR Payment Receipts';
+
+/* ── Get or create receipt folder in Google Drive ── */
+function getOrCreateReceiptFolder() {
+  var folders = DriveApp.getFoldersByName(RECEIPT_FOLDER_NAME);
+  if (folders.hasNext()) return folders.next();
+  return DriveApp.createFolder(RECEIPT_FOLDER_NAME);
+}
+
+/* ── Save receipt image to Google Drive, return shareable URL ── */
+function saveReceiptToDrive(base64Data, projectName, contractor, date) {
+  var folder = getOrCreateReceiptFolder();
+
+  // Strip data URI prefix if present
+  var raw = base64Data;
+  if (raw.indexOf(',') !== -1) raw = raw.split(',')[1];
+
+  var decoded = Utilities.base64Decode(raw);
+  var blob = Utilities.newBlob(decoded, 'image/jpeg');
+
+  // Build descriptive filename
+  var safeName = (projectName || 'Unknown').replace(/[^a-zA-Z0-9 ]/g, '').substring(0, 30);
+  var safeContractor = (contractor || 'Unknown').replace(/[^a-zA-Z0-9 ]/g, '').substring(0, 20);
+  var safeDate = (date || '').replace(/\//g, '-');
+  var filename = 'Receipt_' + safeName + '_' + safeContractor + '_' + safeDate + '.jpg';
+  blob.setName(filename);
+
+  var file = folder.createFile(blob);
+  file.setSharing(DriveApp.Access.ANYONE_WITH_LINK, DriveApp.Permission.VIEW);
+  return file.getUrl();
+}
 
 function doGet(e) {
   var action = (e && e.parameter && e.parameter.action) || 'projects';
@@ -148,8 +179,20 @@ function handlePayment(payload) {
   var description = payload.description || '';
   var date = payload.date || '';
   var projectId = payload.projectId || '';
+  var receiptImage = payload.receiptImage || '';
 
-  // Append row
+  // Save receipt to Google Drive if provided
+  var receiptUrl = '';
+  if (receiptImage) {
+    try {
+      receiptUrl = saveReceiptToDrive(receiptImage, projectName, contractor, date);
+    } catch (driveErr) {
+      Logger.log('Drive save error: ' + driveErr.message);
+      // Payment still saves even if receipt upload fails
+    }
+  }
+
+  // Append row (9 columns — Column I: receiptUrl)
   sheet.appendRow([
     new Date().toISOString(),
     projectName,
@@ -158,7 +201,8 @@ function handlePayment(payload) {
     contractor,
     category,
     description,
-    projectId
+    projectId,
+    receiptUrl
   ]);
 
   // Send email notification
@@ -172,15 +216,15 @@ function handlePayment(payload) {
       'Contractor:  ' + contractor + '\n' +
       'Category:    ' + category + '\n' +
       'Description: ' + description + '\n' +
+      (receiptUrl ? 'Receipt:     ' + receiptUrl + '\n' : '') +
       '\nTimestamp: ' + new Date().toISOString();
 
     MailApp.sendEmail(NOTIFICATION_EMAIL, subject, body);
   } catch (emailErr) {
-    // Payment saved even if email fails
     Logger.log('Email error: ' + emailErr.message);
   }
 
-  return jsonResponse({ success: true });
+  return jsonResponse({ success: true, receiptUrl: receiptUrl });
 }
 
 /* ── Handle Project Summary Sync (for Payment Portal) ── */

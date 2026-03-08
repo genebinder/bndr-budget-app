@@ -492,7 +492,10 @@
   <div>
     <div class="hdr-sub">FinMod</div>
   </div>
-  <div class="hdr-right"><div id="sync-dot" class="sync-dot" title="Cloud sync idle" style="display:none;"></div></div>
+  <div class="hdr-right">
+    <button id="sync-now-btn" onclick="manualSyncNow()" style="display:none;background:none;border:1px solid var(--green);color:var(--green);font-size:.6rem;font-weight:700;padding:3px 8px;border-radius:10px;cursor:pointer;margin-right:6px;letter-spacing:.03em;">SYNC</button>
+    <div id="sync-dot" class="sync-dot" title="Cloud sync idle" style="display:none;"></div>
+  </div>
 </header>
 
 <!-- ══════ Project Selector ══════ -->
@@ -4096,7 +4099,7 @@ var indexSyncTimer = null;
 function scheduleCloudSync() {
   if (!getGasUrl()) return;
   clearTimeout(cloudSyncTimer);
-  cloudSyncTimer = setTimeout(doAutoCloudSync, 10000);
+  cloudSyncTimer = setTimeout(doAutoCloudSync, 2000);
   setSyncDot('syncing');
 }
 
@@ -4206,10 +4209,86 @@ function buildSyncPayload() {
 function setSyncDot(state) {
   var dot = document.getElementById('sync-dot');
   if (!dot) return;
-  dot.style.display = getGasUrl() ? '' : 'none';
+  var hasGas = !!getGasUrl();
+  dot.style.display = hasGas ? '' : 'none';
   dot.className = 'sync-dot ' + state;
-  var titles = { synced:'Cloud synced', syncing:'Syncing...', error:'Sync error — click Sync Projects to retry', loading:'Loading from cloud...' };
+  var titles = { synced:'Cloud synced', syncing:'Syncing...', error:'Sync error — tap SYNC to retry', loading:'Loading from cloud...' };
   dot.title = titles[state] || 'Cloud sync idle';
+  var syncBtn = document.getElementById('sync-now-btn');
+  if (syncBtn) {
+    syncBtn.style.display = hasGas ? '' : 'none';
+    syncBtn.disabled = (state === 'syncing' || state === 'loading');
+    syncBtn.textContent = (state === 'syncing' || state === 'loading') ? 'SYNCING...' : 'SYNC';
+  }
+}
+
+/* ── Manual Sync Now — full push + pull ── */
+function manualSyncNow() {
+  if (!getGasUrl() || !currentProjectId) return;
+  setSyncDot('syncing');
+
+  // 1. Save current project locally first
+  syncProjectFields();
+  try { localStorage.setItem('bndr-project-' + currentProjectId, JSON.stringify(D)); } catch(e) {}
+
+  // 2. Push current project + index to cloud
+  var pushPromises = [
+    cloudSaveProject(currentProjectId, D),
+    cloudSaveIndex()
+  ];
+
+  // Also push summary for portal
+  var summaryPayload = buildSyncPayload();
+  var gasUrl = getGasUrl();
+  pushPromises.push(
+    fetch(gasUrl, { method:'POST', headers:{'Content-Type':'text/plain'}, body:JSON.stringify({action:'sync',projects:summaryPayload}) })
+    .then(function(r){return r.json();}).then(function(d){if(d.success)lastSyncedHash=JSON.stringify(summaryPayload);return d.success;}).catch(function(){return false;})
+  );
+
+  Promise.all(pushPromises).then(function() {
+    // 3. Now pull everything fresh from cloud
+    return cloudLoadAll();
+  }).then(function(cloudData) {
+    if (!cloudData || !cloudData.index) { setSyncDot('error'); return; }
+
+    // Replace local index with cloud index (cloud is truth after push)
+    saveProjectIndex(cloudData.index);
+
+    // Update all local project data from cloud
+    for (var pid in cloudData.projects) {
+      if (pid === '__INDEX__') continue;
+      try { localStorage.setItem('bndr-project-' + pid, cloudData.projects[pid].dataJson); } catch(e) {}
+    }
+
+    // Remove local projects that no longer exist in cloud
+    var cloudIds = {};
+    for (var i = 0; i < cloudData.index.length; i++) cloudIds[cloudData.index[i].id] = true;
+    for (var k = 0; k < localStorage.length; k++) {
+      var key = localStorage.key(k);
+      if (key && key.indexOf('bndr-project-p') === 0) {
+        var localPid = key.replace('bndr-project-', '');
+        if (!cloudIds[localPid]) { localStorage.removeItem(key); k--; }
+      }
+    }
+
+    // Reload current project from updated localStorage
+    if (loadProject(currentProjectId)) {
+      ensureFields();
+      populateProjectFields();
+      renderBudget();
+      renderScope();
+      renderPayments();
+    }
+    updateProjectSelector();
+
+    // Pull portal payments
+    return cloudFetchPayments(currentProjectId).then(function(cloudPayments) {
+      var payChanged = importPortalPayments(cloudPayments);
+      if (payChanged) { scheduleSave(); renderPayments(); renderBudget(); }
+      setSyncDot('synced');
+      lastFullSyncHash = currentProjectId + '-' + JSON.stringify(D).length + '-' + simpleHash(JSON.stringify(D));
+    });
+  }).catch(function() { setSyncDot('error'); });
 }
 
 // Sync when user leaves the tab or closes
@@ -4332,81 +4411,69 @@ function importPortalPayments(cloudPayments) {
 
 function backgroundCloudRefresh() {
   setSyncDot('syncing');
-  cloudLoadAll().then(function(cloudData) {
+
+  // First push current state to cloud so cloud has the latest
+  var pushFirst = [];
+  if (currentProjectId) {
+    syncProjectFields();
+    pushFirst.push(cloudSaveProject(currentProjectId, D));
+  }
+  pushFirst.push(cloudSaveIndex());
+
+  Promise.all(pushFirst).then(function() {
+    // Now pull from cloud — cloud is the source of truth
+    return cloudLoadAll();
+  }).then(function(cloudData) {
     if (!cloudData || !cloudData.index || cloudData.index.length === 0) {
       // Cloud has nothing — push all local data up (first-time setup)
       doFullCloudPush();
       return;
     }
-    var cloudIndex = cloudData.index;
-    var localIndex = getProjectIndex();
-    var localIds = {};
-    for (var i = 0; i < localIndex.length; i++) localIds[localIndex[i].id] = localIndex[i];
 
-    var changed = false;
+    // Cloud index IS the truth — adopt it fully
+    var cloudIndex = cloudData.index;
+    saveProjectIndex(cloudIndex);
+
+    // Update all local project data from cloud
+    var cloudIds = {};
     for (var ci = 0; ci < cloudIndex.length; ci++) {
-      var cp = cloudIndex[ci];
-      if (!localIds[cp.id]) {
-        // Cloud has a project we don't have locally — pull it
-        localIndex.push(cp);
-        if (cloudData.projects[cp.id]) {
-          try { localStorage.setItem('bndr-project-' + cp.id, cloudData.projects[cp.id].dataJson); } catch(e) {}
-        }
-        changed = true;
-      } else {
-        // Both have it — take the newer version
-        var localMod = new Date(localIds[cp.id].lastModified || 0).getTime();
-        var cloudMod = new Date(cp.lastModified || (cloudData.projects[cp.id] ? cloudData.projects[cp.id].lastModified : 0) || 0).getTime();
-        if (cloudMod > localMod && cloudData.projects[cp.id]) {
-          try { localStorage.setItem('bndr-project-' + cp.id, cloudData.projects[cp.id].dataJson); } catch(e) {}
-          localIds[cp.id].lastModified = cp.lastModified;
-          changed = true;
-        }
+      var pid = cloudIndex[ci].id;
+      cloudIds[pid] = true;
+      if (cloudData.projects[pid]) {
+        try { localStorage.setItem('bndr-project-' + pid, cloudData.projects[pid].dataJson); } catch(e) {}
       }
     }
 
-    // Push any local-only projects to cloud
-    var cloudIds = {};
-    for (var ci = 0; ci < cloudIndex.length; ci++) cloudIds[cloudIndex[ci].id] = true;
-    for (var li = 0; li < localIndex.length; li++) {
-      if (!cloudIds[localIndex[li].id]) {
-        var pid = localIndex[li].id;
+    // Remove local projects that no longer exist in cloud (they were deleted)
+    for (var k = 0; k < localStorage.length; k++) {
+      var key = localStorage.key(k);
+      if (key && key.indexOf('bndr-project-p') === 0) {
+        var localPid = key.replace('bndr-project-', '');
+        if (!cloudIds[localPid]) { localStorage.removeItem(key); k--; }
+      }
+    }
+
+    // Reload current project from updated localStorage
+    if (currentProjectId && cloudData.projects[currentProjectId]) {
+      var localRaw = localStorage.getItem('bndr-project-' + currentProjectId);
+      if (localRaw) {
         try {
-          var raw = localStorage.getItem('bndr-project-' + pid);
-          if (raw) cloudSaveProject(pid, JSON.parse(raw));
+          D = JSON.parse(localRaw);
+          ensureFields();
+          populateProjectFields();
+          renderBudget();
+          renderScope();
+          renderPayments();
         } catch(e) {}
       }
     }
-
-    if (changed) {
-      saveProjectIndex(localIndex);
-      // Reload current project if it was updated from cloud
-      if (currentProjectId && cloudData.projects[currentProjectId]) {
-        var localRaw = localStorage.getItem('bndr-project-' + currentProjectId);
-        if (localRaw) {
-          try {
-            D = JSON.parse(localRaw);
-            ensureFields();
-            populateProjectFields();
-            renderBudget();
-            renderScope();
-            renderPayments();
-            updateProjectSelector();
-          } catch(e) {}
-        }
-      }
-    }
-    cloudSaveIndex();
+    updateProjectSelector();
 
     // Pull portal payments for current project
     if (currentProjectId) {
       cloudFetchPayments(currentProjectId).then(function(cloudPayments) {
         var payChanged = importPortalPayments(cloudPayments);
-        if (payChanged) {
-          scheduleSave();
-          renderPayments();
-          renderBudget();
-        }
+        if (payChanged) { scheduleSave(); renderPayments(); renderBudget(); }
         setSyncDot('synced');
       }).catch(function() { setSyncDot('synced'); });
     } else {

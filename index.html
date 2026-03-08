@@ -736,22 +736,16 @@ var D = {
 function defaultCategories() {
   var cats = [
     { name:'Demo & Cleanup', items:['Interior demolition','Trash removal & hauling','Site cleanup','Dumpster'] },
-    { name:'Structural / Framing', items:['Framing repairs','Subfloor repair','Foundation work'] },
     { name:'Roofing', items:['Roof inspection & repair','New roof (if needed)'] },
-    { name:'Siding & Exterior', items:['Siding repair/replacement','Power washing','Wood rot repair'] },
-    { name:'Windows & Doors', items:['Window replacement','Door replacement','Door hardware & locks'] },
     { name:'Plumbing', items:['Rough-in plumbing','Fixture installation','Water heater','Sewer & drain work'] },
     { name:'Electrical', items:['Rough-in electrical','Panel upgrade','Fixtures, outlets & switches','Smoke & CO detectors'] },
     { name:'HVAC', items:['HVAC inspection & repair','Ductwork','Thermostat'] },
     { name:'Drywall', items:['Drywall install & repair','Mud, tape & texture'] },
-    { name:'Paint', items:['Interior paint','Exterior paint'] },
+    { name:'Paint', items:['Interior paint','Exterior paint','MATERIALS'] },
     { name:'Flooring & Tile', items:['Flooring installation','Tile work'] },
     { name:'Kitchen', items:['Cabinets','Countertops','Backsplash','Appliances'] },
     { name:'Bathrooms', items:['Bathroom 1 remodel','Bathroom 2 remodel','Vanity & fixtures','Tile & shower'] },
-    { name:'Trim & Finish', items:['Trim installation','Baseboard','Crown molding'] },
-    { name:'Landscaping & Concrete', items:['Landscaping','Driveway / sidewalk','Fencing'] },
-    { name:'General Materials', items:['Lumber & framing materials','Hardware & fasteners','Adhesives, caulk & sealants','Miscellaneous materials'] },
-    { name:'General Labor & Oversight', items:['Project management','General labor','Supervision','Punch list & warranty work','Building permits','Inspection fees'] }
+    { name:'WINDOWS', items:[] }
   ];
   var result = [];
   for (var c = 0; c < cats.length; c++) {
@@ -762,6 +756,36 @@ function defaultCategories() {
     result.push(cat);
   }
   return result;
+}
+
+/* ── One-time migration: replicate FORM TEMPLATE categories to all projects ── */
+function migrateCategoriesToTemplate() {
+  if (localStorage.getItem('bndr-categories-migrated-v1')) return;
+  try {
+    var index = JSON.parse(localStorage.getItem('bndr-projects-index') || '[]');
+    if (!index.length) return;
+    // Find the FORM TEMPLATE project id so we can skip it
+    var templateId = null;
+    for (var t = 0; t < index.length; t++) {
+      if (index[t].name === 'FORM TEMPLATE') { templateId = index[t].id; break; }
+    }
+    for (var p = 0; p < index.length; p++) {
+      var pid = index[p].id;
+      if (pid === templateId) continue; // skip the template itself
+      var raw = localStorage.getItem('bndr-project-' + pid);
+      if (!raw) continue;
+      var proj = JSON.parse(raw);
+      // Generate fresh categories using temp counters
+      var savedCatId = D.nextCatId, savedItemId = D.nextItemId;
+      D.nextCatId = 1; D.nextItemId = 100;
+      proj.categories = defaultCategories();
+      proj.nextCatId = D.nextCatId;
+      proj.nextItemId = D.nextItemId;
+      D.nextCatId = savedCatId; D.nextItemId = savedItemId;
+      localStorage.setItem('bndr-project-' + pid, JSON.stringify(proj));
+    }
+    localStorage.setItem('bndr-categories-migrated-v1', '1');
+  } catch(e) { /* migration is best-effort */ }
 }
 
 /* ═══════════════════════════════════════════
@@ -4479,6 +4503,9 @@ if (typeof caches !== 'undefined') {
     }
     saveProjectIndex(idx);
   } catch(re2) {}
+
+  // One-time: replicate FORM TEMPLATE categories to all projects
+  migrateCategoriesToTemplate();
 
   var localIndex = getProjectIndex();
 

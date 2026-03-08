@@ -125,6 +125,8 @@
   <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-storage-compat.js"></script>
+  <!-- EmailJS SDK -->
+  <script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
 </head>
 <body>
 
@@ -237,6 +239,38 @@ auth.signInAnonymously().then(function() {
 }).catch(function(err) {
   console.error('[Firebase] Auth error:', err);
 });
+
+/* ═══════════════════════════════════════════
+   EMAILJS CONFIG
+   ═══════════════════════════════════════════ */
+var EMAILJS_PUBLIC_KEY = 'YOUR_PUBLIC_KEY';
+var EMAILJS_SERVICE_ID = 'YOUR_SERVICE_ID';
+var EMAILJS_TEMPLATE_ID = 'YOUR_TEMPLATE_ID';
+var EMAILJS_NOTIFY_TO = 'genebinder@bndrcapital.com';
+
+(function emailjsInit() {
+  if (typeof emailjs !== 'undefined' && EMAILJS_PUBLIC_KEY !== 'YOUR_PUBLIC_KEY') {
+    emailjs.init(EMAILJS_PUBLIC_KEY);
+    console.log('[EmailJS] Initialized');
+  }
+})();
+
+function sendPaymentEmail(payment) {
+  if (typeof emailjs === 'undefined' || EMAILJS_PUBLIC_KEY === 'YOUR_PUBLIC_KEY') return;
+  emailjs.send(EMAILJS_SERVICE_ID, EMAILJS_TEMPLATE_ID, {
+    to_email: EMAILJS_NOTIFY_TO,
+    project_name: payment.projectName || '',
+    amount: '$' + Number(payment.amount).toLocaleString('en-US', { minimumFractionDigits: 2 }),
+    contractor: payment.contractor || 'N/A',
+    category: payment.category || 'N/A',
+    date: payment.date || '',
+    description: payment.description || 'No description'
+  }).then(function() {
+    console.log('[EmailJS] Notification sent');
+  }).catch(function(err) {
+    console.error('[EmailJS] Send error:', err);
+  });
+}
 
 (function() {
   /* ── State ── */
@@ -555,6 +589,7 @@ auth.signInAnonymously().then(function() {
     db.collection('payments').add(paymentData)
     .then(function() {
       showToast('Payment saved successfully!', 'success');
+      sendPaymentEmail(paymentData);
       // Update local totals
       selectedProject.totalPaid = (selectedProject.totalPaid || 0) + amount;
       renderBudgetSummary();

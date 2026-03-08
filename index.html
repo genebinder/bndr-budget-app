@@ -4137,8 +4137,7 @@ function toggleAutoSync() {
 function updateAutoSyncBtn() {
   var btn = document.getElementById('auto-sync-btn');
   if (!btn) return;
-  var hasGas = !!getGasUrl();
-  btn.style.display = hasGas ? '' : 'none';
+  btn.style.display = fbReady ? '' : 'none';
   btn.style.opacity = autoSyncEnabled ? '1' : '.5';
   btn.style.background = autoSyncEnabled ? 'var(--green)' : 'none';
   btn.style.color = autoSyncEnabled ? '#fff' : 'var(--green)';
@@ -4476,9 +4475,6 @@ function doFullCloudPush() {
 /* ═══════════════════════════════════════════
    CLOUD SYNC — Firebase
    ═══════════════════════════════════════════ */
-/* GAS compatibility shims — always return true for Firebase */
-function getGasUrl() { return fbReady ? 'firebase' : ''; }
-function saveGasUrl() { /* no-op */ }
 
 function initSyncSettings() {
   updatePortalLink();

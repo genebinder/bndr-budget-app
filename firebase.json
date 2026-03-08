@@ -4,7 +4,6 @@
     "ignore": [
       "firebase.json",
       "**/.*",
-      "Code.gs",
       "node_modules/**"
     ],
     "rewrites": [],

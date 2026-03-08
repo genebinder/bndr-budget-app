@@ -473,6 +473,12 @@
     .pb-del { background: var(--red-light); color: var(--red-text); }
     .pb-del:active { background: #fde8e8; }
   </style>
+
+  <!-- Firebase SDK (compat for vanilla JS) -->
+  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-storage-compat.js"></script>
 </head>
 <body>
 
@@ -637,16 +643,13 @@
     </div>
   </div>
   <div class="card" id="cloud-sync-card">
-    <div class="card-title">Cloud Sync Settings</div>
-    <div class="fg">
-      <label>Google Apps Script URL</label>
-      <input type="text" id="gas-url" placeholder="https://script.google.com/macros/s/XXXX/exec">
-    </div>
-    <div style="font-size:.65rem;color:var(--muted);margin-bottom:8px;">
-      Paste your deployed Apps Script URL here, then click "Sync Projects" above.
+    <div class="card-title">Cloud Sync (Firebase)</div>
+    <div style="font-size:.72rem;color:var(--text);margin-bottom:8px;">
+      <span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:var(--green);margin-right:6px;vertical-align:middle;"></span>
+      Connected to Firebase — data syncs automatically every 2 seconds.
     </div>
     <div id="sync-status" style="font-size:.75rem;margin-top:8px;"></div>
-    <div id="portal-link-wrap" class="hidden" style="margin-top:10px;">
+    <div id="portal-link-wrap" style="margin-top:10px;">
       <div style="font-size:.65rem;color:var(--muted);margin-bottom:4px;">Payment Portal Link (share with your ops manager):</div>
       <div style="display:flex;gap:6px;">
         <input type="text" id="portal-link" readonly style="flex:1;font-size:.7rem;padding:8px;border:1.5px solid var(--border);border-radius:8px;background:#fafbfa;color:var(--text);font-family:inherit;">
@@ -715,6 +718,30 @@
 </nav>
 
 <script>
+/* ═══════════════════════════════════════════
+   FIREBASE INIT
+   ═══════════════════════════════════════════ */
+var firebaseConfig = {
+  apiKey: "AIzaSyDK5nAO8vUX2BTN2sdoFkARgqxRGNq3uXg",
+  authDomain: "bndr-budget.firebaseapp.com",
+  projectId: "bndr-budget",
+  storageBucket: "bndr-budget.firebasestorage.app",
+  messagingSenderId: "362898964688",
+  appId: "1:362898964688:web:2bbf36b8a1db445fb15ed5",
+  measurementId: "G-JDR24KVX03"
+};
+firebase.initializeApp(firebaseConfig);
+var db = firebase.firestore();
+var auth = firebase.auth();
+var fbReady = false;
+
+auth.signInAnonymously().then(function() {
+  fbReady = true;
+  console.log('[Firebase] Authenticated anonymously');
+}).catch(function(err) {
+  console.error('[Firebase] Auth error:', err);
+});
+
 /* ═══════════════════════════════════════════
    DATA MODEL & DEFAULTS
    ═══════════════════════════════════════════ */
@@ -1216,8 +1243,8 @@ function createNewProject() {
   saveProjectIndex(index);
   // Save to its own slot
   try { localStorage.setItem('bndr-project-' + id, JSON.stringify(D)); } catch(e) {}
-  // Push new project + index to cloud
-  if (getGasUrl()) { cloudSaveProject(id, D); cloudSaveIndex(); }
+  // Push new project + index to Firebase
+  if (fbReady) { cloudSaveProject(id, D); cloudSaveIndex(); }
   return id;
 }
 
@@ -1226,16 +1253,16 @@ function deleteProject(projectId) {
   index = index.filter(function(p) { return p.id !== projectId; });
   saveProjectIndex(index);
   try { localStorage.removeItem('bndr-project-' + projectId); } catch(e) {}
-  // Remove from cloud + sync updated index
-  if (getGasUrl()) { cloudDeleteProject(projectId); cloudSaveIndex(); }
+  // Remove from Firebase + sync updated index
+  if (fbReady) { cloudDeleteProject(projectId); cloudSaveIndex(); }
   return index;
 }
 
 function switchToProject(projectId) {
   // Save current first
   if (currentProjectId) { syncProjectFields(); try { localStorage.setItem('bndr-project-' + currentProjectId, JSON.stringify(D)); } catch(e) {} }
-  // Sync to cloud before switching
-  if (getGasUrl()) { clearTimeout(cloudSyncTimer); doAutoCloudSync(); }
+  // Sync to Firebase before switching
+  if (fbReady) { clearTimeout(cloudSyncTimer); doAutoCloudSync(); }
 
   // Try localStorage first (fast path)
   if (loadProject(projectId)) {
@@ -1248,8 +1275,8 @@ function switchToProject(projectId) {
     return true;
   }
 
-  // Cloud fallback (slow path)
-  if (getGasUrl()) {
+  // Firebase fallback (slow path)
+  if (fbReady) {
     setSyncDot('syncing');
     cloudLoadProject(projectId).then(function(projData) {
       if (projData && projData.project) {
@@ -4090,10 +4117,9 @@ function generateAppIcon() {
 }
 
 /* ═══════════════════════════════════════════
-   AUTO CLOUD SYNC ENGINE
+   AUTO CLOUD SYNC ENGINE (FIRESTORE)
    ═══════════════════════════════════════════ */
 var cloudSyncTimer = null;
-var lastSyncedHash = '';
 var lastFullSyncHash = '';
 var indexSyncTimer = null;
 var autoSyncEnabled = localStorage.getItem('bndr-auto-sync') !== 'off';
@@ -4120,14 +4146,14 @@ function updateAutoSyncBtn() {
 }
 
 function scheduleCloudSync() {
-  if (!getGasUrl() || !autoSyncEnabled) return;
+  if (!fbReady || !autoSyncEnabled) return;
   clearTimeout(cloudSyncTimer);
   cloudSyncTimer = setTimeout(doAutoCloudSync, 2000);
   setSyncDot('syncing');
 }
 
 function scheduleIndexSync() {
-  if (!getGasUrl() || !autoSyncEnabled) return;
+  if (!fbReady || !autoSyncEnabled) return;
   clearTimeout(indexSyncTimer);
   indexSyncTimer = setTimeout(function() { cloudSaveIndex(); }, 15000);
 }
@@ -4139,29 +4165,12 @@ function simpleHash(str) {
 }
 
 function doAutoCloudSync() {
-  var gasUrl = getGasUrl();
-  if (!gasUrl || !currentProjectId) return;
+  if (!fbReady || !currentProjectId) return;
 
   syncProjectFields();
   var promises = [];
 
-  // 1. Summary sync for payment portal (existing Projects sheet)
-  var payload = buildSyncPayload();
-  var hash = JSON.stringify(payload);
-  if (hash !== lastSyncedHash) {
-    promises.push(
-      fetch(gasUrl, {
-        method: 'POST',
-        headers: { 'Content-Type': 'text/plain' },
-        body: JSON.stringify({ action: 'sync', projects: payload })
-      })
-      .then(function(r) { return r.json(); })
-      .then(function(data) { if (data.success) lastSyncedHash = hash; return data.success; })
-      .catch(function() { return false; })
-    );
-  }
-
-  // 2. Full project data sync (ProjectData sheet)
+  // 1. Save project data to Firestore
   var fullJson = JSON.stringify(D);
   var fullHash = currentProjectId + '-' + fullJson.length + '-' + simpleHash(fullJson);
   if (fullHash !== lastFullSyncHash) {
@@ -4173,7 +4182,7 @@ function doAutoCloudSync() {
     );
   }
 
-  // 3. Pull portal payments from cloud
+  // 2. Pull portal payments from Firestore
   promises.push(
     cloudFetchPayments(currentProjectId).then(function(cloudPayments) {
       var changed = importPortalPayments(cloudPayments);
@@ -4193,95 +4202,51 @@ function doAutoCloudSync() {
   });
 }
 
-function buildSyncPayload() {
-  var index = getProjectIndex();
-  var out = [];
-  for (var i = 0; i < index.length; i++) {
-    var pid = index[i].id;
-    var projData;
-    if (pid === currentProjectId) { projData = D; }
-    else { try { var raw = localStorage.getItem('bndr-project-' + pid); projData = raw ? JSON.parse(raw) : null; } catch(e) { continue; } }
-    if (!projData || !projData.project) continue;
-    var contractors = [], seenCon = {};
-    for (var c = 0; c < projData.categories.length; c++) {
-      var cat = projData.categories[c];
-      var cName = (cat.contractor || '').trim();
-      if (cName && !seenCon[cName.toLowerCase()]) { contractors.push(cName); seenCon[cName.toLowerCase()] = true; }
-      for (var ci = 0; ci < cat.items.length; ci++) {
-        var iName = (cat.items[ci].contractor || '').trim();
-        if (iName && !seenCon[iName.toLowerCase()]) { contractors.push(iName); seenCon[iName.toLowerCase()] = true; }
-      }
-    }
-    for (var pi = 0; pi < (projData.payments || []).length; pi++) {
-      var pCon = (projData.payments[pi].contractor || '').trim();
-      if (pCon && !seenCon[pCon.toLowerCase()]) { contractors.push(pCon); seenCon[pCon.toLowerCase()] = true; }
-    }
-    var cats = [], totalEst = 0;
-    for (var c = 0; c < projData.categories.length; c++) {
-      var cat = projData.categories[c];
-      var catEst = cat.totalEstimate || 0;
-      if (!catEst) { for (var ci = 0; ci < cat.items.length; ci++) catEst += (cat.items[ci].estimated || 0); }
-      cats.push({ name: cat.name, estimated: catEst, contractor: cat.contractor || '' });
-      totalEst += catEst;
-    }
-    out.push({ id: pid, name: projData.project.address || 'Untitled Project', categories: cats, contractors: contractors, totalEstimated: totalEst });
-  }
-  return out;
-}
+/* buildSyncPayload removed — portal reads directly from Firestore */
 
 function setSyncDot(state) {
   var dot = document.getElementById('sync-dot');
   if (!dot) return;
-  var hasGas = !!getGasUrl();
-  dot.style.display = hasGas ? '' : 'none';
+  dot.style.display = '';
   dot.className = 'sync-dot ' + state;
   var titles = { synced:'Cloud synced', syncing:'Syncing...', error:'Sync error — tap SYNC to retry', loading:'Loading from cloud...' };
   dot.title = titles[state] || 'Cloud sync idle';
   var syncBtn = document.getElementById('sync-now-btn');
   if (syncBtn) {
-    syncBtn.style.display = hasGas ? '' : 'none';
+    syncBtn.style.display = '';
     syncBtn.disabled = (state === 'syncing' || state === 'loading');
     syncBtn.textContent = (state === 'syncing' || state === 'loading') ? 'SYNCING...' : 'SYNC';
   }
   updateAutoSyncBtn();
 }
 
-/* ── Manual Sync Now — full push + pull ── */
+/* ── Manual Sync Now — full push + pull (Firestore) ── */
 function manualSyncNow() {
-  if (!getGasUrl() || !currentProjectId) return;
+  if (!fbReady || !currentProjectId) return;
   setSyncDot('syncing');
 
   // 1. Save current project locally first
   syncProjectFields();
   try { localStorage.setItem('bndr-project-' + currentProjectId, JSON.stringify(D)); } catch(e) {}
 
-  // 2. Push current project + index to cloud
+  // 2. Push current project + index to Firestore
   var pushPromises = [
     cloudSaveProject(currentProjectId, D),
     cloudSaveIndex()
   ];
 
-  // Also push summary for portal
-  var summaryPayload = buildSyncPayload();
-  var gasUrl = getGasUrl();
-  pushPromises.push(
-    fetch(gasUrl, { method:'POST', headers:{'Content-Type':'text/plain'}, body:JSON.stringify({action:'sync',projects:summaryPayload}) })
-    .then(function(r){return r.json();}).then(function(d){if(d.success)lastSyncedHash=JSON.stringify(summaryPayload);return d.success;}).catch(function(){return false;})
-  );
-
   Promise.all(pushPromises).then(function() {
-    // 3. Now pull everything fresh from cloud
+    // 3. Pull everything fresh from Firestore
     return cloudLoadAll();
   }).then(function(cloudData) {
     if (!cloudData || !cloudData.index) { setSyncDot('error'); return; }
 
-    // Replace local index with cloud index (cloud is truth after push)
+    // Replace local index with cloud index
     saveProjectIndex(cloudData.index);
 
     // Update all local project data from cloud
     for (var pid in cloudData.projects) {
-      if (pid === '__INDEX__') continue;
-      try { localStorage.setItem('bndr-project-' + pid, cloudData.projects[pid].dataJson); } catch(e) {}
+      try { localStorage.setItem('bndr-project-' + pid, JSON.stringify(cloudData.projects[pid])); } catch(e) {}
     }
 
     // Remove local projects that no longer exist in cloud
@@ -4317,7 +4282,7 @@ function manualSyncNow() {
 
 // Sync when user leaves the tab or closes
 document.addEventListener('visibilitychange', function() {
-  if (document.visibilityState === 'hidden' && getGasUrl() && currentProjectId && autoSyncEnabled) {
+  if (document.visibilityState === 'hidden' && fbReady && currentProjectId && autoSyncEnabled) {
     clearTimeout(cloudSyncTimer);
     clearTimeout(indexSyncTimer);
     doAutoCloudSync();
@@ -4326,76 +4291,66 @@ document.addEventListener('visibilitychange', function() {
 });
 
 /* ═══════════════════════════════════════════
-   FULL CLOUD DATA FUNCTIONS
+   FIRESTORE CLOUD DATA FUNCTIONS
    ═══════════════════════════════════════════ */
 function cloudSaveProject(id, dObj) {
-  var gasUrl = getGasUrl();
-  if (!gasUrl || !id) return Promise.resolve(false);
-  return fetch(gasUrl, {
-    method: 'POST',
-    headers: { 'Content-Type': 'text/plain' },
-    body: JSON.stringify({ action: 'syncFull', projectId: id, dataJson: JSON.stringify(dObj), lastModified: new Date().toISOString() })
-  })
-  .then(function(r) { return r.json(); })
-  .then(function(data) { return data.success; })
-  .catch(function() { return false; });
+  if (!fbReady || !id) return Promise.resolve(false);
+  return db.collection('projects').doc(id).set({
+    data: JSON.stringify(dObj),
+    lastModified: new Date().toISOString()
+  }).then(function() { return true; })
+  .catch(function(err) { console.error('[Firestore] Save project error:', err); return false; });
 }
 
 function cloudSaveIndex() {
-  var gasUrl = getGasUrl();
-  if (!gasUrl) return Promise.resolve(false);
-  return fetch(gasUrl, {
-    method: 'POST',
-    headers: { 'Content-Type': 'text/plain' },
-    body: JSON.stringify({ action: 'syncIndex', index: getProjectIndex() })
-  })
-  .then(function(r) { return r.json(); })
-  .then(function(data) { return data.success; })
-  .catch(function() { return false; });
+  if (!fbReady) return Promise.resolve(false);
+  return db.collection('meta').doc('projectIndex').set({
+    index: JSON.stringify(getProjectIndex())
+  }).then(function() { return true; })
+  .catch(function(err) { console.error('[Firestore] Save index error:', err); return false; });
 }
 
 function cloudLoadAll() {
-  var gasUrl = getGasUrl();
-  if (!gasUrl) return Promise.resolve(null);
-  return fetch(gasUrl + '?action=loadAll')
-    .then(function(r) { return r.json(); })
-    .then(function(data) { return data.success ? data : null; })
-    .catch(function() { return null; });
+  if (!fbReady) return Promise.resolve(null);
+  var result = { index: [], projects: {} };
+  return db.collection('meta').doc('projectIndex').get().then(function(doc) {
+    if (doc.exists && doc.data().index) {
+      try { result.index = JSON.parse(doc.data().index); } catch(e) { result.index = []; }
+    }
+    return db.collection('projects').get();
+  }).then(function(snapshot) {
+    snapshot.forEach(function(doc) {
+      try { result.projects[doc.id] = JSON.parse(doc.data().data); } catch(e) {}
+    });
+    return result;
+  }).catch(function(err) { console.error('[Firestore] Load all error:', err); return null; });
 }
 
 function cloudLoadProject(projectId) {
-  var gasUrl = getGasUrl();
-  if (!gasUrl) return Promise.resolve(null);
-  return fetch(gasUrl + '?action=loadProject&id=' + encodeURIComponent(projectId))
-    .then(function(r) { return r.json(); })
-    .then(function(data) {
-      if (!data.success || !data.dataJson) return null;
-      try { return JSON.parse(data.dataJson); } catch(e) { return null; }
-    })
-    .catch(function() { return null; });
+  if (!fbReady) return Promise.resolve(null);
+  return db.collection('projects').doc(projectId).get().then(function(doc) {
+    if (!doc.exists) return null;
+    try { return JSON.parse(doc.data().data); } catch(e) { return null; }
+  }).catch(function(err) { console.error('[Firestore] Load project error:', err); return null; });
 }
 
 function cloudDeleteProject(projectId) {
-  var gasUrl = getGasUrl();
-  if (!gasUrl) return Promise.resolve(false);
-  return fetch(gasUrl, {
-    method: 'POST',
-    headers: { 'Content-Type': 'text/plain' },
-    body: JSON.stringify({ action: 'deleteProject', projectId: projectId })
-  })
-  .then(function(r) { return r.json(); })
-  .then(function(data) { return data.success; })
-  .catch(function() { return false; });
+  if (!fbReady) return Promise.resolve(false);
+  return db.collection('projects').doc(projectId).delete()
+    .then(function() { return true; })
+    .catch(function(err) { console.error('[Firestore] Delete project error:', err); return false; });
 }
 
-/* ── Fetch portal payments from cloud for a project ── */
+/* ── Fetch portal payments from Firestore ── */
 function cloudFetchPayments(projectId) {
-  var gasUrl = getGasUrl();
-  if (!gasUrl || !projectId) return Promise.resolve([]);
-  return fetch(gasUrl + '?action=getPayments&id=' + encodeURIComponent(projectId))
-    .then(function(r) { return r.json(); })
-    .then(function(data) { return data.success ? (data.payments || []) : []; })
-    .catch(function() { return []; });
+  if (!fbReady || !projectId) return Promise.resolve([]);
+  return db.collection('payments').where('projectId', '==', projectId).get()
+    .then(function(snapshot) {
+      var payments = [];
+      snapshot.forEach(function(doc) { payments.push(doc.data()); });
+      return payments;
+    })
+    .catch(function(err) { console.error('[Firestore] Fetch payments error:', err); return []; });
 }
 
 /* ── Import portal payments into D.payments ── */
@@ -4434,9 +4389,10 @@ function importPortalPayments(cloudPayments) {
 }
 
 function backgroundCloudRefresh() {
+  if (!fbReady) return;
   setSyncDot('syncing');
 
-  // First push current state to cloud so cloud has the latest
+  // First push current state to Firestore
   var pushFirst = [];
   if (currentProjectId) {
     syncProjectFields();
@@ -4445,7 +4401,7 @@ function backgroundCloudRefresh() {
   pushFirst.push(cloudSaveIndex());
 
   Promise.all(pushFirst).then(function() {
-    // Now pull from cloud — cloud is the source of truth
+    // Pull from Firestore — cloud is the source of truth
     return cloudLoadAll();
   }).then(function(cloudData) {
     if (!cloudData || !cloudData.index || cloudData.index.length === 0) {
@@ -4464,11 +4420,11 @@ function backgroundCloudRefresh() {
       var pid = cloudIndex[ci].id;
       cloudIds[pid] = true;
       if (cloudData.projects[pid]) {
-        try { localStorage.setItem('bndr-project-' + pid, cloudData.projects[pid].dataJson); } catch(e) {}
+        try { localStorage.setItem('bndr-project-' + pid, JSON.stringify(cloudData.projects[pid])); } catch(e) {}
       }
     }
 
-    // Remove local projects that no longer exist in cloud (they were deleted)
+    // Remove local projects that no longer exist in cloud
     for (var k = 0; k < localStorage.length; k++) {
       var key = localStorage.key(k);
       if (key && key.indexOf('bndr-project-p') === 0) {
@@ -4479,17 +4435,12 @@ function backgroundCloudRefresh() {
 
     // Reload current project from updated localStorage
     if (currentProjectId && cloudData.projects[currentProjectId]) {
-      var localRaw = localStorage.getItem('bndr-project-' + currentProjectId);
-      if (localRaw) {
-        try {
-          D = JSON.parse(localRaw);
-          ensureFields();
-          populateProjectFields();
-          renderBudget();
-          renderScope();
-          renderPayments();
-        } catch(e) {}
-      }
+      D = cloudData.projects[currentProjectId];
+      ensureFields();
+      populateProjectFields();
+      renderBudget();
+      renderScope();
+      renderPayments();
     }
     updateProjectSelector();
 
@@ -4517,49 +4468,29 @@ function doFullCloudPush() {
     if (projData && projData.project) promises.push(cloudSaveProject(pid, projData));
   }
   promises.push(cloudSaveIndex());
-  // Also push summary for portal
-  var summaryPayload = buildSyncPayload();
-  var gasUrl = getGasUrl();
-  if (gasUrl) {
-    promises.push(
-      fetch(gasUrl, { method:'POST', headers:{'Content-Type':'text/plain'}, body:JSON.stringify({action:'sync',projects:summaryPayload}) })
-      .then(function(r){return r.json();}).then(function(d){if(d.success)lastSyncedHash=JSON.stringify(summaryPayload);return d.success;}).catch(function(){return false;})
-    );
-  }
   Promise.all(promises).then(function(results) {
     setSyncDot(results.every(function(r){return r;}) ? 'synced' : 'error');
   });
 }
 
 /* ═══════════════════════════════════════════
-   CLOUD SYNC — Google Apps Script
+   CLOUD SYNC — Firebase
    ═══════════════════════════════════════════ */
-function getGasUrl() { return localStorage.getItem('bndr-gas-url') || ''; }
-function saveGasUrl(url) { localStorage.setItem('bndr-gas-url', url); }
+/* GAS compatibility shims — always return true for Firebase */
+function getGasUrl() { return fbReady ? 'firebase' : ''; }
+function saveGasUrl() { /* no-op */ }
 
 function initSyncSettings() {
-  var urlInput = document.getElementById('gas-url');
-  if (urlInput) urlInput.value = getGasUrl();
   updatePortalLink();
 }
 
 function updatePortalLink() {
-  var gasUrl = getGasUrl();
   var wrap = document.getElementById('portal-link-wrap');
   var linkInput = document.getElementById('portal-link');
-  if (gasUrl) {
-    var portalUrl = window.location.origin + window.location.pathname.replace('index.html', '') + 'pay.html?api=' + encodeURIComponent(gasUrl);
-    linkInput.value = portalUrl;
-    wrap.classList.remove('hidden');
-  } else {
-    wrap.classList.add('hidden');
-  }
+  var portalUrl = window.location.origin + window.location.pathname.replace('index.html', '') + 'pay.html';
+  linkInput.value = portalUrl;
+  wrap.classList.remove('hidden');
 }
-
-document.getElementById('gas-url').addEventListener('blur', function() {
-  saveGasUrl(this.value.trim());
-  updatePortalLink();
-});
 
 document.getElementById('btn-copy-portal').addEventListener('click', function() {
   var linkInput = document.getElementById('portal-link');
@@ -4573,43 +4504,33 @@ document.getElementById('btn-copy-portal').addEventListener('click', function() 
 });
 
 document.getElementById('btnSyncCloud').addEventListener('click', function() {
-  var gasUrl = getGasUrl();
-  if (!gasUrl) {
-    alert('Set the Google Apps Script URL first (scroll down to Cloud Sync Settings on this tab).');
+  if (!fbReady) {
+    alert('Firebase is not connected. Please wait for authentication.');
     return;
   }
 
   var statusEl = document.getElementById('sync-status');
-  statusEl.innerHTML = '<span style="color:var(--green);">Syncing all projects (full data)...</span>';
+  statusEl.innerHTML = '<span style="color:var(--green);">Syncing all projects to Firebase...</span>';
   setSyncDot('syncing');
 
   syncProjectFields();
   try { localStorage.setItem('bndr-project-' + currentProjectId, JSON.stringify(D)); } catch(e) {}
 
-  // Build summary payload for payment portal
-  var summaryPayload = buildSyncPayload();
-  var summaryPromise = fetch(gasUrl, {
-    method: 'POST',
-    headers: { 'Content-Type': 'text/plain' },
-    body: JSON.stringify({ action: 'sync', projects: summaryPayload })
-  }).then(function(r) { return r.json(); }).then(function(d) { if (d.success) lastSyncedHash = JSON.stringify(summaryPayload); return d.success; }).catch(function() { return false; });
-
-  // Full data push for all projects
   var index = getProjectIndex();
-  var fullPromises = [summaryPromise];
+  var promises = [];
   for (var i = 0; i < index.length; i++) {
     var pid = index[i].id;
     var projData;
     if (pid === currentProjectId) { projData = D; }
     else { try { var raw = localStorage.getItem('bndr-project-' + pid); projData = raw ? JSON.parse(raw) : null; } catch(e) { continue; } }
-    if (projData && projData.project) fullPromises.push(cloudSaveProject(pid, projData));
+    if (projData && projData.project) promises.push(cloudSaveProject(pid, projData));
   }
-  fullPromises.push(cloudSaveIndex());
+  promises.push(cloudSaveIndex());
 
-  Promise.all(fullPromises).then(function(results) {
-    var allOk = results.every(function(r) { return r === true || (r && r.success); });
+  Promise.all(promises).then(function(results) {
+    var allOk = results.every(function(r) { return r === true; });
     if (allOk) {
-      statusEl.innerHTML = '<span style="color:var(--green);">&#10003; Fully synced ' + index.length + ' project(s) at ' + new Date().toLocaleTimeString() + '</span>';
+      statusEl.innerHTML = '<span style="color:var(--green);">&#10003; Synced ' + index.length + ' project(s) to Firebase at ' + new Date().toLocaleTimeString() + '</span>';
       setSyncDot('synced');
     } else {
       statusEl.innerHTML = '<span style="color:var(--red);">Some projects failed to sync. Try again.</span>';
@@ -4642,11 +4563,6 @@ if (typeof caches !== 'undefined') {
 // INIT
 (function() {
   generateAppIcon();
-
-  // Check for GAS URL in query params (for new browser setup)
-  var urlParams = new URLSearchParams(window.location.search);
-  var gasParam = urlParams.get('gas');
-  if (gasParam && !getGasUrl()) { saveGasUrl(gasParam); }
 
   // Check for old single-project data and migrate
   var migratedId = migrateOldData();
@@ -4688,67 +4604,96 @@ if (typeof caches !== 'undefined') {
     updateProjectSelector();
     renderBudget();
 
-    // Background refresh from cloud after 2s (only if auto-sync is on)
-    if (getGasUrl() && autoSyncEnabled) { setTimeout(backgroundCloudRefresh, 2000); }
+    // Background refresh from Firebase after 2s (only if auto-sync is on)
+    if (autoSyncEnabled) {
+      setTimeout(function() {
+        if (fbReady) backgroundCloudRefresh();
+        else auth.onAuthStateChanged(function(user) { if (user) { fbReady = true; backgroundCloudRefresh(); } });
+      }, 2000);
+    }
 
-  } else if (getGasUrl()) {
-    // === CLOUD PATH: localStorage empty but GAS URL is set — fetch from cloud ===
+  } else {
+    // === CLOUD/FRESH PATH: localStorage empty — try Firebase first ===
     document.body.insertAdjacentHTML('afterbegin',
       '<div id="cloud-loading-overlay" style="position:fixed;inset:0;background:rgba(255,255,255,.95);z-index:9999;display:flex;align-items:center;justify-content:center;flex-direction:column;">' +
-      '<div style="font-size:1.1rem;color:#6B7A59;font-weight:600;margin-bottom:12px;">Loading from cloud...</div>' +
+      '<div style="font-size:1.1rem;color:#6B7A59;font-weight:600;margin-bottom:12px;">Loading from Firebase...</div>' +
       '<div style="width:28px;height:28px;border:3px solid #e0e0e0;border-top-color:#6B7A59;border-radius:50%;animation:spin .6s linear infinite;"></div>' +
       '<style>@keyframes spin{to{transform:rotate(360deg)}}</style></div>'
     );
 
-    cloudLoadAll().then(function(cloudData) {
-      var overlay = document.getElementById('cloud-loading-overlay');
-      if (overlay) overlay.remove();
+    // Wait for Firebase auth, then load
+    function loadFromFirebase() {
+      cloudLoadAll().then(function(cloudData) {
+        var overlay = document.getElementById('cloud-loading-overlay');
+        if (overlay) overlay.remove();
 
-      if (cloudData && cloudData.index && cloudData.index.length > 0) {
-        // Populate localStorage from cloud
-        saveProjectIndex(cloudData.index);
-        for (var pid in cloudData.projects) {
-          if (pid === '__INDEX__') continue;
-          try { localStorage.setItem('bndr-project-' + pid, cloudData.projects[pid].dataJson); } catch(e) {}
+        if (cloudData && cloudData.index && cloudData.index.length > 0) {
+          saveProjectIndex(cloudData.index);
+          for (var pid in cloudData.projects) {
+            try { localStorage.setItem('bndr-project-' + pid, JSON.stringify(cloudData.projects[pid])); } catch(e) {}
+          }
+          loadProject(cloudData.index[0].id);
+          loadImportQueue();
+          ensureFields();
+          populateProjectFields();
+          updateProjectSelector();
+          renderBudget();
+          renderScope();
+          renderPayments();
+          setSyncDot('synced');
+        } else {
+          if (migratedId) { loadProject(migratedId); }
+          else { createNewProject(); }
+          loadImportQueue();
+          ensureFields();
+          populateProjectFields();
+          updateProjectSelector();
+          renderBudget();
         }
-        loadProject(cloudData.index[0].id);
+      }).catch(function() {
+        var overlay = document.getElementById('cloud-loading-overlay');
+        if (overlay) overlay.remove();
+        if (migratedId) { loadProject(migratedId); }
+        else { createNewProject(); }
         loadImportQueue();
         ensureFields();
         populateProjectFields();
         updateProjectSelector();
         renderBudget();
-        renderScope();
-        renderPayments();
-        setSyncDot('synced');
-      } else {
-        // No cloud data either — create fresh project
-        createNewProject();
-        loadImportQueue();
-        ensureFields();
-        populateProjectFields();
-        updateProjectSelector();
-        renderBudget();
-      }
-    }).catch(function() {
-      var overlay = document.getElementById('cloud-loading-overlay');
-      if (overlay) overlay.remove();
-      createNewProject();
-      loadImportQueue();
-      ensureFields();
-      populateProjectFields();
-      updateProjectSelector();
-      renderBudget();
-    });
+      });
+    }
 
-  } else {
-    // === FRESH PATH: No local data, no GAS URL ===
-    if (migratedId) { loadProject(migratedId); }
-    else { createNewProject(); }
-    loadImportQueue();
-    ensureFields();
-    populateProjectFields();
-    updateProjectSelector();
-    renderBudget();
+    if (fbReady) { loadFromFirebase(); }
+    else {
+      auth.onAuthStateChanged(function(user) {
+        if (user) { fbReady = true; loadFromFirebase(); }
+        else {
+          var overlay = document.getElementById('cloud-loading-overlay');
+          if (overlay) overlay.remove();
+          if (migratedId) { loadProject(migratedId); }
+          else { createNewProject(); }
+          loadImportQueue();
+          ensureFields();
+          populateProjectFields();
+          updateProjectSelector();
+          renderBudget();
+        }
+      });
+      // Timeout fallback in case auth takes too long
+      setTimeout(function() {
+        var overlay = document.getElementById('cloud-loading-overlay');
+        if (overlay) {
+          overlay.remove();
+          if (migratedId) { loadProject(migratedId); }
+          else { createNewProject(); }
+          loadImportQueue();
+          ensureFields();
+          populateProjectFields();
+          updateProjectSelector();
+          renderBudget();
+        }
+      }, 5000);
+    }
   }
 })();
 </script>

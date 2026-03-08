@@ -119,6 +119,12 @@
     @keyframes spin { to { transform: rotate(360deg); } }
     .company-info { text-align: center; padding: 16px; font-size: .65rem; color: var(--light-text); line-height: 1.5; }
   </style>
+
+  <!-- Firebase SDK (compat for vanilla JS) -->
+  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-storage-compat.js"></script>
 </head>
 <body>
 
@@ -200,13 +206,7 @@
 
   </div>
 
-  <div id="no-api" class="card hidden" style="text-align:center;">
-    <div class="card-title" style="color:var(--red);">Configuration Required</div>
-    <p style="font-size:.82rem;color:var(--muted);line-height:1.5;">
-      This portal requires a valid API link.<br>
-      Contact the project owner for the correct URL.
-    </p>
-  </div>
+  <!-- no-api div removed — Firebase is always available -->
 
   <div class="company-info">
     BNDR Capital<br>
@@ -217,18 +217,28 @@
 </div>
 
 <script>
+/* ═══════════════════════════════════════════
+   FIREBASE INIT
+   ═══════════════════════════════════════════ */
+var firebaseConfig = {
+  apiKey: "AIzaSyDK5nAO8vUX2BTN2sdoFkARgqxRGNq3uXg",
+  authDomain: "bndr-budget.firebaseapp.com",
+  projectId: "bndr-budget",
+  storageBucket: "bndr-budget.firebasestorage.app",
+  messagingSenderId: "362898964688",
+  appId: "1:362898964688:web:2bbf36b8a1db445fb15ed5",
+  measurementId: "G-JDR24KVX03"
+};
+firebase.initializeApp(firebaseConfig);
+var db = firebase.firestore();
+var auth = firebase.auth();
+auth.signInAnonymously().then(function() {
+  console.log('[Firebase] Portal authenticated');
+}).catch(function(err) {
+  console.error('[Firebase] Auth error:', err);
+});
+
 (function() {
-  /* ── Config ── */
-  var API_URL = '';
-  var params = new URLSearchParams(window.location.search);
-  API_URL = params.get('api') || '';
-
-  if (!API_URL) {
-    document.getElementById('loading').classList.add('hidden');
-    document.getElementById('no-api').classList.remove('hidden');
-    return;
-  }
-
   /* ── State ── */
   var projects = [];
   var selectedProject = null;
@@ -330,23 +340,91 @@
 
   document.getElementById('receipt-remove').addEventListener('click', function() { clearReceiptPreview(); });
 
-  /* ── Load Projects ── */
+  /* ── Load Projects from Firestore ── */
   function loadProjects() {
-    fetch(API_URL + '?action=projects')
-      .then(function(r) { return r.json(); })
-      .then(function(data) {
-        if (!data.success || !data.projects) {
-          throw new Error(data.error || 'Failed to load projects');
+    // Wait for Firebase auth
+    function doLoad() {
+      // Read project index from Firestore
+      db.collection('meta').doc('projectIndex').get().then(function(indexDoc) {
+        var index = [];
+        if (indexDoc.exists && indexDoc.data().index) {
+          try { index = JSON.parse(indexDoc.data().index); } catch(e) {}
         }
-        projects = data.projects;
-        document.getElementById('loading').classList.add('hidden');
-        document.getElementById('app').classList.remove('hidden');
-        populateProjectSelector();
-      })
-      .catch(function(err) {
+        if (index.length === 0) {
+          document.getElementById('loading').innerHTML =
+            '<span style="color:var(--muted);">No projects found.</span>';
+          return;
+        }
+        // Load each project to build the projects array for the portal
+        return db.collection('projects').get().then(function(snapshot) {
+          var projectMap = {};
+          snapshot.forEach(function(doc) {
+            try { projectMap[doc.id] = JSON.parse(doc.data().data); } catch(e) {}
+          });
+
+          projects = [];
+          for (var i = 0; i < index.length; i++) {
+            var pid = index[i].id;
+            var pData = projectMap[pid];
+            if (!pData || !pData.project) continue;
+
+            // Build contractors list
+            var contractors = [], seenCon = {};
+            for (var c = 0; c < (pData.categories || []).length; c++) {
+              var cat = pData.categories[c];
+              var cName = (cat.contractor || '').trim();
+              if (cName && !seenCon[cName.toLowerCase()]) { contractors.push(cName); seenCon[cName.toLowerCase()] = true; }
+              for (var ci = 0; ci < (cat.items || []).length; ci++) {
+                var iName = (cat.items[ci].contractor || '').trim();
+                if (iName && !seenCon[iName.toLowerCase()]) { contractors.push(iName); seenCon[iName.toLowerCase()] = true; }
+              }
+            }
+            for (var pi = 0; pi < (pData.payments || []).length; pi++) {
+              var pCon = (pData.payments[pi].contractor || '').trim();
+              if (pCon && !seenCon[pCon.toLowerCase()]) { contractors.push(pCon); seenCon[pCon.toLowerCase()] = true; }
+            }
+
+            // Build categories list and totals
+            var cats = [], totalEst = 0, totalPaid = 0;
+            for (var c = 0; c < (pData.categories || []).length; c++) {
+              var cat = pData.categories[c];
+              var catEst = cat.totalEstimate || 0;
+              if (!catEst) { for (var ci = 0; ci < (cat.items || []).length; ci++) catEst += (cat.items[ci].estimated || 0); }
+              cats.push({ name: cat.name, estimated: catEst, contractor: cat.contractor || '' });
+              totalEst += catEst;
+            }
+            for (var pi = 0; pi < (pData.payments || []).length; pi++) {
+              totalPaid += Number(pData.payments[pi].amount) || 0;
+            }
+
+            projects.push({
+              id: pid,
+              name: pData.project.address || 'Untitled Project',
+              categories: cats,
+              contractors: contractors,
+              totalEstimated: totalEst,
+              totalPaid: totalPaid
+            });
+          }
+
+          document.getElementById('loading').classList.add('hidden');
+          document.getElementById('app').classList.remove('hidden');
+          populateProjectSelector();
+        });
+      }).catch(function(err) {
         document.getElementById('loading').innerHTML =
           '<span style="color:var(--red);">Failed to load projects: ' + esc(err.message) + '</span>';
       });
+    }
+
+    // Wait for auth to be ready
+    auth.onAuthStateChanged(function(user) {
+      if (user) doLoad();
+      else {
+        document.getElementById('loading').innerHTML =
+          '<span style="color:var(--red);">Authentication failed. Please refresh.</span>';
+      }
+    });
   }
 
   function populateProjectSelector() {
@@ -456,8 +534,7 @@
     var category = document.getElementById('pf-category').value;
     if (category === '__other__') category = 'Other';
 
-    var payload = {
-      action: 'payment',
+    var paymentData = {
       projectId: selectedProject.id,
       projectName: selectedProject.name,
       date: document.getElementById('pf-date').value || todayStr(),
@@ -465,38 +542,31 @@
       contractor: contractor,
       category: category,
       description: document.getElementById('pf-desc').value || '',
-      receiptImage: receiptBase64 || ''
+      receiptImage: receiptBase64 || '',
+      timestamp: new Date().toISOString(),
+      source: 'portal'
     };
 
     var btn = document.getElementById('pf-save');
     btn.disabled = true;
     btn.textContent = receiptBase64 ? 'Uploading receipt...' : 'Submitting...';
 
-    fetch(API_URL, {
-      method: 'POST',
-      headers: { 'Content-Type': 'text/plain' },
-      body: JSON.stringify(payload)
-    })
-    .then(function(r) { return r.json(); })
-    .then(function(data) {
-      if (data.success) {
-        var msg = data.receiptUrl ? 'Payment + receipt saved! Notification sent.' : 'Payment saved! Notification sent.';
-        showToast(msg, 'success');
-        // Update local totals
-        selectedProject.totalPaid = (selectedProject.totalPaid || 0) + amount;
-        renderBudgetSummary();
-        // Reset form
-        document.getElementById('pf-amount').value = '';
-        document.getElementById('pf-contractor').value = '';
-        document.getElementById('pf-contractor-other').value = '';
-        document.getElementById('pf-contractor-other-wrap').classList.add('hidden');
-        document.getElementById('pf-category').value = '';
-        document.getElementById('pf-desc').value = '';
-        document.getElementById('pf-date').value = todayStr();
-        clearReceiptPreview();
-      } else {
-        showToast('Error: ' + (data.error || 'Unknown error'), 'error');
-      }
+    // Save payment to Firestore
+    db.collection('payments').add(paymentData)
+    .then(function() {
+      showToast('Payment saved successfully!', 'success');
+      // Update local totals
+      selectedProject.totalPaid = (selectedProject.totalPaid || 0) + amount;
+      renderBudgetSummary();
+      // Reset form
+      document.getElementById('pf-amount').value = '';
+      document.getElementById('pf-contractor').value = '';
+      document.getElementById('pf-contractor-other').value = '';
+      document.getElementById('pf-contractor-other-wrap').classList.add('hidden');
+      document.getElementById('pf-category').value = '';
+      document.getElementById('pf-desc').value = '';
+      document.getElementById('pf-date').value = todayStr();
+      clearReceiptPreview();
     })
     .catch(function(err) {
       showToast('Failed to submit: ' + err.message, 'error');

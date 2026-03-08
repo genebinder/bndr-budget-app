@@ -735,6 +735,8 @@ var D = {
 
 function defaultCategories() {
   var cats = [
+    { name:'GENERAL LABOR', items:[] },
+    { name:'MATERIALS', items:[] },
     { name:'Demo & Cleanup', items:['Interior demolition','Trash removal & hauling','Site cleanup','Dumpster'] },
     { name:'Roofing', items:['Roof inspection & repair','New roof (if needed)'] },
     { name:'Plumbing', items:['Rough-in plumbing','Fixture installation','Water heater','Sewer & drain work'] },
@@ -745,9 +747,7 @@ function defaultCategories() {
     { name:'Kitchen', items:['Cabinets','Countertops','Backsplash','Appliances'] },
     { name:'Bathrooms', items:['Bathroom 1 remodel','Bathroom 2 remodel','Vanity & fixtures','Tile & shower'] },
     { name:'WINDOWS', items:[] },
-    { name:'Framing and Drywall', items:['Framing','Drywall'] },
-    { name:'General Labor', items:[] },
-    { name:'Materials', items:[] }
+    { name:'Framing and Drywall', items:['Framing','Drywall'] }
   ];
   var result = [];
   for (var c = 0; c < cats.length; c++) {
@@ -762,7 +762,7 @@ function defaultCategories() {
 
 /* ── One-time migration: replicate FORM TEMPLATE categories to all projects ── */
 function migrateCategoriesToTemplate() {
-  if (localStorage.getItem('bndr-categories-migrated-v1')) return;
+  if (localStorage.getItem('bndr-categories-migrated-v2')) return;
   try {
     var index = JSON.parse(localStorage.getItem('bndr-projects-index') || '[]');
     if (!index.length) return;
@@ -786,7 +786,7 @@ function migrateCategoriesToTemplate() {
       D.nextCatId = savedCatId; D.nextItemId = savedItemId;
       localStorage.setItem('bndr-project-' + pid, JSON.stringify(proj));
     }
-    localStorage.setItem('bndr-categories-migrated-v1', '1');
+    localStorage.setItem('bndr-categories-migrated-v2', '1');
   } catch(e) { /* migration is best-effort */ }
 }
 

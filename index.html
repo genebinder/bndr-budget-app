@@ -43,7 +43,12 @@
     .app-header .hdr-logo { width: 140px; height: auto; flex-shrink: 0; }
     .app-header .hdr-title { font-size: .95rem; font-weight: 800; letter-spacing: 3px; color: var(--dark); }
     .app-header .hdr-sub { font-size: .6rem; color: var(--muted); letter-spacing: 1px; }
-    .hdr-right { margin-left: auto; display: flex; gap: 8px; }
+    .hdr-right { margin-left: auto; display: flex; gap: 8px; align-items: center; }
+    .sync-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--muted); opacity: .5; transition: all .3s; }
+    .sync-dot.syncing { background: var(--amber, #d97706); opacity: 1; animation: pulse .8s infinite alternate; }
+    .sync-dot.synced { background: var(--green); opacity: 1; }
+    .sync-dot.error { background: var(--red); opacity: 1; }
+    @keyframes pulse { from { opacity: .4; } to { opacity: 1; } }
     .hdr-btn {
       background: rgba(0,0,0,.06); border: none; color: var(--dark);
       border-radius: 8px; padding: 6px 10px; font-size: .7rem; font-weight: 600;
@@ -486,6 +491,7 @@
   <div>
     <div class="hdr-sub">FinMod</div>
   </div>
+  <div class="hdr-right"><div id="sync-dot" class="sync-dot" title="Cloud sync idle" style="display:none;"></div></div>
 </header>
 
 <!-- ══════ Project Selector ══════ -->
@@ -1143,6 +1149,7 @@ function saveState() {
     saveProjectIndex(index);
     updateProjectSelector();
   } catch(e) {}
+  scheduleCloudSync();
 }
 
 function loadProject(projectId) {
@@ -1188,6 +1195,8 @@ function deleteProject(projectId) {
 function switchToProject(projectId) {
   // Save current first
   if (currentProjectId) { syncProjectFields(); try { localStorage.setItem('bndr-project-' + currentProjectId, JSON.stringify(D)); } catch(e) {} }
+  // Sync to cloud before switching
+  if (getGasUrl()) { clearTimeout(cloudSyncTimer); doAutoCloudSync(); }
   if (!loadProject(projectId)) return false;
   ensureFields();
   populateProjectFields();
@@ -4011,6 +4020,93 @@ function generateAppIcon() {
 }
 
 /* ═══════════════════════════════════════════
+   AUTO CLOUD SYNC ENGINE
+   ═══════════════════════════════════════════ */
+var cloudSyncTimer = null;
+var lastSyncedHash = '';
+
+function scheduleCloudSync() {
+  if (!getGasUrl()) return;
+  clearTimeout(cloudSyncTimer);
+  cloudSyncTimer = setTimeout(doAutoCloudSync, 10000);
+  setSyncDot('syncing');
+}
+
+function doAutoCloudSync() {
+  var gasUrl = getGasUrl();
+  if (!gasUrl || !currentProjectId) return;
+
+  syncProjectFields();
+  var payload = buildSyncPayload();
+  var hash = JSON.stringify(payload);
+  if (hash === lastSyncedHash) { setSyncDot('synced'); return; }
+
+  fetch(gasUrl, {
+    method: 'POST',
+    headers: { 'Content-Type': 'text/plain' },
+    body: JSON.stringify({ action: 'sync', projects: payload })
+  })
+  .then(function(r) { return r.json(); })
+  .then(function(data) {
+    if (data.success) { lastSyncedHash = hash; setSyncDot('synced'); }
+    else { setSyncDot('error'); }
+  })
+  .catch(function() { setSyncDot('error'); });
+}
+
+function buildSyncPayload() {
+  var index = getProjectIndex();
+  var out = [];
+  for (var i = 0; i < index.length; i++) {
+    var pid = index[i].id;
+    var projData;
+    if (pid === currentProjectId) { projData = D; }
+    else { try { var raw = localStorage.getItem('bndr-project-' + pid); projData = raw ? JSON.parse(raw) : null; } catch(e) { continue; } }
+    if (!projData || !projData.project) continue;
+    var contractors = [], seenCon = {};
+    for (var c = 0; c < projData.categories.length; c++) {
+      var cat = projData.categories[c];
+      var cName = (cat.contractor || '').trim();
+      if (cName && !seenCon[cName.toLowerCase()]) { contractors.push(cName); seenCon[cName.toLowerCase()] = true; }
+      for (var ci = 0; ci < cat.items.length; ci++) {
+        var iName = (cat.items[ci].contractor || '').trim();
+        if (iName && !seenCon[iName.toLowerCase()]) { contractors.push(iName); seenCon[iName.toLowerCase()] = true; }
+      }
+    }
+    for (var pi = 0; pi < (projData.payments || []).length; pi++) {
+      var pCon = (projData.payments[pi].contractor || '').trim();
+      if (pCon && !seenCon[pCon.toLowerCase()]) { contractors.push(pCon); seenCon[pCon.toLowerCase()] = true; }
+    }
+    var cats = [], totalEst = 0;
+    for (var c = 0; c < projData.categories.length; c++) {
+      var cat = projData.categories[c];
+      var catEst = cat.totalEstimate || 0;
+      if (!catEst) { for (var ci = 0; ci < cat.items.length; ci++) catEst += (cat.items[ci].estimated || 0); }
+      cats.push({ name: cat.name, estimated: catEst, contractor: cat.contractor || '' });
+      totalEst += catEst;
+    }
+    out.push({ id: pid, name: projData.project.address || 'Untitled Project', categories: cats, contractors: contractors, totalEstimated: totalEst });
+  }
+  return out;
+}
+
+function setSyncDot(state) {
+  var dot = document.getElementById('sync-dot');
+  if (!dot) return;
+  dot.style.display = getGasUrl() ? '' : 'none';
+  dot.className = 'sync-dot ' + state;
+  dot.title = state === 'synced' ? 'Cloud synced' : state === 'syncing' ? 'Syncing...' : 'Sync error';
+}
+
+// Sync when user leaves the tab or closes
+document.addEventListener('visibilitychange', function() {
+  if (document.visibilityState === 'hidden' && getGasUrl() && currentProjectId) {
+    clearTimeout(cloudSyncTimer);
+    doAutoCloudSync();
+  }
+});
+
+/* ═══════════════════════════════════════════
    CLOUD SYNC — Google Apps Script
    ═══════════════════════════════════════════ */
 function getGasUrl() { return localStorage.getItem('bndr-gas-url') || ''; }
@@ -4195,6 +4291,9 @@ if (typeof caches !== 'undefined') {
   populateProjectFields();
   updateProjectSelector();
   renderBudget();
+
+  // Auto-sync to cloud on startup if configured
+  if (getGasUrl()) { setTimeout(doAutoCloudSync, 2000); }
 })();
 </script>
 </body>

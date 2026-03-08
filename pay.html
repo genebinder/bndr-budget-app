@@ -1,0 +1,391 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#ffffff">
+  <title>BNDR — Payment Portal</title>
+  <style>
+    :root {
+      --green: #6B7A59; --green-dark: #5a6a4a; --green-light: #e8ede4; --green-bg: #f4f6f2;
+      --dark: #2D2D2D; --text: #222; --muted: #888; --light-text: #aaa;
+      --border: #e0e0e0; --card: #fff; --bg: #f1f5f0;
+      --red: #dc2626; --red-light: #fef2f2; --red-text: #b91c1c;
+      --amber: #f59e0b; --amber-light: #fffbeb;
+      --radius: 12px;
+    }
+    * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+    body {
+      font-family: -apple-system, 'SF Pro Text', system-ui, sans-serif;
+      background: var(--bg); color: var(--text);
+      padding: 0; -webkit-font-smoothing: antialiased;
+    }
+    .portal-header {
+      background: #fff; color: var(--dark);
+      border-bottom: 1px solid var(--border);
+      padding: env(safe-area-inset-top, 0px) 16px 0;
+      height: calc(52px + env(safe-area-inset-top, 0px));
+      display: flex; align-items: center; gap: 10px;
+    }
+    .portal-header .hdr-logo { width: 120px; height: auto; flex-shrink: 0; }
+    .portal-header .hdr-sub { font-size: .6rem; color: var(--muted); letter-spacing: 1px; }
+    .container { padding: 12px; max-width: 500px; margin: 0 auto; }
+    .card {
+      background: var(--card); border-radius: var(--radius);
+      padding: 16px; margin-bottom: 10px;
+      box-shadow: 0 1px 3px rgba(0,0,0,.06);
+    }
+    .card-title {
+      font-size: .72rem; font-weight: 700; color: var(--green);
+      text-transform: uppercase; letter-spacing: 1px; margin-bottom: 10px;
+    }
+    .summary-card {
+      background: linear-gradient(135deg, var(--dark) 0%, #3a3a3a 100%);
+      color: #fff; border-radius: var(--radius); padding: 18px;
+      margin-bottom: 12px;
+    }
+    .summary-row { display: flex; justify-content: space-between; align-items: center; padding: 3px 0; }
+    .summary-label { font-size: .78rem; color: rgba(255,255,255,.7); }
+    .summary-value { font-size: .88rem; font-weight: 700; }
+    .summary-big { font-size: 1.1rem; font-weight: 900; }
+    .summary-divider { border-top: 1px solid rgba(255,255,255,.15); margin: 8px 0; }
+    .positive { color: #4ade80; }
+    .negative { color: #f87171; }
+    .progress-wrap { background: rgba(255,255,255,.15); border-radius: 6px; height: 8px; margin-top: 8px; overflow: hidden; }
+    .progress-fill { height: 100%; border-radius: 6px; transition: width .3s; background: var(--green); }
+    .fg { margin-bottom: 10px; }
+    .fg label { font-size: .72rem; font-weight: 600; color: var(--muted); display: block; margin-bottom: 3px; }
+    .fg input, .fg textarea, .fg select {
+      width: 100%; border: 1.5px solid var(--border); border-radius: 8px;
+      padding: 10px 12px; font-size: 16px; font-family: inherit;
+      color: var(--text); background: #fafbfa; outline: none;
+      -webkit-appearance: none; appearance: none;
+    }
+    .fg input:focus, .fg select:focus { border-color: var(--green); background: #fff; }
+    .row2 { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+    .markup-row { display: flex; gap: 4px; margin-top: 3px; }
+    .markup-btn {
+      border: none; background: var(--amber-light); color: #92400e;
+      font-size: .58rem; font-weight: 700; padding: 3px 7px;
+      border-radius: 5px; cursor: pointer; font-family: inherit;
+      white-space: nowrap; -webkit-appearance: none;
+    }
+    .markup-btn:active { background: #fde68a; }
+    .add-form { background: var(--green-bg); border-radius: var(--radius); padding: 16px; margin-bottom: 10px; }
+    .btn {
+      display: block; width: 100%; padding: 13px 16px; border: none;
+      border-radius: 10px; font-size: .85rem; font-weight: 700;
+      cursor: pointer; font-family: inherit; text-align: center;
+      -webkit-appearance: none;
+    }
+    .btn-green { background: var(--green); color: #fff; }
+    .btn-green:active { background: var(--green-dark); }
+    .btn-green:disabled { opacity: .5; cursor: not-allowed; }
+    .mt { margin-top: 10px; }
+    .hidden { display: none !important; }
+    .toast {
+      position: fixed; top: 0; left: 0; right: 0; padding: 14px 16px;
+      font-size: .82rem; font-weight: 600; text-align: center; z-index: 200;
+      transform: translateY(-100%); transition: transform .3s ease;
+    }
+    .toast.show { transform: translateY(0); }
+    .toast.success { background: #dcfce7; color: #166534; border-bottom: 1px solid #86efac; }
+    .toast.error { background: var(--red-light); color: var(--red-text); border-bottom: 1px solid #fca5a5; }
+    .loading { text-align: center; padding: 30px; color: var(--muted); font-size: .85rem; }
+    .spinner { display: inline-block; width: 20px; height: 20px; border: 2.5px solid var(--border); border-top-color: var(--green); border-radius: 50%; animation: spin .6s linear infinite; margin-right: 8px; vertical-align: middle; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .company-info { text-align: center; padding: 16px; font-size: .65rem; color: var(--light-text); line-height: 1.5; }
+  </style>
+</head>
+<body>
+
+<header class="portal-header">
+  <svg class="hdr-logo" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 292.77 77.05">
+    <g>
+      <g>
+        <path d="M41.15,0H.03l-.03,53.05v2.91h2.78l2.05-2.05,2.08-2.05,5.87-5.87V13.11h28.36c5.62,0,10.2,4.58,10.2,10.2,0,2.72-1.07,5.27-3,7.2l-.47.51-1.45,1.42-1.45,1.45-2.24,2.24,4.26,3.44c.22.13.41.28.85.54,1.45.92,2.84,1.8,4.17,2.78l1.42,1.07,2.24-2.24,1.45-1.45.51-.51c4.39-4.39,6.82-10.23,6.82-16.45,0-12.85-10.45-23.31-23.3-23.31Z"/>
+        <polygon points="34.89 18.03 12.79 40.17 10.74 42.22 8.65 44.3 4.1 48.85 2.05 50.9 .6 52.36 0 53.05 0 55.96 15.5 55.96 34.89 36.57 53.08 54.76 53.08 63.95 .76 63.95 .76 77.05 66.19 77.05 66.19 49.33 34.89 18.03"/>
+      </g>
+      <path d="M142.9,76.91h-15.23l-34.5-52.13v52.13h-15.24V.83h15.24l34.5,52.24V.83h15.23v76.08Z"/>
+      <path d="M205.54,5.62c6.06,3.12,10.74,7.56,14.04,13.33,3.3,5.77,4.95,12.46,4.95,20.08s-1.65,14.28-4.95,19.97c-3.3,5.7-7.98,10.1-14.04,13.22-6.06,3.12-13.08,4.68-21.06,4.68h-26.56V.94h26.56c7.98,0,15,1.56,21.06,4.68ZM202.44,57.43c4.35-4.35,6.53-10.48,6.53-18.39s-2.18-14.09-6.53-18.56c-4.35-4.46-10.52-6.69-18.5-6.69h-10.77v50.17h10.77c7.98,0,14.15-2.18,18.5-6.53Z"/>
+      <path d="M275.14,76.91l-16.76-29.6h-7.18v29.6h-15.24V.94h28.52c5.87,0,10.88,1.03,15.02,3.1s7.24,4.86,9.3,8.38c2.07,3.52,3.1,7.46,3.1,11.81,0,5.01-1.45,9.52-4.35,13.55-2.9,4.03-7.22,6.8-12.95,8.33l18.18,30.8h-17.63ZM251.2,35.88h12.73c4.14,0,7.22-1,9.25-2.99,2.03-2,3.05-4.77,3.05-8.33s-1.02-6.18-3.05-8.11c-2.03-1.92-5.12-2.88-9.25-2.88h-12.73v22.31Z"/>
+    </g>
+  </svg>
+  <div>
+    <div class="hdr-sub">Payment Portal</div>
+  </div>
+</header>
+
+<div id="toast" class="toast"></div>
+
+<div class="container">
+  <div id="loading" class="loading"><span class="spinner"></span> Loading projects...</div>
+  <div id="app" class="hidden">
+
+    <!-- Project Selector -->
+    <div class="card">
+      <div class="card-title">Select Project</div>
+      <div class="fg" style="margin-bottom:0;">
+        <select id="project-select"><option value="">— Choose a project —</option></select>
+      </div>
+    </div>
+
+    <!-- Budget Summary -->
+    <div id="budget-summary"></div>
+
+    <!-- Payment Form -->
+    <div id="pay-form-wrap" class="hidden">
+      <div class="add-form">
+        <div class="card-title" style="color:var(--dark);">New Payment</div>
+        <div class="row2">
+          <div class="fg"><label>Date</label><input type="text" id="pf-date"></div>
+          <div class="fg"><label>Amount ($)</label>
+            <input type="text" id="pf-amount" inputmode="decimal" placeholder="0">
+            <div class="markup-row"><button class="markup-btn" id="pf-markup">+ 15%</button></div>
+          </div>
+        </div>
+        <div class="fg"><label>Contractor</label>
+          <select id="pf-contractor"><option value="">Select contractor...</option></select>
+        </div>
+        <div class="fg hidden" id="pf-contractor-other-wrap">
+          <label>Contractor Name</label>
+          <input type="text" id="pf-contractor-other" placeholder="Enter contractor name...">
+        </div>
+        <div class="fg"><label>Category</label>
+          <select id="pf-category"><option value="">Select category...</option></select>
+        </div>
+        <div class="fg"><label>Description</label>
+          <input type="text" id="pf-desc" placeholder="Payment description...">
+        </div>
+        <button class="btn btn-green mt" id="pf-save">Submit Payment</button>
+      </div>
+    </div>
+
+  </div>
+
+  <div id="no-api" class="card hidden" style="text-align:center;">
+    <div class="card-title" style="color:var(--red);">Configuration Required</div>
+    <p style="font-size:.82rem;color:var(--muted);line-height:1.5;">
+      This portal requires a valid API link.<br>
+      Contact the project owner for the correct URL.
+    </p>
+  </div>
+
+  <div class="company-info">
+    BNDR Capital<br>
+    9229 Ward Pkwy, Ste 380<br>
+    Kansas City, MO 64114<br>
+    (913) 219-8906
+  </div>
+</div>
+
+<script>
+(function() {
+  /* ── Config ── */
+  var API_URL = '';
+  var params = new URLSearchParams(window.location.search);
+  API_URL = params.get('api') || '';
+
+  if (!API_URL) {
+    document.getElementById('loading').classList.add('hidden');
+    document.getElementById('no-api').classList.remove('hidden');
+    return;
+  }
+
+  /* ── State ── */
+  var projects = [];
+  var selectedProject = null;
+
+  /* ── Utilities ── */
+  function fmt(n) { return n.toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 0 }); }
+  function parseMoney(s) { if (typeof s === 'number') return s; return parseFloat((s || '').replace(/[^0-9.\-]/g, '')) || 0; }
+  function todayStr() { var d = new Date(); return (d.getMonth()+1) + '/' + d.getDate() + '/' + d.getFullYear(); }
+  function esc(s) { var d = document.createElement('div'); d.textContent = s; return d.innerHTML; }
+
+  function showToast(msg, type) {
+    var t = document.getElementById('toast');
+    t.textContent = msg;
+    t.className = 'toast ' + type + ' show';
+    setTimeout(function() { t.classList.remove('show'); }, 4000);
+  }
+
+  /* ── Load Projects ── */
+  function loadProjects() {
+    fetch(API_URL + '?action=projects')
+      .then(function(r) { return r.json(); })
+      .then(function(data) {
+        if (!data.success || !data.projects) {
+          throw new Error(data.error || 'Failed to load projects');
+        }
+        projects = data.projects;
+        document.getElementById('loading').classList.add('hidden');
+        document.getElementById('app').classList.remove('hidden');
+        populateProjectSelector();
+      })
+      .catch(function(err) {
+        document.getElementById('loading').innerHTML =
+          '<span style="color:var(--red);">Failed to load projects: ' + esc(err.message) + '</span>';
+      });
+  }
+
+  function populateProjectSelector() {
+    var sel = document.getElementById('project-select');
+    var html = '<option value="">— Choose a project —</option>';
+    for (var i = 0; i < projects.length; i++) {
+      html += '<option value="' + i + '">' + esc(projects[i].name || 'Untitled Project') + '</option>';
+    }
+    sel.innerHTML = html;
+  }
+
+  /* ── Project Change ── */
+  document.getElementById('project-select').addEventListener('change', function() {
+    var idx = this.value;
+    if (idx === '') {
+      selectedProject = null;
+      document.getElementById('budget-summary').innerHTML = '';
+      document.getElementById('pay-form-wrap').classList.add('hidden');
+      return;
+    }
+    selectedProject = projects[parseInt(idx)];
+    renderBudgetSummary();
+    populateFormDropdowns();
+    document.getElementById('pay-form-wrap').classList.remove('hidden');
+    document.getElementById('pf-date').value = todayStr();
+  });
+
+  /* ── Budget Summary ── */
+  function renderBudgetSummary() {
+    if (!selectedProject) return;
+    var totalEst = selectedProject.totalEstimated || 0;
+    var totalPaid = selectedProject.totalPaid || 0;
+    var remaining = totalEst - totalPaid;
+    var isOver = remaining < 0;
+    var pct = totalEst > 0 ? Math.min(100, Math.round((totalPaid / totalEst) * 100)) : 0;
+
+    var html =
+      '<div class="summary-card">' +
+        '<div class="summary-row"><span class="summary-label">Contract Total (Estimated)</span><span class="summary-value">$' + fmt(totalEst) + '</span></div>' +
+        '<div class="summary-row"><span class="summary-label">Total Paid</span><span class="summary-value">$' + fmt(totalPaid) + '</span></div>' +
+        '<div class="summary-divider"></div>' +
+        '<div class="summary-row"><span class="summary-label">' + (isOver ? 'Overpaid' : 'Remaining Balance') + '</span>' +
+        '<span class="summary-big ' + (isOver ? 'negative' : 'positive') + '">$' + fmt(Math.abs(remaining)) + (isOver ? ' over' : '') + '</span></div>' +
+        '<div class="progress-wrap"><div class="progress-fill" style="width:' + pct + '%;' + (pct >= 100 ? 'background:#f87171;' : '') + '"></div></div>' +
+      '</div>';
+
+    document.getElementById('budget-summary').innerHTML = html;
+  }
+
+  /* ── Form Dropdowns ── */
+  function populateFormDropdowns() {
+    if (!selectedProject) return;
+
+    // Contractors
+    var conSel = document.getElementById('pf-contractor');
+    var conHtml = '<option value="">Select contractor...</option>';
+    var contractors = selectedProject.contractors || [];
+    for (var i = 0; i < contractors.length; i++) {
+      conHtml += '<option value="' + esc(contractors[i]) + '">' + esc(contractors[i]) + '</option>';
+    }
+    conHtml += '<option value="__other__">Other...</option>';
+    conSel.innerHTML = conHtml;
+
+    // Categories
+    var catSel = document.getElementById('pf-category');
+    var catHtml = '<option value="">Select category...</option>';
+    var cats = selectedProject.categories || [];
+    for (var i = 0; i < cats.length; i++) {
+      catHtml += '<option value="' + esc(cats[i].name) + '">' + esc(cats[i].name) + '</option>';
+    }
+    catHtml += '<option value="__other__">Other</option>';
+    catSel.innerHTML = catHtml;
+  }
+
+  /* ── Contractor "Other" toggle ── */
+  document.getElementById('pf-contractor').addEventListener('change', function() {
+    var wrap = document.getElementById('pf-contractor-other-wrap');
+    if (this.value === '__other__') {
+      wrap.classList.remove('hidden');
+      document.getElementById('pf-contractor-other').focus();
+    } else {
+      wrap.classList.add('hidden');
+    }
+  });
+
+  /* ── +15% Markup ── */
+  document.getElementById('pf-markup').addEventListener('click', function() {
+    var inp = document.getElementById('pf-amount');
+    var val = parseMoney(inp.value);
+    if (val > 0) {
+      inp.value = (Math.round(val * 1.15 * 100) / 100);
+    }
+  });
+
+  /* ── Submit Payment ── */
+  document.getElementById('pf-save').addEventListener('click', function() {
+    if (!selectedProject) { showToast('Select a project first.', 'error'); return; }
+
+    var amount = parseMoney(document.getElementById('pf-amount').value);
+    if (amount <= 0) { showToast('Enter a payment amount.', 'error'); return; }
+
+    var contractorVal = document.getElementById('pf-contractor').value;
+    var contractor = contractorVal === '__other__'
+      ? (document.getElementById('pf-contractor-other').value || '').trim()
+      : (contractorVal || '');
+
+    var category = document.getElementById('pf-category').value;
+    if (category === '__other__') category = 'Other';
+
+    var payload = {
+      action: 'payment',
+      projectId: selectedProject.id,
+      projectName: selectedProject.name,
+      date: document.getElementById('pf-date').value || todayStr(),
+      amount: amount,
+      contractor: contractor,
+      category: category,
+      description: document.getElementById('pf-desc').value || ''
+    };
+
+    var btn = document.getElementById('pf-save');
+    btn.disabled = true;
+    btn.textContent = 'Submitting...';
+
+    fetch(API_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'text/plain' },
+      body: JSON.stringify(payload)
+    })
+    .then(function(r) { return r.json(); })
+    .then(function(data) {
+      if (data.success) {
+        showToast('Payment saved! Notification sent.', 'success');
+        // Update local totals
+        selectedProject.totalPaid = (selectedProject.totalPaid || 0) + amount;
+        renderBudgetSummary();
+        // Reset form
+        document.getElementById('pf-amount').value = '';
+        document.getElementById('pf-contractor').value = '';
+        document.getElementById('pf-contractor-other').value = '';
+        document.getElementById('pf-contractor-other-wrap').classList.add('hidden');
+        document.getElementById('pf-category').value = '';
+        document.getElementById('pf-desc').value = '';
+        document.getElementById('pf-date').value = todayStr();
+      } else {
+        showToast('Error: ' + (data.error || 'Unknown error'), 'error');
+      }
+    })
+    .catch(function(err) {
+      showToast('Failed to submit: ' + err.message, 'error');
+    })
+    .finally(function() {
+      btn.disabled = false;
+      btn.textContent = 'Submit Payment';
+    });
+  });
+
+  /* ── Init ── */
+  loadProjects();
+})();
+</script>
+</body>
+</html>

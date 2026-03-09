@@ -264,7 +264,9 @@ function sendPaymentEmail(payment) {
     contractor: payment.contractor || 'N/A',
     category: payment.category || 'N/A',
     date: payment.date || '',
-    description: payment.description || 'No description'
+    description: payment.description || 'No description',
+    receipt_image: payment.receiptImage || '',
+    has_receipt: payment.receiptImage ? 'Yes' : 'No'
   }).then(function() {
     console.log('[EmailJS] Notification sent');
   }).catch(function(err) {

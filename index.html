@@ -4300,8 +4300,14 @@ document.addEventListener('visibilitychange', function() {
    ═══════════════════════════════════════════ */
 function cloudSaveProject(id, dObj) {
   if (!fbReady || !id) return Promise.resolve(false);
+  // Strip portal payments before saving — they live in the payments collection
+  // and are always re-imported fresh (avoids stale receipt data in project docs)
+  var saveObj = JSON.parse(JSON.stringify(dObj));
+  if (saveObj.payments) {
+    saveObj.payments = saveObj.payments.filter(function(p) { return p.source !== 'portal'; });
+  }
   return db.collection('projects').doc(id).set({
-    data: JSON.stringify(dObj),
+    data: JSON.stringify(saveObj),
     lastModified: new Date().toISOString()
   }).then(function() { return true; })
   .catch(function(err) { console.error('[Firestore] Save project error:', err); return false; });

@@ -2320,7 +2320,13 @@ function renderPayList() {
       }
       html += (p.desc ? esc(p.desc) : '<span style="color:var(--muted);">No description</span>');
       html += '</div>';
-      if (p.receiptUrl) html += '<div style="margin-top:2px;"><a href="' + escAttr(p.receiptUrl) + '" target="_blank" style="font-size:.65rem;color:var(--accent);">View Receipt</a></div>';
+      if (p.receiptUrl) {
+        if (p.receiptUrl.indexOf('data:') === 0) {
+          html += '<div style="margin-top:4px;"><img src="' + escAttr(p.receiptUrl) + '" style="max-width:100%;border-radius:8px;border:1px solid var(--border);" alt="Receipt"></div>';
+        } else {
+          html += '<div style="margin-top:2px;"><a href="' + escAttr(p.receiptUrl) + '" target="_blank" style="font-size:.65rem;color:var(--accent);">View Receipt</a></div>';
+        }
+      }
       if (balText) html += '<div class="pay-bal ' + balClass + '">' + balText + '</div>';
       html += '<div style="margin-top:4px;">' +
         '<button class="pay-edit-btn" data-pay-action="edit" data-pay-id="' + p.id + '">Edit</button>' +
@@ -4379,7 +4385,7 @@ function importPortalPayments(cloudPayments) {
       desc: cp.description || '',
       amount: Number(cp.amount) || 0,
       source: 'portal',
-      receiptUrl: cp.receiptUrl || '',
+      receiptUrl: cp.receiptUrl || cp.receiptImage || '',
       portalTimestamp: cp.timestamp || ''
     });
   }

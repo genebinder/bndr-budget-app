@@ -479,6 +479,7 @@
   <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-storage-compat.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.2/html2pdf.bundle.min.js"></script>
 </head>
 <body>
 
@@ -616,7 +617,7 @@
       </button>
       <button class="export-btn" id="btnShare">
         <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M4 12v8a2 2 0 002 2h12a2 2 0 002-2v-8M16 6l-4-4-4 4M12 2v13"/></svg>
-        <span>Share / Text</span>
+        <span>Share / PDF</span>
       </button>
       <button class="export-btn" id="btnDownloadHTML">
         <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M7 10l5 5 5-5M12 15V3"/></svg>
@@ -3747,63 +3748,49 @@ document.getElementById('btnPrint').addEventListener('click', function() {
 });
 
 document.getElementById('btnShare').addEventListener('click', function() {
-  syncProjectFields();
+  renderExportPreview();
+  var btn = this;
+  btn.disabled = true;
+  btn.querySelector('span').textContent = 'Generating…';
+
+  var element = document.getElementById('export-preview');
   var p = D.project;
-  var text = 'BNDR CAPITAL — Scope of Work & Budget\n';
-  text += '══════════════════════════════\n';
-  text += 'Property: ' + p.address + '\n';
-  if (p.date) text += 'Date: ' + p.date + '\n';
-  if (p.contractor) text += 'Contractor: ' + p.contractor + '\n';
-  text += 'PM: ' + p.pm + '\n\n';
-  text += 'BUDGET SUMMARY\n';
+  var filename = 'BNDR-SOW-' + (p.address || 'report').replace(/[^a-zA-Z0-9]/g, '-').substring(0, 40) + '.pdf';
 
-  for (var c = 0; c < D.categories.length; c++) {
-    var cat = D.categories[c];
-    var ce = getCatEstimated(cat);
-    if (ce === 0 && getCatActual(cat) === 0) continue;
-    text += '  ' + cat.name;
-    if (cat.contractor) text += ' (' + cat.contractor + (cat.phone ? ' ' + cat.phone : '') + ')';
-    text += ': $' + fmt(ce) + ' est / $' + fmt(getCatActual(cat)) + ' actual\n';
-  }
+  var opt = {
+    margin:       [0.3, 0.4, 0.3, 0.4],
+    filename:     filename,
+    image:        { type: 'jpeg', quality: 0.95 },
+    html2canvas:  { scale: 2, useCORS: true, logging: false },
+    jsPDF:        { unit: 'in', format: 'letter', orientation: 'portrait' },
+    pagebreak:    { mode: ['avoid-all', 'css', 'legacy'] }
+  };
 
-  text += '\nTotal Estimated: $' + fmt(getTotalEstimated()) + '\n';
-  text += 'Total Actual: $' + fmt(getTotalActual()) + '\n';
-  text += 'Total Paid: $' + fmt(getTotalPaid()) + '\n';
+  html2pdf().set(opt).from(element).outputPdf('blob').then(function(pdfBlob) {
+    var pdfFile = new File([pdfBlob], filename, { type: 'application/pdf' });
 
-  // Scope items
-  if (D.scope) {
-    text += '\nSCOPE OF WORK\n';
-    for (var section in D.scope) {
-      var cats = D.scope[section];
-      var hasItems = false;
-      for (var cat in cats) { for (var i = 0; i < cats[cat].length; i++) { if (cats[cat][i].included) { hasItems = true; break; } } if (hasItems) break; }
-      if (!hasItems) continue;
-      text += '\n' + section + '\n';
-      for (var cat in cats) {
-        var included = [];
-        for (var i = 0; i < cats[cat].length; i++) { if (cats[cat][i].included) included.push(cats[cat][i].text); }
-        if (included.length === 0) continue;
-        text += '  ' + cat + ':\n';
-        for (var i = 0; i < included.length; i++) { text += '    - ' + included[i] + '\n'; }
-      }
+    if (navigator.canShare && navigator.canShare({ files: [pdfFile] })) {
+      navigator.share({
+        title: 'SOW & Budget — ' + p.address,
+        files: [pdfFile]
+      }).catch(function() {});
+    } else {
+      // Fallback: download the PDF
+      var url = URL.createObjectURL(pdfBlob);
+      var a = document.createElement('a');
+      a.href = url;
+      a.download = filename;
+      a.click();
+      URL.revokeObjectURL(url);
     }
-  }
 
-  if (p.notes) text += '\nNotes: ' + p.notes + '\n';
-  text += '\n— BNDR Capital | (913) 219-8906';
-
-  if (navigator.share) {
-    navigator.share({ title: 'SOW & Budget — ' + p.address, text: text }).catch(function() {});
-  } else {
-    try {
-      navigator.clipboard.writeText(text).then(function() { alert('Copied to clipboard!'); });
-    } catch(err) {
-      var ta = document.createElement('textarea');
-      ta.value = text; ta.style.position = 'fixed'; ta.style.left = '-9999px';
-      document.body.appendChild(ta); ta.select(); document.execCommand('copy');
-      document.body.removeChild(ta); alert('Copied to clipboard!');
-    }
-  }
+    btn.disabled = false;
+    btn.querySelector('span').textContent = 'Share / PDF';
+  }).catch(function(err) {
+    alert('PDF generation failed: ' + err.message);
+    btn.disabled = false;
+    btn.querySelector('span').textContent = 'Share / PDF';
+  });
 });
 
 document.getElementById('btnExportJSON').addEventListener('click', function() {

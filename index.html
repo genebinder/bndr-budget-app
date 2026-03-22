@@ -3634,6 +3634,24 @@ function renderExportPreview() {
     '<td style="padding:6px 8px;text-align:right;">$' + fmt(totalAct) + '</td></tr>';
   html += '</tbody></table>';
 
+  // Financial summary
+  var remaining = totalEst + bonus - totalPaid;
+  var isOver = remaining < 0;
+  html += '<div style="font-weight:700;font-size:.82rem;margin-bottom:6px;">Financial Summary</div>' +
+    '<table style="width:100%;border-collapse:collapse;font-size:.78rem;margin-bottom:14px;">' +
+    '<tbody>' +
+    '<tr><td style="padding:4px 8px;">Contract Total (Estimated)</td><td style="padding:4px 8px;text-align:right;font-weight:700;">$' + fmt(totalEst) + '</td></tr>' +
+    '<tr><td style="padding:4px 8px;">Total Actual</td><td style="padding:4px 8px;text-align:right;font-weight:700;">$' + fmt(totalAct) + '</td></tr>';
+  if (bonus > 0) {
+    html += '<tr><td style="padding:4px 8px;">Bonus' +
+      (p.bonusDate ? ' — on or before ' + esc(p.bonusDate) : '') +
+      '</td><td style="padding:4px 8px;text-align:right;font-weight:700;">$' + fmt(bonus) + '</td></tr>';
+  }
+  html += '<tr><td style="padding:4px 8px;">Total Paid</td><td style="padding:4px 8px;text-align:right;font-weight:700;">$' + fmt(totalPaid) + '</td></tr>' +
+    '<tr style="border-top:2px solid var(--green);font-weight:700;"><td style="padding:6px 8px;">' + (isOver ? 'Overpaid' : 'Remaining Balance') + '</td>' +
+    '<td style="padding:6px 8px;text-align:right;color:' + (isOver ? 'var(--red)' : 'var(--green)') + ';">$' + fmt(Math.abs(remaining)) + (isOver ? ' over' : '') + '</td></tr>' +
+    '</tbody></table>';
+
   // Scope items
   if (D.scope) {
     for (var section in D.scope) {

@@ -635,6 +635,35 @@
         <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M18 10h-1.26A8 8 0 109 20h9a5 5 0 000-10z"/><path d="M16 16l-4-4-4 4M12 12v9"/></svg>
         <span>Sync Projects</span>
       </button>
+      <button class="export-btn" id="btnSendSignature" style="border-color:#7c3aed;background:#f5f3ff;">
+        <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M17 3a2.85 2.85 0 114 4L7.5 20.5 2 22l1.5-5.5L17 3z"/></svg>
+        <span>Send for Signature</span>
+      </button>
+    </div>
+    <!-- Signature send form -->
+    <div id="sig-send-form" class="hidden" style="margin-top:12px;background:var(--green-bg);border-radius:12px;padding:16px;">
+      <div style="font-weight:700;font-size:.82rem;margin-bottom:10px;color:var(--dark);">Send Contract for Signature</div>
+      <div style="margin-bottom:8px;">
+        <label style="font-size:.72rem;font-weight:600;color:var(--muted);display:block;margin-bottom:3px;">Recipient Phone Number</label>
+        <input type="tel" id="sig-phone" placeholder="(555) 555-5555" style="width:100%;border:1.5px solid var(--border);border-radius:8px;padding:10px 12px;font-size:16px;font-family:inherit;background:#fafbfa;">
+      </div>
+      <div style="margin-bottom:8px;">
+        <label style="font-size:.72rem;font-weight:600;color:var(--muted);display:block;margin-bottom:3px;">Signer Role</label>
+        <select id="sig-role" style="width:100%;border:1.5px solid var(--border);border-radius:8px;padding:10px 12px;font-size:16px;font-family:inherit;background:#fafbfa;">
+          <option value="contractor">Contractor</option>
+          <option value="buyer">Buyer / Owner</option>
+          <option value="pm">Project Manager</option>
+        </select>
+      </div>
+      <div style="margin-bottom:10px;">
+        <label style="font-size:.72rem;font-weight:600;color:var(--muted);display:block;margin-bottom:3px;">Signing Link</label>
+        <input type="text" id="sig-link" readonly style="width:100%;border:1.5px solid var(--border);border-radius:8px;padding:10px 12px;font-size:.72rem;font-family:inherit;background:#f0f0f0;color:var(--muted);">
+      </div>
+      <div style="display:flex;gap:8px;">
+        <button class="btn btn-green" id="btnTextSignLink" style="flex:1;">Send via Text</button>
+        <button class="btn btn-outline" id="btnCopySignLink" style="flex:0 0 auto;">Copy Link</button>
+      </div>
+      <div id="sig-send-status" style="font-size:.72rem;margin-top:8px;color:var(--muted);"></div>
     </div>
     <div style="margin-top:12px;">
       <label class="btn btn-outline" style="cursor:pointer;">
@@ -1487,7 +1516,7 @@ function switchTab(tabId) {
   if (tabId === 'tab-payments') renderPayments();
   if (tabId === 'tab-imports') renderImports();
   if (tabId === 'tab-finance') renderFinance();
-  if (tabId === 'tab-export') { renderExportPreview(); initSyncSettings(); }
+  if (tabId === 'tab-export') { renderExportPreview(); initSyncSettings(); checkSignatures(); }
   window.scrollTo(0, 0);
 }
 
@@ -3741,11 +3770,12 @@ function renderExportPreview() {
     html += '</tbody></table>';
   }
 
-  // Signature lines
-  html += '<div style="display:flex;gap:30px;margin-top:30px;">' +
+  // Signature lines — show digital signatures if available
+  html += '<div id="export-signatures" style="margin-top:30px;">' +
+    '<div style="display:flex;gap:30px;">' +
     '<div style="flex:1;border-top:1px solid #000;padding-top:4px;font-size:.72rem;color:#666;">Contractor Signature &nbsp;&nbsp;&nbsp;&nbsp; Date</div>' +
     '<div style="flex:1;border-top:1px solid #000;padding-top:4px;font-size:.72rem;color:#666;">Project Manager Signature &nbsp;&nbsp;&nbsp;&nbsp; Date</div>' +
-  '</div>';
+    '</div></div>';
 
   // Notes
   if (p.notes) {
@@ -3755,6 +3785,31 @@ function renderExportPreview() {
 
   html += '</div>';
   document.getElementById('export-preview').innerHTML = html;
+  loadExportSignatures();
+}
+
+function loadExportSignatures() {
+  if (!fbReady || !currentProjectId) return;
+  db.collection('signatures').where('projectId', '==', currentProjectId)
+    .orderBy('timestamp', 'desc').get().then(function(snapshot) {
+    if (snapshot.empty) return;
+    var sigEl = document.getElementById('export-signatures');
+    if (!sigEl) return;
+    var html = '';
+    snapshot.forEach(function(doc) {
+      var s = doc.data();
+      var dt = new Date(s.timestamp);
+      html += '<div style="margin-bottom:16px;padding:8px;border:1px solid var(--border);border-radius:8px;background:#fafbfa;">' +
+        '<div style="font-size:.7rem;color:var(--muted);margin-bottom:4px;">' +
+        esc(s.role || 'Signer') + ' — ' + dt.toLocaleDateString() + ' ' + dt.toLocaleTimeString() + '</div>' +
+        '<div style="font-weight:600;font-size:.82rem;margin-bottom:6px;">' + esc(s.name || '') + '</div>' +
+        (s.signature ? '<img src="' + s.signature + '" style="max-width:280px;height:80px;object-fit:contain;border-bottom:1px solid #000;">' : '') +
+        '</div>';
+    });
+    // Prepend digital signatures before the manual signature lines
+    sigEl.insertAdjacentHTML('afterbegin',
+      '<div style="font-weight:700;font-size:.82rem;margin-bottom:8px;">Digital Signatures</div>' + html);
+  }).catch(function() {});
 }
 
 /* ═══════════════════════════════════════════
@@ -4554,6 +4609,102 @@ document.getElementById('btnSyncCloud').addEventListener('click', function() {
     setSyncDot('error');
   });
 });
+
+/* ═══════════════════════════════════════════
+   SEND FOR SIGNATURE
+   ═══════════════════════════════════════════ */
+document.getElementById('btnSendSignature').addEventListener('click', function() {
+  var form = document.getElementById('sig-send-form');
+  form.classList.toggle('hidden');
+  if (!form.classList.contains('hidden')) {
+    updateSignLink();
+  }
+});
+
+function updateSignLink() {
+  var role = document.getElementById('sig-role').value;
+  var signUrl = window.location.origin + window.location.pathname.replace('index.html', '') +
+    'sign.html?project=' + encodeURIComponent(currentProjectId) + '&role=' + encodeURIComponent(role);
+  document.getElementById('sig-link').value = signUrl;
+}
+
+document.getElementById('sig-role').addEventListener('change', updateSignLink);
+
+document.getElementById('btnCopySignLink').addEventListener('click', function() {
+  var link = document.getElementById('sig-link').value;
+  navigator.clipboard.writeText(link).then(function() {
+    document.getElementById('sig-send-status').innerHTML = '<span style="color:var(--green);">Link copied to clipboard!</span>';
+  }).catch(function() {
+    var inp = document.getElementById('sig-link');
+    inp.select();
+    document.execCommand('copy');
+    document.getElementById('sig-send-status').innerHTML = '<span style="color:var(--green);">Link copied!</span>';
+  });
+});
+
+document.getElementById('btnTextSignLink').addEventListener('click', function() {
+  // Ensure project is synced to Firebase first
+  var statusEl = document.getElementById('sig-send-status');
+  var phone = document.getElementById('sig-phone').value.replace(/[^0-9+]/g, '');
+  var link = document.getElementById('sig-link').value;
+
+  if (!phone) {
+    statusEl.innerHTML = '<span style="color:var(--red);">Please enter a phone number.</span>';
+    return;
+  }
+
+  statusEl.innerHTML = '<span style="color:var(--green);">Syncing project to cloud...</span>';
+
+  // Save current project to Firebase so the signer can load it
+  syncProjectFields();
+  try { localStorage.setItem('bndr-project-' + currentProjectId, JSON.stringify(D)); } catch(e) {}
+
+  cloudSaveProject(currentProjectId, D).then(function(ok) {
+    if (!ok) {
+      statusEl.innerHTML = '<span style="color:var(--red);">Failed to sync project. Please try again.</span>';
+      return;
+    }
+
+    var address = D.project.address || 'your project';
+    var body = 'BNDR Capital — Please review and sign the Scope of Work & Budget for ' + address + ': ' + link;
+
+    // Use sms: URI to open native messaging app with pre-filled message
+    var smsUrl = 'sms:' + phone + '?body=' + encodeURIComponent(body);
+    window.location.href = smsUrl;
+
+    statusEl.innerHTML = '<span style="color:var(--green);">Opening messaging app... If it doesn\'t open, copy the link and send it manually.</span>';
+  });
+});
+
+/* ═══════════════════════════════════════════
+   SIGNATURE STATUS — Check for received signatures
+   ═══════════════════════════════════════════ */
+function checkSignatures() {
+  if (!fbReady || !currentProjectId) return;
+  db.collection('signatures').where('projectId', '==', currentProjectId)
+    .orderBy('timestamp', 'desc').get().then(function(snapshot) {
+    if (snapshot.empty) return;
+    var sigs = [];
+    snapshot.forEach(function(doc) { sigs.push(doc.data()); });
+    renderSignatureStatus(sigs);
+  }).catch(function() {});
+}
+
+function renderSignatureStatus(sigs) {
+  var el = document.getElementById('sig-send-status');
+  if (!el) return;
+  var html = '<div style="margin-top:8px;border-top:1px solid var(--border);padding-top:8px;">' +
+    '<div style="font-weight:700;font-size:.72rem;margin-bottom:4px;">Received Signatures:</div>';
+  for (var i = 0; i < sigs.length; i++) {
+    var s = sigs[i];
+    var dt = new Date(s.timestamp);
+    html += '<div style="font-size:.7rem;padding:3px 0;color:var(--green-dark);">' +
+      '&#10003; ' + (s.name || 'Unknown') + ' (' + (s.role || 'unknown') + ') — ' +
+      dt.toLocaleDateString() + ' ' + dt.toLocaleTimeString() + '</div>';
+  }
+  html += '</div>';
+  el.innerHTML = html;
+}
 
 /* ═══════════════════════════════════════════
    SERVICE WORKER REGISTRATION

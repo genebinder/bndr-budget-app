@@ -1,0 +1,536 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <meta name="theme-color" content="#ffffff">
+  <title>BNDR — Sign Document</title>
+  <style>
+    :root {
+      --green: #6B7A59; --green-dark: #5a6a4a; --green-light: #e8ede4; --green-bg: #f4f6f2;
+      --dark: #2D2D2D; --text: #222; --muted: #888;
+      --border: #e0e0e0; --card: #fff; --bg: #f1f5f0;
+      --red: #dc2626; --red-light: #fef2f2;
+      --radius: 12px;
+    }
+    * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+    body {
+      font-family: -apple-system, 'SF Pro Text', system-ui, sans-serif;
+      background: var(--bg); color: var(--text);
+      -webkit-font-smoothing: antialiased;
+    }
+    .header {
+      background: #fff; border-bottom: 1px solid var(--border);
+      padding: env(safe-area-inset-top, 0px) 16px 0;
+      height: calc(52px + env(safe-area-inset-top, 0px));
+      display: flex; align-items: center; gap: 10px;
+    }
+    .header svg { width: 100px; height: auto; }
+    .header .sub { font-size: .6rem; color: var(--muted); letter-spacing: 1px; }
+    .container { padding: 12px; max-width: 600px; margin: 0 auto; }
+    .card {
+      background: var(--card); border-radius: var(--radius);
+      padding: 16px; margin-bottom: 10px;
+      box-shadow: 0 1px 3px rgba(0,0,0,.06);
+    }
+    .card-title {
+      font-size: .72rem; font-weight: 700; color: var(--green);
+      text-transform: uppercase; letter-spacing: 1px; margin-bottom: 10px;
+    }
+    .info-grid {
+      display: grid; grid-template-columns: 1fr 1fr; gap: 4px 16px;
+      font-size: .78rem; margin-bottom: 14px;
+    }
+    .info-grid strong { color: var(--green-dark); }
+    .budget-table {
+      width: 100%; border-collapse: collapse; font-size: .78rem; margin-bottom: 14px;
+    }
+    .budget-table th {
+      background: var(--green); color: #fff; padding: 6px 8px; text-align: left;
+    }
+    .budget-table th:nth-child(3), .budget-table th:nth-child(4) { text-align: right; }
+    .budget-table td { padding: 4px 8px; }
+    .budget-table .cat-row { background: var(--green-light); font-weight: 700; }
+    .budget-table .total-row { border-top: 2px solid var(--green); font-weight: 700; }
+    .budget-table .right { text-align: right; }
+
+    /* Signature pad */
+    .sig-section { margin-top: 16px; }
+    .sig-label {
+      font-size: .82rem; font-weight: 700; margin-bottom: 8px; color: var(--dark);
+    }
+    .sig-name-input {
+      width: 100%; border: 1.5px solid var(--border); border-radius: 8px;
+      padding: 10px 12px; font-size: 16px; font-family: inherit;
+      color: var(--text); background: #fafbfa; outline: none;
+      margin-bottom: 10px;
+    }
+    .sig-name-input:focus { border-color: var(--green); background: #fff; }
+    .sig-canvas-wrap {
+      border: 2px solid var(--border); border-radius: 10px;
+      background: #fff; position: relative; overflow: hidden;
+      touch-action: none;
+    }
+    .sig-canvas-wrap canvas {
+      display: block; width: 100%; height: 200px;
+      cursor: crosshair;
+    }
+    .sig-hint {
+      position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
+      font-size: .82rem; color: #ccc; pointer-events: none;
+      transition: opacity .3s;
+    }
+    .sig-hint.hidden { opacity: 0; }
+    .sig-line {
+      position: absolute; bottom: 40px; left: 20px; right: 20px;
+      border-bottom: 1px solid #ddd; pointer-events: none;
+    }
+    .sig-x {
+      position: absolute; bottom: 42px; left: 10px;
+      font-size: 1.1rem; color: #ccc; pointer-events: none;
+    }
+    .sig-actions {
+      display: flex; gap: 8px; margin-top: 8px;
+    }
+    .btn {
+      display: block; width: 100%; padding: 13px 16px; border: none;
+      border-radius: 10px; font-size: .85rem; font-weight: 700;
+      cursor: pointer; font-family: inherit; text-align: center;
+    }
+    .btn-green { background: var(--green); color: #fff; }
+    .btn-green:active { background: var(--green-dark); }
+    .btn-green:disabled { opacity: .5; cursor: not-allowed; }
+    .btn-outline {
+      background: transparent; border: 1.5px solid var(--border); color: var(--text);
+    }
+    .btn-outline:active { background: var(--green-light); }
+    .btn-sm { padding: 8px 14px; font-size: .75rem; }
+
+    .toast {
+      position: fixed; top: 0; left: 0; right: 0; padding: 14px 16px;
+      font-size: .82rem; font-weight: 600; text-align: center; z-index: 200;
+      transform: translateY(-100%); transition: transform .3s ease;
+    }
+    .toast.show { transform: translateY(0); }
+    .toast.success { background: #dcfce7; color: #166534; border-bottom: 1px solid #86efac; }
+    .toast.error { background: var(--red-light); color: #b91c1c; border-bottom: 1px solid #fca5a5; }
+
+    .loading { text-align: center; padding: 40px; color: var(--muted); font-size: .85rem; }
+    .done-card { text-align: center; padding: 30px; }
+    .done-card .checkmark { font-size: 3rem; margin-bottom: 10px; }
+    .done-card h2 { font-size: 1rem; margin-bottom: 6px; color: var(--green-dark); }
+    .done-card p { font-size: .82rem; color: var(--muted); }
+    .hidden { display: none !important; }
+
+    .rules-list { padding-left: 18px; font-size: .72rem; line-height: 1.6; margin-bottom: 8px; }
+    .fee-label { font-weight: 700; font-size: .72rem; color: var(--red); margin-bottom: 4px; }
+    .fee-list { padding-left: 18px; font-size: .72rem; line-height: 1.6; margin-bottom: 14px; }
+    .section-title {
+      font-weight: 800; font-size: .82rem; letter-spacing: 1px;
+      margin: 14px 0 6px; color: var(--green);
+    }
+  </style>
+</head>
+<body>
+
+<div class="header">
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 292.77 77.05">
+    <g><g>
+      <path d="M41.15,0H.03l-.03,53.05v2.91h2.78l2.05-2.05,2.08-2.05,5.87-5.87V13.11h28.36c5.62,0,10.2,4.58,10.2,10.2,0,2.72-1.07,5.27-3,7.2l-.47.51-1.45,1.42-1.45,1.45-2.24,2.24,4.26,3.44c.22.13.41.28.85.54,1.45.92,2.84,1.8,4.17,2.78l1.42,1.07,2.24-2.24,1.45-1.45.51-.51c4.39-4.39,6.82-10.23,6.82-16.45,0-12.85-10.45-23.31-23.3-23.31Z"/>
+      <polygon points="34.89 18.03 12.79 40.17 10.74 42.22 8.65 44.3 4.1 48.85 2.05 50.9 .6 52.36 0 53.05 0 55.96 15.5 55.96 34.89 36.57 53.08 54.76 53.08 63.95 .76 63.95 .76 77.05 66.19 77.05 66.19 49.33 34.89 18.03"/>
+    </g>
+    <path d="M142.9,76.91h-15.23l-34.5-52.13v52.13h-15.24V.83h15.24l34.5,52.24V.83h15.23v76.08Z"/>
+    <path d="M205.54,5.62c6.06,3.12,10.74,7.56,14.04,13.33,3.3,5.77,4.95,12.46,4.95,20.08s-1.65,14.28-4.95,19.97c-3.3,5.7-7.98,10.1-14.04,13.22-6.06,3.12-13.08,4.68-21.06,4.68h-26.56V.94h26.56c7.98,0,15,1.56,21.06,4.68ZM202.44,57.43c4.35-4.35,6.53-10.48,6.53-18.39s-2.18-14.09-6.53-18.56c-4.35-4.46-10.52-6.69-18.5-6.69h-10.77v50.17h10.77c7.98,0,14.15-2.18,18.5-6.53Z"/>
+    <path d="M275.14,76.91l-16.76-29.6h-7.18v29.6h-15.24V.94h28.52c5.87,0,10.88,1.03,15.02,3.1s7.24,4.86,9.3,8.38c2.07,3.52,3.1,7.46,3.1,11.81,0,5.01-1.45,9.52-4.35,13.55-2.9,4.03-7.22,6.8-12.95,8.33l18.18,30.8h-17.63ZM251.2,35.88h12.73c4.14,0,7.22-1,9.25-2.99,2.03-2,3.05-4.77,3.05-8.33s-1.02-6.18-3.05-8.11c-2.03-1.92-5.12-2.88-9.25-2.88h-12.73v22.31Z"/>
+    </g>
+  </svg>
+  <div class="sub">DOCUMENT SIGNING</div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<div class="container">
+  <div id="loading" class="loading">Loading document...</div>
+
+  <div id="doc-view" class="hidden">
+    <div class="card">
+      <div style="text-align:center;font-weight:800;font-size:.95rem;letter-spacing:2px;margin-bottom:12px;color:var(--dark);">SCOPE OF WORK &amp; BUDGET</div>
+      <div class="info-grid" id="project-info"></div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">Budget</div>
+      <table class="budget-table" id="budget-table">
+        <thead><tr><th>Item</th><th>Contractor</th><th style="text-align:right;width:80px;">Estimated</th><th style="text-align:right;width:80px;">Actual</th></tr></thead>
+        <tbody id="budget-body"></tbody>
+      </table>
+    </div>
+
+    <div class="card" id="scope-card" class="hidden">
+      <div class="card-title">Scope of Work</div>
+      <div id="scope-content"></div>
+    </div>
+
+    <div class="card" id="rules-card">
+      <div class="card-title">Pre-Construction &amp; General Conditions</div>
+      <div id="rules-content"></div>
+    </div>
+
+    <div class="card" id="payments-card" class="hidden">
+      <div class="card-title">Payments</div>
+      <div id="payments-content"></div>
+    </div>
+
+    <div class="card sig-section">
+      <div class="card-title">Sign Below</div>
+      <div class="sig-label">Your Full Name</div>
+      <input type="text" class="sig-name-input" id="signer-name" placeholder="Enter your full name">
+      <div class="sig-label" style="margin-top:12px;">Your Signature</div>
+      <div class="sig-canvas-wrap" id="sig-wrap">
+        <canvas id="sig-canvas"></canvas>
+        <div class="sig-line"></div>
+        <div class="sig-x">&#10005;</div>
+        <div class="sig-hint" id="sig-hint">Sign here with your finger</div>
+      </div>
+      <div class="sig-actions">
+        <button class="btn btn-outline btn-sm" id="sig-clear" style="flex:0 0 auto;">Clear</button>
+        <button class="btn btn-green" id="sig-submit" disabled>Submit Signature</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="done-view" class="hidden">
+    <div class="card done-card">
+      <div class="checkmark">&#10003;</div>
+      <h2>Signature Submitted</h2>
+      <p>Your signature has been recorded. You may close this page.</p>
+    </div>
+  </div>
+
+  <div class="company-info" style="text-align:center;font-size:.6rem;color:var(--muted);padding:16px;">
+    BNDR Capital &middot; 9229 Ward Pkwy, Ste 380 &middot; Kansas City, MO 64114 &middot; (913) 219-8906
+  </div>
+</div>
+
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
+<script>
+var firebaseConfig = {
+  apiKey: "AIzaSyDK5nAO8vUX2BTN2sdoFkARgqxRGNq3uXg",
+  authDomain: "bndr-budget.firebaseapp.com",
+  projectId: "bndr-budget",
+  storageBucket: "bndr-budget.firebasestorage.app",
+  messagingSenderId: "362898964688",
+  appId: "1:362898964688:web:2bbf36b8a1db445fb15ed5",
+  measurementId: "G-JDR24KVX03"
+};
+firebase.initializeApp(firebaseConfig);
+var db = firebase.firestore();
+var auth = firebase.auth();
+
+(function() {
+  /* ── Utilities ── */
+  function fmt(n) { return Number(n || 0).toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 0 }); }
+  function esc(s) { var d = document.createElement('div'); d.textContent = s || ''; return d.innerHTML; }
+  function showToast(msg, type) {
+    var t = document.getElementById('toast');
+    t.textContent = msg;
+    t.className = 'toast ' + type + ' show';
+    setTimeout(function() { t.classList.remove('show'); }, 4000);
+  }
+
+  /* ── Parse URL params ── */
+  var params = new URLSearchParams(window.location.search);
+  var projectId = params.get('project');
+  var sigRole = params.get('role') || 'contractor'; // contractor or buyer
+
+  if (!projectId) {
+    document.getElementById('loading').textContent = 'Invalid link — no project specified.';
+    return;
+  }
+
+  /* ── Fixed rules (match index.html) ── */
+  var FIXED_RULES = [
+    'Work hours: 7:30 AM – 6:00 PM, Monday through Saturday.',
+    'Contractor must maintain a clean, organized job site at all times.',
+    'All debris must be removed from the property at the end of each work day.',
+    'Contractor is responsible for protecting all existing finishes, fixtures, and landscaping.',
+    'Changes to the scope of work must be approved in writing before work begins.',
+    'Contractor must provide proof of insurance and required licenses before starting.',
+    'BNDR Capital reserves the right to inspect work at any stage of the project.',
+    'Final payment will be released upon satisfactory completion and final walk-through.'
+  ];
+  var FEE_RULES = [
+    'Failure to clean up at end of work day',
+    'Damage to existing property or neighbor property',
+    'Unauthorized work outside agreed scope',
+    'No-show without prior notice'
+  ];
+
+  /* ── Load project from Firestore ── */
+  auth.signInAnonymously().then(function() {
+    return db.collection('projects').doc(projectId).get();
+  }).then(function(doc) {
+    if (!doc.exists) {
+      document.getElementById('loading').textContent = 'Document not found.';
+      return;
+    }
+
+    var D;
+    try { D = JSON.parse(doc.data().data); } catch(e) {
+      document.getElementById('loading').textContent = 'Error loading document.';
+      return;
+    }
+
+    renderDocument(D);
+    document.getElementById('loading').classList.add('hidden');
+    document.getElementById('doc-view').classList.remove('hidden');
+    initSignaturePad(D);
+  }).catch(function(err) {
+    console.error('[Firebase]', err);
+    document.getElementById('loading').textContent = 'Error loading document. Please try again.';
+  });
+
+  /* ── Render contract document ── */
+  function renderDocument(D) {
+    var p = D.project;
+
+    // Project info
+    var infoHtml =
+      '<div><strong>Property:</strong> ' + esc(p.address) + '</div>' +
+      '<div><strong>Date:</strong> ' + esc(p.date) + '</div>' +
+      '<div><strong>Contractor:</strong> ' + esc(p.contractor) + '</div>' +
+      '<div><strong>PM:</strong> ' + esc(p.pm) + '</div>' +
+      '<div><strong>Start:</strong> ' + esc(p.startDate) + '</div>' +
+      '<div><strong>Completion:</strong> ' + esc(p.endDate) + '</div>';
+    document.getElementById('project-info').innerHTML = infoHtml;
+
+    // Budget table
+    var cats = D.categories || [];
+    var totalEst = 0, totalAct = 0;
+    var bodyHtml = '';
+
+    for (var c = 0; c < cats.length; c++) {
+      var cat = cats[c];
+      var catEst = 0, catAct = 0;
+      var hasItems = false;
+
+      for (var i = 0; i < cat.items.length; i++) {
+        var item = cat.items[i];
+        if (item.desc || item.estimated || item.actual) hasItems = true;
+        catEst += Number(item.estimated || 0);
+        catAct += Number(item.actual || 0);
+      }
+      if (!hasItems && !cat.contractor) continue;
+
+      totalEst += catEst;
+      totalAct += catAct;
+
+      var conInfo = cat.contractor ? esc(cat.contractor) + (cat.phone ? '<br>' + esc(cat.phone) : '') : '';
+      bodyHtml += '<tr class="cat-row"><td>' + esc(cat.name) + '</td><td style="font-size:.72rem;">' + conInfo + '</td>' +
+        '<td class="right">$' + fmt(catEst) + '</td><td class="right">$' + fmt(catAct) + '</td></tr>';
+
+      for (var i = 0; i < cat.items.length; i++) {
+        var item = cat.items[i];
+        if (!item.desc && !item.estimated && !item.actual) continue;
+        bodyHtml += '<tr><td style="padding-left:20px;">' + esc(item.desc) + '</td><td></td>' +
+          '<td class="right">$' + fmt(item.estimated) + '</td><td class="right">$' + fmt(item.actual) + '</td></tr>';
+      }
+    }
+
+    bodyHtml += '<tr class="total-row"><td colspan="2">TOTAL</td>' +
+      '<td class="right">$' + fmt(totalEst) + '</td><td class="right">$' + fmt(totalAct) + '</td></tr>';
+    document.getElementById('budget-body').innerHTML = bodyHtml;
+
+    // Scope
+    if (D.scope) {
+      var scopeHtml = '';
+      var hasScope = false;
+      for (var section in D.scope) {
+        var sectionCats = D.scope[section];
+        var sectionHtml = '';
+        for (var cat in sectionCats) {
+          var included = [];
+          for (var i = 0; i < sectionCats[cat].length; i++) {
+            if (sectionCats[cat][i].included) included.push(sectionCats[cat][i]);
+          }
+          if (included.length === 0) continue;
+          sectionHtml += '<div style="font-weight:700;font-size:.78rem;margin:6px 0 2px;">' + esc(cat) + '</div><ul style="padding-left:18px;margin-bottom:4px;">';
+          for (var i = 0; i < included.length; i++) {
+            sectionHtml += '<li style="font-size:.75rem;line-height:1.5;">' + esc(included[i].text) + '</li>';
+          }
+          sectionHtml += '</ul>';
+        }
+        if (sectionHtml) {
+          hasScope = true;
+          scopeHtml += '<div class="section-title">' + esc(section) + '</div>' + sectionHtml;
+        }
+      }
+      if (hasScope) {
+        document.getElementById('scope-content').innerHTML = scopeHtml;
+        document.getElementById('scope-card').classList.remove('hidden');
+      }
+    }
+
+    // Rules
+    var rulesHtml = '<ol class="rules-list">';
+    for (var i = 0; i < FIXED_RULES.length; i++) rulesHtml += '<li>' + esc(FIXED_RULES[i]) + '</li>';
+    if (D.customFixedRules) {
+      for (var i = 0; i < D.customFixedRules.length; i++) rulesHtml += '<li>' + esc(D.customFixedRules[i]) + '</li>';
+    }
+    rulesHtml += '</ol>';
+    rulesHtml += '<div class="fee-label">$100 fee PER EVENT for violations:</div><ul class="fee-list">';
+    for (var i = 0; i < FEE_RULES.length; i++) rulesHtml += '<li>' + esc(FEE_RULES[i]) + '</li>';
+    if (D.customFeeRules) {
+      for (var i = 0; i < D.customFeeRules.length; i++) rulesHtml += '<li>' + esc(D.customFeeRules[i]) + '</li>';
+    }
+    rulesHtml += '</ul>';
+    document.getElementById('rules-content').innerHTML = rulesHtml;
+
+    // Payments
+    var payments = D.payments || [];
+    if (payments.length > 0) {
+      var payHtml = '<table style="width:100%;border-collapse:collapse;font-size:.78rem;">' +
+        '<thead><tr style="background:#eee;"><th style="padding:4px 8px;text-align:left;">Date</th><th style="padding:4px 8px;text-align:left;">Description</th><th style="padding:4px 8px;text-align:right;">Amount</th></tr></thead><tbody>';
+      var totalPaid = 0;
+      for (var i = 0; i < payments.length; i++) {
+        var pay = payments[i];
+        totalPaid += Number(pay.amount || 0);
+        payHtml += '<tr><td style="padding:4px 8px;">' + esc(pay.date) + '</td>' +
+          '<td style="padding:4px 8px;">' + esc(pay.category) + (pay.desc ? ' - ' + esc(pay.desc) : '') + '</td>' +
+          '<td style="padding:4px 8px;text-align:right;">$' + fmt(pay.amount) + '</td></tr>';
+      }
+      payHtml += '<tr style="border-top:1px solid #ccc;font-weight:700;"><td colspan="2" style="padding:4px 8px;">Total Paid</td>' +
+        '<td style="padding:4px 8px;text-align:right;">$' + fmt(totalPaid) + '</td></tr>';
+      payHtml += '</tbody></table>';
+      document.getElementById('payments-content').innerHTML = payHtml;
+      document.getElementById('payments-card').classList.remove('hidden');
+    }
+  }
+
+  /* ── Signature Pad ── */
+  function initSignaturePad(D) {
+    var canvas = document.getElementById('sig-canvas');
+    var wrap = document.getElementById('sig-wrap');
+    var ctx = canvas.getContext('2d');
+    var hint = document.getElementById('sig-hint');
+    var nameInput = document.getElementById('signer-name');
+    var submitBtn = document.getElementById('sig-submit');
+    var clearBtn = document.getElementById('sig-clear');
+
+    var drawing = false;
+    var hasDrawn = false;
+    var lastX = 0, lastY = 0;
+
+    function resizeCanvas() {
+      var rect = wrap.getBoundingClientRect();
+      var dpr = window.devicePixelRatio || 1;
+      canvas.width = rect.width * dpr;
+      canvas.height = 200 * dpr;
+      canvas.style.height = '200px';
+      ctx.scale(dpr, dpr);
+      ctx.strokeStyle = '#222';
+      ctx.lineWidth = 2.5;
+      ctx.lineCap = 'round';
+      ctx.lineJoin = 'round';
+    }
+    resizeCanvas();
+    window.addEventListener('resize', function() {
+      if (!hasDrawn) resizeCanvas();
+    });
+
+    function getPos(e) {
+      var rect = canvas.getBoundingClientRect();
+      var touch = e.touches ? e.touches[0] : e;
+      return { x: touch.clientX - rect.left, y: touch.clientY - rect.top };
+    }
+
+    function startDraw(e) {
+      e.preventDefault();
+      drawing = true;
+      var pos = getPos(e);
+      lastX = pos.x;
+      lastY = pos.y;
+      ctx.beginPath();
+      ctx.moveTo(pos.x, pos.y);
+      if (!hasDrawn) {
+        hasDrawn = true;
+        hint.classList.add('hidden');
+        updateSubmitState();
+      }
+    }
+
+    function moveDraw(e) {
+      if (!drawing) return;
+      e.preventDefault();
+      var pos = getPos(e);
+      ctx.lineTo(pos.x, pos.y);
+      ctx.stroke();
+      ctx.beginPath();
+      ctx.moveTo(pos.x, pos.y);
+      lastX = pos.x;
+      lastY = pos.y;
+    }
+
+    function endDraw(e) {
+      if (!drawing) return;
+      drawing = false;
+      ctx.beginPath();
+    }
+
+    canvas.addEventListener('touchstart', startDraw, { passive: false });
+    canvas.addEventListener('touchmove', moveDraw, { passive: false });
+    canvas.addEventListener('touchend', endDraw);
+    canvas.addEventListener('mousedown', startDraw);
+    canvas.addEventListener('mousemove', moveDraw);
+    canvas.addEventListener('mouseup', endDraw);
+    canvas.addEventListener('mouseleave', endDraw);
+
+    clearBtn.addEventListener('click', function() {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      hasDrawn = false;
+      hint.classList.remove('hidden');
+      resizeCanvas();
+      updateSubmitState();
+    });
+
+    function updateSubmitState() {
+      submitBtn.disabled = !(hasDrawn && nameInput.value.trim());
+    }
+    nameInput.addEventListener('input', updateSubmitState);
+
+    submitBtn.addEventListener('click', function() {
+      if (!hasDrawn || !nameInput.value.trim()) return;
+      submitBtn.disabled = true;
+      submitBtn.textContent = 'Submitting...';
+
+      var sigData = canvas.toDataURL('image/png');
+      var sigName = nameInput.value.trim();
+      var now = new Date().toISOString();
+
+      var sigDoc = {
+        projectId: projectId,
+        role: sigRole,
+        name: sigName,
+        signature: sigData,
+        timestamp: now,
+        userAgent: navigator.userAgent
+      };
+
+      db.collection('signatures').add(sigDoc).then(function() {
+        document.getElementById('doc-view').classList.add('hidden');
+        document.getElementById('done-view').classList.remove('hidden');
+        showToast('Signature submitted successfully!', 'success');
+      }).catch(function(err) {
+        console.error('[Firebase] Signature save error:', err);
+        showToast('Failed to submit signature. Please try again.', 'error');
+        submitBtn.disabled = false;
+        submitBtn.textContent = 'Submit Signature';
+      });
+    });
+  }
+})();
+</script>
+</body>
+</html>

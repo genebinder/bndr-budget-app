@@ -472,6 +472,59 @@
     .pb-new:active { background: var(--green-dark); }
     .pb-del { background: var(--red-light); color: var(--red-text); }
     .pb-del:active { background: #fde8e8; }
+
+    /* ── Photo Annotation Modal ── */
+    .ann-overlay {
+      position: fixed; inset: 0; background: rgba(0,0,0,.85); z-index: 5000;
+      display: flex; flex-direction: column; align-items: center; justify-content: center;
+    }
+    .ann-overlay.hidden { display: none; }
+    .ann-toolbar {
+      display: flex; gap: 6px; padding: 8px 12px; background: #222; border-radius: 10px 10px 0 0;
+      width: 100%; max-width: 600px; flex-wrap: wrap; align-items: center;
+    }
+    .ann-toolbar button {
+      border: none; background: #444; color: #fff; border-radius: 6px;
+      padding: 7px 12px; font-size: .72rem; font-weight: 700; cursor: pointer;
+      font-family: inherit; display: flex; align-items: center; gap: 4px;
+    }
+    .ann-toolbar button.active { background: var(--green); }
+    .ann-toolbar button:active { opacity: .8; }
+    .ann-toolbar .ann-spacer { flex: 1; }
+    .ann-canvas-wrap {
+      width: 100%; max-width: 600px; background: #111; position: relative;
+      touch-action: none; overflow: hidden;
+    }
+    .ann-canvas-wrap canvas { display: block; width: 100%; }
+    .ann-bottom {
+      display: flex; gap: 8px; padding: 10px 12px; background: #222; border-radius: 0 0 10px 10px;
+      width: 100%; max-width: 600px;
+    }
+    .ann-bottom button {
+      flex: 1; border: none; border-radius: 8px; padding: 12px;
+      font-size: .82rem; font-weight: 700; cursor: pointer; font-family: inherit;
+    }
+    .ann-save { background: var(--green); color: #fff; }
+    .ann-cancel { background: #444; color: #fff; }
+    .ann-caption-input {
+      position: absolute; z-index: 10; border: 2px solid var(--green);
+      border-radius: 6px; padding: 6px 8px; font-size: 14px; font-family: inherit;
+      background: rgba(255,255,255,.95); color: #222; outline: none;
+      min-width: 120px; max-width: 250px;
+    }
+
+    /* Photo button on line items */
+    .li-photo-btn {
+      border: none; background: var(--green-light); color: var(--green-dark);
+      font-size: .6rem; font-weight: 700; padding: 3px 7px;
+      border-radius: 5px; cursor: pointer; font-family: inherit;
+      white-space: nowrap; display: inline-flex; align-items: center; gap: 3px;
+    }
+    .li-photo-btn:active { background: var(--green); color: #fff; }
+    .li-photo-thumb {
+      width: 40px; height: 40px; object-fit: cover; border-radius: 6px;
+      border: 1px solid var(--border); cursor: pointer; margin-top: 4px;
+    }
   </style>
 
   <!-- Firebase SDK (compat for vanilla JS) -->
@@ -746,6 +799,36 @@
     Export
   </button>
 </nav>
+
+<!-- ══════ Photo Annotation Modal ══════ -->
+<div class="ann-overlay hidden" id="ann-overlay">
+  <div class="ann-toolbar">
+    <button id="ann-tool-arrow" class="active" title="Arrow">
+      <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+      Arrow
+    </button>
+    <button id="ann-tool-caption" title="Caption">
+      <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M12 20h9M16.5 3.5a2.12 2.12 0 013 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
+      Caption
+    </button>
+    <button id="ann-tool-add-arrow" title="Add another arrow">
+      <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg>
+      + Arrow
+    </button>
+    <div class="ann-spacer"></div>
+    <button id="ann-undo" title="Undo">
+      <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M1 4v6h6M3.51 15a9 9 0 1 0 2.13-9.36L1 10"/></svg>
+      Undo
+    </button>
+  </div>
+  <div class="ann-canvas-wrap" id="ann-canvas-wrap">
+    <canvas id="ann-canvas"></canvas>
+  </div>
+  <div class="ann-bottom">
+    <button class="ann-cancel" id="ann-cancel">Cancel</button>
+    <button class="ann-save" id="ann-save">Save Photo</button>
+  </div>
+</div>
 
 <script>
 /* ═══════════════════════════════════════════
@@ -1627,6 +1710,13 @@ function renderBudgetCategories() {
           '<div class="li-contractor-row">' +
             '<label>Contractor:</label>' +
             '<input type="text" value="' + escAttr(itemContractorVal) + '" data-field="contractor" placeholder="' + escAttr(itemContractorPlaceholder) + '">' +
+          '</div>' +
+          '<div class="li-photo-row" style="margin:4px 0;">' +
+            '<button class="li-photo-btn" data-action="annotate-photo" data-cat-id="' + cat.id + '" data-item-id="' + item.id + '">' +
+              '<svg width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/></svg> ' +
+              (item.photo ? 'Edit Photo' : 'Add Photo') +
+            '</button>' +
+            (item.photo ? '<img class="li-photo-thumb" src="' + item.photo + '" data-action="annotate-photo" data-cat-id="' + cat.id + '" data-item-id="' + item.id + '">' : '') +
           '</div>' +
           '<div class="li-amounts">' +
             '<div class="li-field"><label>Estimated</label><input type="text" inputmode="decimal" value="' + (item.estimated ? fmt(item.estimated) : '') + '" data-field="estimated" placeholder="$0"><div class="markup-row"><button class="markup-btn" data-action="markup" data-field="estimated" data-item-id="' + item.id + '">+ 15%</button></div></div>' +
@@ -4705,6 +4795,320 @@ function renderSignatureStatus(sigs) {
   html += '</div>';
   el.innerHTML = html;
 }
+
+/* ═══════════════════════════════════════════
+   PHOTO ANNOTATION TOOL
+   ═══════════════════════════════════════════ */
+(function() {
+  var overlay = document.getElementById('ann-overlay');
+  var canvas = document.getElementById('ann-canvas');
+  var wrap = document.getElementById('ann-canvas-wrap');
+  var ctx = canvas.getContext('2d');
+
+  var bgImage = null;
+  var annotations = []; // { type: 'arrow'|'caption', ... }
+  var currentTool = 'arrow'; // 'arrow' or 'caption'
+  var drawing = false;
+  var dragStart = null;
+  var dragEnd = null;
+  var activeCaptionInput = null;
+  var targetCatId = null;
+  var targetItemId = null;
+
+  var ARROW_COLOR = '#FF3B30';
+  var ARROW_WIDTH = 3;
+  var CAPTION_COLOR = '#FFFFFF';
+  var CAPTION_BG = 'rgba(0,0,0,.7)';
+  var CAPTION_FONT = 'bold 14px -apple-system, system-ui, sans-serif';
+
+  // Tool buttons
+  document.getElementById('ann-tool-arrow').addEventListener('click', function() { setTool('arrow'); });
+  document.getElementById('ann-tool-caption').addEventListener('click', function() { setTool('caption'); });
+  document.getElementById('ann-tool-add-arrow').addEventListener('click', function() { setTool('arrow'); });
+  document.getElementById('ann-undo').addEventListener('click', function() {
+    annotations.pop();
+    redraw();
+  });
+
+  function setTool(tool) {
+    currentTool = tool;
+    document.getElementById('ann-tool-arrow').classList.toggle('active', tool === 'arrow');
+    document.getElementById('ann-tool-caption').classList.toggle('active', tool === 'caption');
+    document.getElementById('ann-tool-add-arrow').classList.toggle('active', false);
+    if (tool === 'arrow') {
+      document.getElementById('ann-tool-add-arrow').classList.add('active');
+    }
+  }
+
+  function getCanvasPos(e) {
+    var rect = canvas.getBoundingClientRect();
+    var touch = e.touches ? e.touches[0] : e;
+    var scaleX = canvas.width / rect.width;
+    var scaleY = canvas.height / rect.height;
+    return {
+      x: (touch.clientX - rect.left) * scaleX,
+      y: (touch.clientY - rect.top) * scaleY
+    };
+  }
+
+  // Drawing events
+  canvas.addEventListener('touchstart', onStart, { passive: false });
+  canvas.addEventListener('mousedown', onStart);
+  canvas.addEventListener('touchmove', onMove, { passive: false });
+  canvas.addEventListener('mousemove', onMove);
+  canvas.addEventListener('touchend', onEnd);
+  canvas.addEventListener('mouseup', onEnd);
+
+  function onStart(e) {
+    e.preventDefault();
+    removeActiveCaptionInput();
+    var pos = getCanvasPos(e);
+    if (currentTool === 'arrow') {
+      drawing = true;
+      dragStart = pos;
+      dragEnd = pos;
+    } else if (currentTool === 'caption') {
+      showCaptionInput(pos, e);
+    }
+  }
+
+  function onMove(e) {
+    if (!drawing) return;
+    e.preventDefault();
+    dragEnd = getCanvasPos(e);
+    redraw();
+    drawArrow(ctx, dragStart.x, dragStart.y, dragEnd.x, dragEnd.y, ARROW_COLOR, ARROW_WIDTH);
+  }
+
+  function onEnd(e) {
+    if (!drawing) return;
+    drawing = false;
+    if (dragStart && dragEnd) {
+      var dx = dragEnd.x - dragStart.x;
+      var dy = dragEnd.y - dragStart.y;
+      if (Math.sqrt(dx * dx + dy * dy) > 10) {
+        annotations.push({
+          type: 'arrow',
+          x1: dragStart.x, y1: dragStart.y,
+          x2: dragEnd.x, y2: dragEnd.y
+        });
+      }
+    }
+    dragStart = null;
+    dragEnd = null;
+    redraw();
+  }
+
+  function showCaptionInput(pos, originalEvent) {
+    removeActiveCaptionInput();
+    var rect = canvas.getBoundingClientRect();
+    var scaleX = rect.width / canvas.width;
+    var scaleY = rect.height / canvas.height;
+    var input = document.createElement('input');
+    input.type = 'text';
+    input.className = 'ann-caption-input';
+    input.placeholder = 'Type caption...';
+    input.style.left = (pos.x * scaleX) + 'px';
+    input.style.top = (pos.y * scaleY) + 'px';
+    wrap.appendChild(input);
+    activeCaptionInput = input;
+    setTimeout(function() { input.focus(); }, 50);
+
+    input.addEventListener('keydown', function(ke) {
+      if (ke.key === 'Enter') {
+        commitCaption(input, pos);
+      }
+    });
+    input.addEventListener('blur', function() {
+      setTimeout(function() { commitCaption(input, pos); }, 150);
+    });
+  }
+
+  function commitCaption(input, pos) {
+    var text = input.value.trim();
+    if (text) {
+      annotations.push({ type: 'caption', x: pos.x, y: pos.y, text: text });
+    }
+    removeActiveCaptionInput();
+    redraw();
+  }
+
+  function removeActiveCaptionInput() {
+    if (activeCaptionInput && activeCaptionInput.parentNode) {
+      activeCaptionInput.parentNode.removeChild(activeCaptionInput);
+    }
+    activeCaptionInput = null;
+  }
+
+  function drawArrow(c, x1, y1, x2, y2, color, width) {
+    var headLen = 14;
+    var angle = Math.atan2(y2 - y1, x2 - x1);
+
+    c.save();
+    c.strokeStyle = color;
+    c.fillStyle = color;
+    c.lineWidth = width;
+    c.lineCap = 'round';
+
+    // Line
+    c.beginPath();
+    c.moveTo(x1, y1);
+    c.lineTo(x2, y2);
+    c.stroke();
+
+    // Arrowhead
+    c.beginPath();
+    c.moveTo(x2, y2);
+    c.lineTo(x2 - headLen * Math.cos(angle - Math.PI / 6), y2 - headLen * Math.sin(angle - Math.PI / 6));
+    c.lineTo(x2 - headLen * Math.cos(angle + Math.PI / 6), y2 - headLen * Math.sin(angle + Math.PI / 6));
+    c.closePath();
+    c.fill();
+    c.restore();
+  }
+
+  function drawCaption(c, x, y, text) {
+    c.save();
+    c.font = CAPTION_FONT;
+    var metrics = c.measureText(text);
+    var pad = 6;
+    var w = metrics.width + pad * 2;
+    var h = 20 + pad * 2;
+
+    c.fillStyle = CAPTION_BG;
+    c.beginPath();
+    var r = 4;
+    c.moveTo(x + r, y);
+    c.lineTo(x + w - r, y);
+    c.quadraticCurveTo(x + w, y, x + w, y + r);
+    c.lineTo(x + w, y + h - r);
+    c.quadraticCurveTo(x + w, y + h, x + w - r, y + h);
+    c.lineTo(x + r, y + h);
+    c.quadraticCurveTo(x, y + h, x, y + h - r);
+    c.lineTo(x, y + r);
+    c.quadraticCurveTo(x, y, x + r, y);
+    c.closePath();
+    c.fill();
+
+    c.fillStyle = CAPTION_COLOR;
+    c.textBaseline = 'middle';
+    c.fillText(text, x + pad, y + h / 2);
+    c.restore();
+  }
+
+  function redraw() {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    if (bgImage) {
+      ctx.drawImage(bgImage, 0, 0, canvas.width, canvas.height);
+    }
+    for (var i = 0; i < annotations.length; i++) {
+      var a = annotations[i];
+      if (a.type === 'arrow') {
+        drawArrow(ctx, a.x1, a.y1, a.x2, a.y2, ARROW_COLOR, ARROW_WIDTH);
+      } else if (a.type === 'caption') {
+        drawCaption(ctx, a.x, a.y, a.text);
+      }
+    }
+  }
+
+  // Open annotation modal
+  window.openAnnotation = function(catId, itemId) {
+    targetCatId = catId;
+    targetItemId = itemId;
+    annotations = [];
+
+    // Find item data
+    var item = findItem(catId, itemId);
+    if (!item) return;
+
+    if (item.photo) {
+      // Edit existing annotated photo
+      loadImage(item.photo);
+    } else {
+      // Upload new photo
+      var fileInput = document.createElement('input');
+      fileInput.type = 'file';
+      fileInput.accept = 'image/*';
+      fileInput.capture = 'environment';
+      fileInput.addEventListener('change', function() {
+        if (fileInput.files && fileInput.files[0]) {
+          var reader = new FileReader();
+          reader.onload = function(ev) {
+            loadImage(ev.target.result);
+          };
+          reader.readAsDataURL(fileInput.files[0]);
+        }
+      });
+      fileInput.click();
+    }
+  };
+
+  function findItem(catId, itemId) {
+    for (var c = 0; c < D.categories.length; c++) {
+      if (String(D.categories[c].id) === String(catId)) {
+        for (var i = 0; i < D.categories[c].items.length; i++) {
+          if (String(D.categories[c].items[i].id) === String(itemId)) {
+            return D.categories[c].items[i];
+          }
+        }
+      }
+    }
+    return null;
+  }
+
+  function loadImage(src) {
+    var img = new Image();
+    img.onload = function() {
+      bgImage = img;
+      var maxW = 1200;
+      var w = img.width;
+      var h = img.height;
+      if (w > maxW) { h = h * (maxW / w); w = maxW; }
+      canvas.width = w;
+      canvas.height = h;
+      redraw();
+      overlay.classList.remove('hidden');
+      setTool('arrow');
+    };
+    img.onerror = function() { alert('Could not load image.'); };
+    img.src = src;
+  }
+
+  // Cancel
+  document.getElementById('ann-cancel').addEventListener('click', function() {
+    overlay.classList.add('hidden');
+    removeActiveCaptionInput();
+    bgImage = null;
+    annotations = [];
+  });
+
+  // Save
+  document.getElementById('ann-save').addEventListener('click', function() {
+    removeActiveCaptionInput();
+    redraw();
+    var dataUrl = canvas.toDataURL('image/jpeg', 0.85);
+    var item = findItem(targetCatId, targetItemId);
+    if (item) {
+      item.photo = dataUrl;
+      scheduleSave();
+      renderBudget();
+    }
+    overlay.classList.add('hidden');
+    bgImage = null;
+    annotations = [];
+  });
+})();
+
+// Handle annotate-photo clicks via event delegation on budget tab
+document.getElementById('tab-budget').addEventListener('click', function(e) {
+  var btn = e.target.closest('[data-action="annotate-photo"]');
+  if (btn) {
+    var catId = btn.getAttribute('data-cat-id');
+    var itemId = btn.getAttribute('data-item-id');
+    if (catId && itemId) {
+      openAnnotation(catId, itemId);
+    }
+  }
+});
 
 /* ═══════════════════════════════════════════
    SERVICE WORKER REGISTRATION

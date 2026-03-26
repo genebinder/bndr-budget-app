@@ -401,7 +401,7 @@
       body { padding: 0; background: #fff; }
       .app-header, .tab-bar, .no-print { display: none !important; }
       .tab-panel { display: block !important; padding: 0; }
-      #tab-project, #tab-budget, #tab-payments, #tab-scope, #tab-imports, #tab-finance { display: none !important; }
+      #tab-project, #tab-budget, #tab-payments, #tab-scope, #tab-imports, #tab-finance, #tab-docs { display: none !important; }
       #tab-export { display: block !important; }
       .card { box-shadow: none; break-inside: avoid; }
       .print-page { display: block !important; }
@@ -472,6 +472,111 @@
     .pb-new:active { background: var(--green-dark); }
     .pb-del { background: var(--red-light); color: var(--red-text); }
     .pb-del:active { background: #fde8e8; }
+
+    /* ── Photo Annotation Modal ── */
+    .ann-overlay {
+      position: fixed; inset: 0; background: rgba(0,0,0,.85); z-index: 5000;
+      display: flex; flex-direction: column; align-items: center; justify-content: center;
+    }
+    .ann-overlay.hidden { display: none; }
+    .ann-toolbar {
+      display: flex; gap: 6px; padding: 8px 12px; background: #222; border-radius: 10px 10px 0 0;
+      width: 100%; max-width: 600px; flex-wrap: wrap; align-items: center;
+    }
+    .ann-toolbar button {
+      border: none; background: #444; color: #fff; border-radius: 6px;
+      padding: 7px 12px; font-size: .72rem; font-weight: 700; cursor: pointer;
+      font-family: inherit; display: flex; align-items: center; gap: 4px;
+    }
+    .ann-toolbar button.active { background: var(--green); }
+    .ann-toolbar button:active { opacity: .8; }
+    .ann-toolbar .ann-spacer { flex: 1; }
+    .ann-canvas-wrap {
+      width: 100%; max-width: 600px; background: #111; position: relative;
+      touch-action: none; overflow: hidden;
+    }
+    .ann-canvas-wrap canvas { display: block; width: 100%; }
+    .ann-bottom {
+      display: flex; gap: 8px; padding: 10px 12px; background: #222; border-radius: 0 0 10px 10px;
+      width: 100%; max-width: 600px;
+    }
+    .ann-bottom button {
+      flex: 1; border: none; border-radius: 8px; padding: 12px;
+      font-size: .82rem; font-weight: 700; cursor: pointer; font-family: inherit;
+    }
+    .ann-save { background: var(--green); color: #fff; }
+    .ann-cancel { background: #444; color: #fff; }
+    .ann-caption-input {
+      position: absolute; z-index: 10; border: 2px solid var(--green);
+      border-radius: 6px; padding: 6px 8px; font-size: 14px; font-family: inherit;
+      background: rgba(255,255,255,.95); color: #222; outline: none;
+      min-width: 120px; max-width: 250px;
+    }
+
+    /* Photo button on line items */
+    /* ── Site Report Items ── */
+    .rpt-item {
+      background: var(--green-bg); border-radius: 10px; padding: 12px;
+      margin-bottom: 8px; position: relative;
+    }
+    .rpt-item-del {
+      position: absolute; top: 8px; right: 8px; border: none; background: none;
+      color: var(--red); font-size: 1.1rem; cursor: pointer; padding: 0; line-height: 1;
+    }
+    .rpt-item textarea, .rpt-item input[type="text"], .rpt-item select {
+      width: 100%; border: 1.5px solid var(--border); border-radius: 6px;
+      padding: 8px 10px; font-size: 14px; font-family: inherit;
+      background: #fff; outline: none; margin-bottom: 6px;
+    }
+    .rpt-item textarea:focus, .rpt-item input[type="text"]:focus { border-color: var(--green); }
+    .rpt-photo-grid {
+      display: flex; flex-wrap: wrap; gap: 6px; margin-top: 6px;
+    }
+    .rpt-photo-thumb {
+      width: 60px; height: 60px; object-fit: cover; border-radius: 8px;
+      border: 1px solid var(--border); cursor: pointer;
+    }
+    .rpt-add-photo {
+      width: 60px; height: 60px; border: 2px dashed var(--border); border-radius: 8px;
+      display: flex; align-items: center; justify-content: center;
+      cursor: pointer; color: var(--muted); font-size: 1.5rem; background: #fff;
+    }
+    .rpt-add-photo:active { background: var(--green-light); border-color: var(--green); }
+    .rpt-report-card {
+      background: var(--card); border-radius: var(--radius); padding: 14px;
+      margin-bottom: 8px; box-shadow: 0 1px 3px rgba(0,0,0,.06);
+      cursor: pointer; display: flex; align-items: center; gap: 12px;
+    }
+    .rpt-report-card:active { background: var(--green-light); }
+    .rpt-report-card .rpt-icon {
+      width: 40px; height: 40px; border-radius: 10px; background: var(--green-light);
+      display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+    }
+    .rpt-report-card .rpt-icon svg { width: 20px; height: 20px; color: var(--green); }
+    .rpt-report-card .rpt-info { flex: 1; min-width: 0; }
+    .rpt-report-card .rpt-info h4 { font-size: .82rem; margin-bottom: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .rpt-report-card .rpt-info p { font-size: .68rem; color: var(--muted); margin: 0; }
+    .rpt-status-badge {
+      font-size: .6rem; font-weight: 700; padding: 3px 8px; border-radius: 10px;
+      white-space: nowrap;
+    }
+    .rpt-status-badge.on-track { background: #dcfce7; color: #166534; }
+    .rpt-status-badge.behind { background: #fef2f2; color: #b91c1c; }
+    .rpt-status-badge.ahead { background: #dbeafe; color: #1e40af; }
+    .rpt-status-badge.on-hold { background: #fffbeb; color: #92400e; }
+    .rpt-status-badge.complete { background: var(--green-light); color: var(--green-dark); }
+
+    .li-photo-btn {
+      border: none; background: var(--green-light); color: var(--green-dark);
+      font-size: .6rem; font-weight: 700; padding: 3px 7px;
+      border-radius: 5px; cursor: pointer; font-family: inherit;
+      white-space: nowrap; display: inline-flex; align-items: center; gap: 3px;
+    }
+    .li-photo-btn:active { background: var(--green); color: #fff; }
+    .li-photo-thumb {
+      width: 40px; height: 40px; object-fit: cover; border-radius: 6px;
+      border: 1px solid var(--border); cursor: pointer; margin-top: 4px;
+    }
   </style>
 
   <!-- Firebase SDK (compat for vanilla JS) -->
@@ -479,6 +584,7 @@
   <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-storage-compat.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.2/html2pdf.bundle.min.js"></script>
 </head>
 <body>
 
@@ -616,7 +722,7 @@
       </button>
       <button class="export-btn" id="btnShare">
         <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M4 12v8a2 2 0 002 2h12a2 2 0 002-2v-8M16 6l-4-4-4 4M12 2v13"/></svg>
-        <span>Share / Text</span>
+        <span>Share / PDF</span>
       </button>
       <button class="export-btn" id="btnDownloadHTML">
         <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M7 10l5 5 5-5M12 15V3"/></svg>
@@ -634,6 +740,35 @@
         <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M18 10h-1.26A8 8 0 109 20h9a5 5 0 000-10z"/><path d="M16 16l-4-4-4 4M12 12v9"/></svg>
         <span>Sync Projects</span>
       </button>
+      <button class="export-btn" id="btnSendSignature" style="border-color:#7c3aed;background:#f5f3ff;">
+        <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M17 3a2.85 2.85 0 114 4L7.5 20.5 2 22l1.5-5.5L17 3z"/></svg>
+        <span>Send for Signature</span>
+      </button>
+    </div>
+    <!-- Signature send form -->
+    <div id="sig-send-form" class="hidden" style="margin-top:12px;background:var(--green-bg);border-radius:12px;padding:16px;">
+      <div style="font-weight:700;font-size:.82rem;margin-bottom:10px;color:var(--dark);">Send Contract for Signature</div>
+      <div style="margin-bottom:8px;">
+        <label style="font-size:.72rem;font-weight:600;color:var(--muted);display:block;margin-bottom:3px;">Recipient Phone Number</label>
+        <input type="tel" id="sig-phone" placeholder="(555) 555-5555" style="width:100%;border:1.5px solid var(--border);border-radius:8px;padding:10px 12px;font-size:16px;font-family:inherit;background:#fafbfa;">
+      </div>
+      <div style="margin-bottom:8px;">
+        <label style="font-size:.72rem;font-weight:600;color:var(--muted);display:block;margin-bottom:3px;">Signer Role</label>
+        <select id="sig-role" style="width:100%;border:1.5px solid var(--border);border-radius:8px;padding:10px 12px;font-size:16px;font-family:inherit;background:#fafbfa;">
+          <option value="contractor">Contractor</option>
+          <option value="buyer">Buyer / Owner</option>
+          <option value="pm">Project Manager</option>
+        </select>
+      </div>
+      <div style="margin-bottom:10px;">
+        <label style="font-size:.72rem;font-weight:600;color:var(--muted);display:block;margin-bottom:3px;">Signing Link</label>
+        <input type="text" id="sig-link" readonly style="width:100%;border:1.5px solid var(--border);border-radius:8px;padding:10px 12px;font-size:.72rem;font-family:inherit;background:#f0f0f0;color:var(--muted);">
+      </div>
+      <div style="display:flex;gap:8px;">
+        <button class="btn btn-green" id="btnTextSignLink" style="flex:1;">Send via Text</button>
+        <button class="btn btn-outline" id="btnCopySignLink" style="flex:0 0 auto;">Copy Link</button>
+      </div>
+      <div id="sig-send-status" style="font-size:.72rem;margin-top:8px;color:var(--muted);"></div>
     </div>
     <div style="margin-top:12px;">
       <label class="btn btn-outline" style="cursor:pointer;">
@@ -685,6 +820,82 @@
   <div id="fp-inputs"></div>
 </div>
 
+<!-- ══════ Tab: Docs (Site Reports) ══════ -->
+<div id="tab-docs" class="tab-panel">
+  <div id="docs-list-view">
+    <div class="card">
+      <div class="card-title">Site Reports</div>
+      <div style="font-size:.72rem;color:var(--muted);margin-bottom:10px;">Inspection reports with photos, notes, and observations.</div>
+      <button class="btn btn-green" id="btnNewReport" style="margin-bottom:12px;">
+        + New Site Report
+      </button>
+      <div id="docs-report-list"></div>
+    </div>
+  </div>
+
+  <div id="docs-edit-view" class="hidden">
+    <div class="card">
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:12px;">
+        <button class="btn btn-outline btn-sm" id="btnBackToReports" style="flex:0 0 auto;width:auto;">&larr; Back</button>
+        <div class="card-title" style="margin-bottom:0;flex:1;">Site Report</div>
+      </div>
+
+      <div style="margin-bottom:10px;">
+        <label style="font-size:.72rem;font-weight:600;color:var(--muted);display:block;margin-bottom:3px;">Report Title</label>
+        <input type="text" id="rpt-title" placeholder="e.g. Initial Inspection, Week 3 Progress..." style="width:100%;border:1.5px solid var(--border);border-radius:8px;padding:10px 12px;font-size:16px;font-family:inherit;background:#fafbfa;outline:none;">
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px;">
+        <div>
+          <label style="font-size:.72rem;font-weight:600;color:var(--muted);display:block;margin-bottom:3px;">Date</label>
+          <input type="text" id="rpt-date" placeholder="MM/DD/YYYY" style="width:100%;border:1.5px solid var(--border);border-radius:8px;padding:10px 12px;font-size:16px;font-family:inherit;background:#fafbfa;outline:none;">
+        </div>
+        <div>
+          <label style="font-size:.72rem;font-weight:600;color:var(--muted);display:block;margin-bottom:3px;">Inspector</label>
+          <input type="text" id="rpt-inspector" placeholder="Your name" style="width:100%;border:1.5px solid var(--border);border-radius:8px;padding:10px 12px;font-size:16px;font-family:inherit;background:#fafbfa;outline:none;">
+        </div>
+      </div>
+      <div style="margin-bottom:10px;">
+        <label style="font-size:.72rem;font-weight:600;color:var(--muted);display:block;margin-bottom:3px;">Overall Status</label>
+        <select id="rpt-status" style="width:100%;border:1.5px solid var(--border);border-radius:8px;padding:10px 12px;font-size:16px;font-family:inherit;background:#fafbfa;outline:none;">
+          <option value="On Track">On Track</option>
+          <option value="Behind Schedule">Behind Schedule</option>
+          <option value="Ahead of Schedule">Ahead of Schedule</option>
+          <option value="On Hold">On Hold</option>
+          <option value="Complete">Complete</option>
+        </select>
+      </div>
+      <div style="margin-bottom:10px;">
+        <label style="font-size:.72rem;font-weight:600;color:var(--muted);display:block;margin-bottom:3px;">Summary / Notes</label>
+        <textarea id="rpt-notes" rows="4" placeholder="General observations, progress notes..." style="width:100%;border:1.5px solid var(--border);border-radius:8px;padding:10px 12px;font-size:16px;font-family:inherit;background:#fafbfa;outline:none;resize:vertical;"></textarea>
+      </div>
+    </div>
+
+    <!-- Report Items (observations) -->
+    <div class="card">
+      <div class="card-title">Observations</div>
+      <div id="rpt-items"></div>
+      <button class="btn btn-outline btn-sm mt" id="btnAddObservation">+ Add Observation</button>
+    </div>
+
+    <!-- Report Actions -->
+    <div class="card">
+      <div class="card-title">Export Report</div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;">
+        <button class="btn btn-green" id="btnReportPDF" style="flex:1;">
+          <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" style="width:16px;height:16px;vertical-align:middle;"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+          Share PDF
+        </button>
+        <button class="btn btn-outline" id="btnReportText" style="flex:1;">
+          <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" style="width:16px;height:16px;vertical-align:middle;"><path d="M4 12v8a2 2 0 002 2h12a2 2 0 002-2v-8M16 6l-4-4-4 4M12 2v13"/></svg>
+          Send via Text
+        </button>
+      </div>
+      <div id="rpt-export-status" style="font-size:.72rem;margin-top:8px;color:var(--muted);"></div>
+    </div>
+
+  </div>
+</div>
+
 <!-- ══════ Tab Bar ══════ -->
 <nav class="tab-bar">
   <button class="tab-btn active" data-tab="tab-project">
@@ -711,11 +922,45 @@
     <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M12 20V10M6 20V4M18 20v-6"/></svg>
     Finance
   </button>
+  <button class="tab-btn" data-tab="tab-docs">
+    <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/><path d="M9 15h6M9 11h6"/></svg>
+    Docs
+  </button>
   <button class="tab-btn" data-tab="tab-export">
     <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
     Export
   </button>
 </nav>
+
+<!-- ══════ Photo Annotation Modal ══════ -->
+<div class="ann-overlay hidden" id="ann-overlay">
+  <div class="ann-toolbar">
+    <button id="ann-tool-arrow" class="active" title="Arrow">
+      <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+      Arrow
+    </button>
+    <button id="ann-tool-caption" title="Caption">
+      <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M12 20h9M16.5 3.5a2.12 2.12 0 013 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
+      Caption
+    </button>
+    <button id="ann-tool-add-arrow" title="Add another arrow">
+      <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg>
+      + Arrow
+    </button>
+    <div class="ann-spacer"></div>
+    <button id="ann-undo" title="Undo">
+      <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M1 4v6h6M3.51 15a9 9 0 1 0 2.13-9.36L1 10"/></svg>
+      Undo
+    </button>
+  </div>
+  <div class="ann-canvas-wrap" id="ann-canvas-wrap">
+    <canvas id="ann-canvas"></canvas>
+  </div>
+  <div class="ann-bottom">
+    <button class="ann-cancel" id="ann-cancel">Cancel</button>
+    <button class="ann-save" id="ann-save">Save Photo</button>
+  </div>
+</div>
 
 <script>
 /* ═══════════════════════════════════════════
@@ -761,7 +1006,9 @@ var D = {
   projections: null,
   nextCatId: 1,
   nextItemId: 1,
-  nextPayId: 1
+  nextPayId: 1,
+  siteReports: [],
+  nextReportId: 1
 };
 
 function defaultCategories() {
@@ -1237,6 +1484,8 @@ function createNewProject() {
   D.nextCatId = D.categories.length ? D.categories[D.categories.length - 1].id + 1 : 1;
   D.nextItemId = 100;
   D.nextPayId = 1;
+  D.siteReports = [];
+  D.nextReportId = 1;
   // Add to index
   var index = getProjectIndex();
   index.unshift({ id: id, name: 'Untitled Project', created: new Date().toISOString(), lastModified: new Date().toISOString() });
@@ -1321,6 +1570,8 @@ function ensureFields() {
   if (!D.deliveredMats) D.deliveredMats = DEFAULT_DELIVERED_MATS.slice();
   if (!D.customFixedRules) D.customFixedRules = [];
   if (!D.customFeeRules) D.customFeeRules = [];
+  if (!D.siteReports) D.siteReports = [];
+  if (!D.nextReportId) D.nextReportId = 1;
   for (var i = 0; i < D.categories.length; i++) {
     if (D.categories[i].contractor === undefined) D.categories[i].contractor = '';
     if (D.categories[i].phone === undefined) D.categories[i].phone = '';
@@ -1486,7 +1737,8 @@ function switchTab(tabId) {
   if (tabId === 'tab-payments') renderPayments();
   if (tabId === 'tab-imports') renderImports();
   if (tabId === 'tab-finance') renderFinance();
-  if (tabId === 'tab-export') { renderExportPreview(); initSyncSettings(); }
+  if (tabId === 'tab-docs') renderReportList();
+  if (tabId === 'tab-export') { renderExportPreview(); initSyncSettings(); checkSignatures(); }
   window.scrollTo(0, 0);
 }
 
@@ -1597,6 +1849,13 @@ function renderBudgetCategories() {
           '<div class="li-contractor-row">' +
             '<label>Contractor:</label>' +
             '<input type="text" value="' + escAttr(itemContractorVal) + '" data-field="contractor" placeholder="' + escAttr(itemContractorPlaceholder) + '">' +
+          '</div>' +
+          '<div class="li-photo-row" style="margin:4px 0;">' +
+            '<button class="li-photo-btn" data-action="annotate-photo" data-cat-id="' + cat.id + '" data-item-id="' + item.id + '">' +
+              '<svg width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/></svg> ' +
+              (item.photo ? 'Edit Photo' : 'Add Photo') +
+            '</button>' +
+            (item.photo ? '<img class="li-photo-thumb" src="' + item.photo + '" data-action="annotate-photo" data-cat-id="' + cat.id + '" data-item-id="' + item.id + '">' : '') +
           '</div>' +
           '<div class="li-amounts">' +
             '<div class="li-field"><label>Estimated</label><input type="text" inputmode="decimal" value="' + (item.estimated ? fmt(item.estimated) : '') + '" data-field="estimated" placeholder="$0"><div class="markup-row"><button class="markup-btn" data-action="markup" data-field="estimated" data-item-id="' + item.id + '">+ 15%</button></div></div>' +
@@ -3620,7 +3879,9 @@ function renderExportPreview() {
       if (!item.desc && !item.estimated && !item.actual) continue;
       var itemCon = (item.contractor || '').trim();
       var showItemCon = itemCon && itemCon !== (cat.contractor || '').trim();
-      html += '<tr><td style="padding:4px 8px 4px 20px;">' + esc(item.desc) + '</td>' +
+      html += '<tr><td style="padding:4px 8px 4px 20px;">' + esc(item.desc) +
+        (item.photo ? '<br><img src="' + item.photo + '" style="max-width:180px;height:auto;border-radius:4px;margin-top:4px;">' : '') +
+        '</td>' +
         '<td style="padding:4px 8px;font-size:.68rem;color:var(--green-dark);">' + (showItemCon ? esc(itemCon) : '') + '</td>' +
         '<td style="padding:4px 8px;text-align:right;">$' + fmt(item.estimated) + '</td>' +
         '<td style="padding:4px 8px;text-align:right;">$' + fmt(item.actual) + '</td></tr>';
@@ -3632,6 +3893,24 @@ function renderExportPreview() {
     '<td style="padding:6px 8px;text-align:right;">$' + fmt(totalEst) + '</td>' +
     '<td style="padding:6px 8px;text-align:right;">$' + fmt(totalAct) + '</td></tr>';
   html += '</tbody></table>';
+
+  // Financial summary
+  var remaining = totalEst + bonus - totalPaid;
+  var isOver = remaining < 0;
+  html += '<div style="font-weight:700;font-size:.82rem;margin-bottom:6px;">Financial Summary</div>' +
+    '<table style="width:100%;border-collapse:collapse;font-size:.78rem;margin-bottom:14px;">' +
+    '<tbody>' +
+    '<tr><td style="padding:4px 8px;">Contract Total (Estimated)</td><td style="padding:4px 8px;text-align:right;font-weight:700;">$' + fmt(totalEst) + '</td></tr>' +
+    '<tr><td style="padding:4px 8px;">Total Actual</td><td style="padding:4px 8px;text-align:right;font-weight:700;">$' + fmt(totalAct) + '</td></tr>';
+  if (bonus > 0) {
+    html += '<tr><td style="padding:4px 8px;">Bonus' +
+      (p.bonusDate ? ' — on or before ' + esc(p.bonusDate) : '') +
+      '</td><td style="padding:4px 8px;text-align:right;font-weight:700;">$' + fmt(bonus) + '</td></tr>';
+  }
+  html += '<tr><td style="padding:4px 8px;">Total Paid</td><td style="padding:4px 8px;text-align:right;font-weight:700;">$' + fmt(totalPaid) + '</td></tr>' +
+    '<tr style="border-top:2px solid var(--green);font-weight:700;"><td style="padding:6px 8px;">' + (isOver ? 'Overpaid' : 'Remaining Balance') + '</td>' +
+    '<td style="padding:6px 8px;text-align:right;color:' + (isOver ? 'var(--red)' : 'var(--green)') + ';">$' + fmt(Math.abs(remaining)) + (isOver ? ' over' : '') + '</td></tr>' +
+    '</tbody></table>';
 
   // Scope items
   if (D.scope) {
@@ -3722,11 +4001,12 @@ function renderExportPreview() {
     html += '</tbody></table>';
   }
 
-  // Signature lines
-  html += '<div style="display:flex;gap:30px;margin-top:30px;">' +
+  // Signature lines — show digital signatures if available
+  html += '<div id="export-signatures" style="margin-top:30px;">' +
+    '<div style="display:flex;gap:30px;">' +
     '<div style="flex:1;border-top:1px solid #000;padding-top:4px;font-size:.72rem;color:#666;">Contractor Signature &nbsp;&nbsp;&nbsp;&nbsp; Date</div>' +
     '<div style="flex:1;border-top:1px solid #000;padding-top:4px;font-size:.72rem;color:#666;">Project Manager Signature &nbsp;&nbsp;&nbsp;&nbsp; Date</div>' +
-  '</div>';
+    '</div></div>';
 
   // Notes
   if (p.notes) {
@@ -3736,6 +4016,31 @@ function renderExportPreview() {
 
   html += '</div>';
   document.getElementById('export-preview').innerHTML = html;
+  loadExportSignatures();
+}
+
+function loadExportSignatures() {
+  if (!fbReady || !currentProjectId) return;
+  db.collection('signatures').where('projectId', '==', currentProjectId)
+    .orderBy('timestamp', 'desc').get().then(function(snapshot) {
+    if (snapshot.empty) return;
+    var sigEl = document.getElementById('export-signatures');
+    if (!sigEl) return;
+    var html = '';
+    snapshot.forEach(function(doc) {
+      var s = doc.data();
+      var dt = new Date(s.timestamp);
+      html += '<div style="margin-bottom:16px;padding:8px;border:1px solid var(--border);border-radius:8px;background:#fafbfa;">' +
+        '<div style="font-size:.7rem;color:var(--muted);margin-bottom:4px;">' +
+        esc(s.role || 'Signer') + ' — ' + dt.toLocaleDateString() + ' ' + dt.toLocaleTimeString() + '</div>' +
+        '<div style="font-weight:600;font-size:.82rem;margin-bottom:6px;">' + esc(s.name || '') + '</div>' +
+        (s.signature ? '<img src="' + s.signature + '" style="max-width:280px;height:80px;object-fit:contain;border-bottom:1px solid #000;">' : '') +
+        '</div>';
+    });
+    // Prepend digital signatures before the manual signature lines
+    sigEl.insertAdjacentHTML('afterbegin',
+      '<div style="font-weight:700;font-size:.82rem;margin-bottom:8px;">Digital Signatures</div>' + html);
+  }).catch(function() {});
 }
 
 /* ═══════════════════════════════════════════
@@ -3747,63 +4052,49 @@ document.getElementById('btnPrint').addEventListener('click', function() {
 });
 
 document.getElementById('btnShare').addEventListener('click', function() {
-  syncProjectFields();
+  renderExportPreview();
+  var btn = this;
+  btn.disabled = true;
+  btn.querySelector('span').textContent = 'Generating…';
+
+  var element = document.getElementById('export-preview');
   var p = D.project;
-  var text = 'BNDR CAPITAL — Scope of Work & Budget\n';
-  text += '══════════════════════════════\n';
-  text += 'Property: ' + p.address + '\n';
-  if (p.date) text += 'Date: ' + p.date + '\n';
-  if (p.contractor) text += 'Contractor: ' + p.contractor + '\n';
-  text += 'PM: ' + p.pm + '\n\n';
-  text += 'BUDGET SUMMARY\n';
+  var filename = 'BNDR-SOW-' + (p.address || 'report').replace(/[^a-zA-Z0-9]/g, '-').substring(0, 40) + '.pdf';
 
-  for (var c = 0; c < D.categories.length; c++) {
-    var cat = D.categories[c];
-    var ce = getCatEstimated(cat);
-    if (ce === 0 && getCatActual(cat) === 0) continue;
-    text += '  ' + cat.name;
-    if (cat.contractor) text += ' (' + cat.contractor + (cat.phone ? ' ' + cat.phone : '') + ')';
-    text += ': $' + fmt(ce) + ' est / $' + fmt(getCatActual(cat)) + ' actual\n';
-  }
+  var opt = {
+    margin:       [0.3, 0.4, 0.3, 0.4],
+    filename:     filename,
+    image:        { type: 'jpeg', quality: 0.95 },
+    html2canvas:  { scale: 2, useCORS: true, logging: false },
+    jsPDF:        { unit: 'in', format: 'letter', orientation: 'portrait' },
+    pagebreak:    { mode: ['avoid-all', 'css', 'legacy'] }
+  };
 
-  text += '\nTotal Estimated: $' + fmt(getTotalEstimated()) + '\n';
-  text += 'Total Actual: $' + fmt(getTotalActual()) + '\n';
-  text += 'Total Paid: $' + fmt(getTotalPaid()) + '\n';
+  html2pdf().set(opt).from(element).outputPdf('blob').then(function(pdfBlob) {
+    var pdfFile = new File([pdfBlob], filename, { type: 'application/pdf' });
 
-  // Scope items
-  if (D.scope) {
-    text += '\nSCOPE OF WORK\n';
-    for (var section in D.scope) {
-      var cats = D.scope[section];
-      var hasItems = false;
-      for (var cat in cats) { for (var i = 0; i < cats[cat].length; i++) { if (cats[cat][i].included) { hasItems = true; break; } } if (hasItems) break; }
-      if (!hasItems) continue;
-      text += '\n' + section + '\n';
-      for (var cat in cats) {
-        var included = [];
-        for (var i = 0; i < cats[cat].length; i++) { if (cats[cat][i].included) included.push(cats[cat][i].text); }
-        if (included.length === 0) continue;
-        text += '  ' + cat + ':\n';
-        for (var i = 0; i < included.length; i++) { text += '    - ' + included[i] + '\n'; }
-      }
+    if (navigator.canShare && navigator.canShare({ files: [pdfFile] })) {
+      navigator.share({
+        title: 'SOW & Budget — ' + p.address,
+        files: [pdfFile]
+      }).catch(function() {});
+    } else {
+      // Fallback: download the PDF
+      var url = URL.createObjectURL(pdfBlob);
+      var a = document.createElement('a');
+      a.href = url;
+      a.download = filename;
+      a.click();
+      URL.revokeObjectURL(url);
     }
-  }
 
-  if (p.notes) text += '\nNotes: ' + p.notes + '\n';
-  text += '\n— BNDR Capital | (913) 219-8906';
-
-  if (navigator.share) {
-    navigator.share({ title: 'SOW & Budget — ' + p.address, text: text }).catch(function() {});
-  } else {
-    try {
-      navigator.clipboard.writeText(text).then(function() { alert('Copied to clipboard!'); });
-    } catch(err) {
-      var ta = document.createElement('textarea');
-      ta.value = text; ta.style.position = 'fixed'; ta.style.left = '-9999px';
-      document.body.appendChild(ta); ta.select(); document.execCommand('copy');
-      document.body.removeChild(ta); alert('Copied to clipboard!');
-    }
-  }
+    btn.disabled = false;
+    btn.querySelector('span').textContent = 'Share / PDF';
+  }).catch(function(err) {
+    alert('PDF generation failed: ' + err.message);
+    btn.disabled = false;
+    btn.querySelector('span').textContent = 'Share / PDF';
+  });
 });
 
 document.getElementById('btnExportJSON').addEventListener('click', function() {
@@ -3911,6 +4202,7 @@ document.getElementById('btnDownloadHTML').addEventListener('click', function() 
     '  if (!D.scope) D.scope = initDefaultScope();\n' +
     '  if (!D.materials) D.materials = {};\n' +
     '  if (!D.deliveredMats) D.deliveredMats = [];\n' +
+    '  if (!D.siteReports) D.siteReports = [];\n' +
     '  populateProjectFields();\n' +
     '  renderBudget();\n' +
     '})();\n';
@@ -3951,6 +4243,7 @@ document.getElementById('btnSharePassword').addEventListener('click', function()
     '  if (!D.scope) D.scope = initDefaultScope();\n' +
     '  if (!D.materials) D.materials = {};\n' +
     '  if (!D.deliveredMats) D.deliveredMats = [];\n' +
+    '  if (!D.siteReports) D.siteReports = [];\n' +
     '  ensureFields();\n' +
     '  populateProjectFields();\n' +
     '  renderBudget();\n' +
@@ -4548,6 +4841,924 @@ document.getElementById('btnSyncCloud').addEventListener('click', function() {
     statusEl.innerHTML = '<span style="color:var(--red);">Sync failed: ' + err.message + '</span>';
     setSyncDot('error');
   });
+});
+
+/* ═══════════════════════════════════════════
+   SEND FOR SIGNATURE
+   ═══════════════════════════════════════════ */
+document.getElementById('btnSendSignature').addEventListener('click', function() {
+  var form = document.getElementById('sig-send-form');
+  form.classList.toggle('hidden');
+  if (!form.classList.contains('hidden')) {
+    updateSignLink();
+  }
+});
+
+function updateSignLink() {
+  var role = document.getElementById('sig-role').value;
+  var signUrl = window.location.origin + window.location.pathname.replace('index.html', '') +
+    'sign.html?project=' + encodeURIComponent(currentProjectId) + '&role=' + encodeURIComponent(role);
+  document.getElementById('sig-link').value = signUrl;
+}
+
+document.getElementById('sig-role').addEventListener('change', updateSignLink);
+
+document.getElementById('btnCopySignLink').addEventListener('click', function() {
+  var link = document.getElementById('sig-link').value;
+  navigator.clipboard.writeText(link).then(function() {
+    document.getElementById('sig-send-status').innerHTML = '<span style="color:var(--green);">Link copied to clipboard!</span>';
+  }).catch(function() {
+    var inp = document.getElementById('sig-link');
+    inp.select();
+    document.execCommand('copy');
+    document.getElementById('sig-send-status').innerHTML = '<span style="color:var(--green);">Link copied!</span>';
+  });
+});
+
+document.getElementById('btnTextSignLink').addEventListener('click', function() {
+  // Ensure project is synced to Firebase first
+  var statusEl = document.getElementById('sig-send-status');
+  var phone = document.getElementById('sig-phone').value.replace(/[^0-9+]/g, '');
+  var link = document.getElementById('sig-link').value;
+
+  if (!phone) {
+    statusEl.innerHTML = '<span style="color:var(--red);">Please enter a phone number.</span>';
+    return;
+  }
+
+  statusEl.innerHTML = '<span style="color:var(--green);">Syncing project to cloud...</span>';
+
+  // Save current project to Firebase so the signer can load it
+  syncProjectFields();
+  try { localStorage.setItem('bndr-project-' + currentProjectId, JSON.stringify(D)); } catch(e) {}
+
+  cloudSaveProject(currentProjectId, D).then(function(ok) {
+    if (!ok) {
+      statusEl.innerHTML = '<span style="color:var(--red);">Failed to sync project. Please try again.</span>';
+      return;
+    }
+
+    var address = D.project.address || 'your project';
+    var body = 'BNDR Capital — Please review and sign the Scope of Work & Budget for ' + address + ': ' + link;
+
+    // Use sms: URI to open native messaging app with pre-filled message
+    var smsUrl = 'sms:' + phone + '?body=' + encodeURIComponent(body);
+    window.location.href = smsUrl;
+
+    statusEl.innerHTML = '<span style="color:var(--green);">Opening messaging app... If it doesn\'t open, copy the link and send it manually.</span>';
+  });
+});
+
+/* ═══════════════════════════════════════════
+   SIGNATURE STATUS — Check for received signatures
+   ═══════════════════════════════════════════ */
+function checkSignatures() {
+  if (!fbReady || !currentProjectId) return;
+  db.collection('signatures').where('projectId', '==', currentProjectId)
+    .orderBy('timestamp', 'desc').get().then(function(snapshot) {
+    if (snapshot.empty) return;
+    var sigs = [];
+    snapshot.forEach(function(doc) { sigs.push(doc.data()); });
+    renderSignatureStatus(sigs);
+  }).catch(function() {});
+}
+
+function renderSignatureStatus(sigs) {
+  var el = document.getElementById('sig-send-status');
+  if (!el) return;
+  var html = '<div style="margin-top:8px;border-top:1px solid var(--border);padding-top:8px;">' +
+    '<div style="font-weight:700;font-size:.72rem;margin-bottom:4px;">Received Signatures:</div>';
+  for (var i = 0; i < sigs.length; i++) {
+    var s = sigs[i];
+    var dt = new Date(s.timestamp);
+    html += '<div style="font-size:.7rem;padding:3px 0;color:var(--green-dark);">' +
+      '&#10003; ' + (s.name || 'Unknown') + ' (' + (s.role || 'unknown') + ') — ' +
+      dt.toLocaleDateString() + ' ' + dt.toLocaleTimeString() + '</div>';
+  }
+  html += '</div>';
+  el.innerHTML = html;
+}
+
+/* ═══════════════════════════════════════════
+   SITE REPORTS (Docs Tab)
+   ═══════════════════════════════════════════ */
+var editingReportId = null;
+
+function ensureReports() {
+  if (!D.siteReports) D.siteReports = [];
+  if (!D.nextReportId) D.nextReportId = 1;
+}
+
+function statusBadgeClass(status) {
+  if (!status) return '';
+  var s = status.toLowerCase();
+  if (s.indexOf('on track') >= 0) return 'on-track';
+  if (s.indexOf('behind') >= 0) return 'behind';
+  if (s.indexOf('ahead') >= 0) return 'ahead';
+  if (s.indexOf('hold') >= 0) return 'on-hold';
+  if (s.indexOf('complete') >= 0) return 'complete';
+  return '';
+}
+
+function renderReportList() {
+  ensureReports();
+  var wrap = document.getElementById('docs-report-list');
+  if (D.siteReports.length === 0) {
+    wrap.innerHTML = '<div style="text-align:center;padding:20px;color:var(--muted);font-size:.82rem;">No site reports yet. Create your first one!</div>';
+    return;
+  }
+  var html = '';
+  // Show newest first
+  var sorted = D.siteReports.slice().sort(function(a, b) {
+    return (b.created || '').localeCompare(a.created || '');
+  });
+  for (var i = 0; i < sorted.length; i++) {
+    var r = sorted[i];
+    var photoCount = 0;
+    if (r.items) {
+      for (var j = 0; j < r.items.length; j++) {
+        photoCount += (r.items[j].photos || []).length;
+      }
+    }
+    html += '<div class="rpt-report-card" data-report-id="' + r.id + '">' +
+      '<div class="rpt-icon"><svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/><path d="M9 15h6M9 11h6"/></svg></div>' +
+      '<div class="rpt-info"><h4>' + esc(r.title || 'Untitled Report') + '</h4>' +
+      '<p>' + esc(r.date || '') + ' &bull; ' + (r.items ? r.items.length : 0) + ' observations &bull; ' + photoCount + ' photos</p></div>' +
+      '<span class="rpt-status-badge ' + statusBadgeClass(r.status) + '">' + esc(r.status || '') + '</span>' +
+      '</div>';
+  }
+  wrap.innerHTML = html;
+}
+
+function openReport(reportId) {
+  ensureReports();
+  editingReportId = reportId;
+  var report = null;
+  for (var i = 0; i < D.siteReports.length; i++) {
+    if (D.siteReports[i].id === reportId) { report = D.siteReports[i]; break; }
+  }
+  if (!report) return;
+
+  document.getElementById('docs-list-view').classList.add('hidden');
+  document.getElementById('docs-edit-view').classList.remove('hidden');
+
+  document.getElementById('rpt-title').value = report.title || '';
+  document.getElementById('rpt-date').value = report.date || '';
+  document.getElementById('rpt-inspector').value = report.inspector || '';
+  document.getElementById('rpt-status').value = report.status || 'On Track';
+  document.getElementById('rpt-notes').value = report.notes || '';
+
+  renderObservations(report);
+}
+
+function getEditingReport() {
+  if (!editingReportId) return null;
+  for (var i = 0; i < D.siteReports.length; i++) {
+    if (D.siteReports[i].id === editingReportId) return D.siteReports[i];
+  }
+  return null;
+}
+
+function syncReportFields() {
+  var report = getEditingReport();
+  if (!report) return;
+  report.title = document.getElementById('rpt-title').value.trim();
+  report.date = document.getElementById('rpt-date').value.trim();
+  report.inspector = document.getElementById('rpt-inspector').value.trim();
+  report.status = document.getElementById('rpt-status').value;
+  report.notes = document.getElementById('rpt-notes').value.trim();
+  report.lastModified = new Date().toISOString();
+}
+
+function renderObservations(report) {
+  if (!report.items) report.items = [];
+  var wrap = document.getElementById('rpt-items');
+  var html = '';
+  for (var i = 0; i < report.items.length; i++) {
+    var obs = report.items[i];
+    html += '<div class="rpt-item" data-obs-idx="' + i + '">' +
+      '<button class="rpt-item-del" data-action="del-obs" data-obs-idx="' + i + '">&times;</button>' +
+      '<label style="font-size:.65rem;font-weight:600;color:var(--muted);display:block;margin-bottom:3px;">Area / Location</label>' +
+      '<input type="text" value="' + escAttr(obs.area || '') + '" data-obs-field="area" data-obs-idx="' + i + '" placeholder="e.g. Kitchen, Roof, Foundation...">' +
+      '<label style="font-size:.65rem;font-weight:600;color:var(--muted);display:block;margin-bottom:3px;">Condition</label>' +
+      '<select data-obs-field="condition" data-obs-idx="' + i + '">' +
+        '<option value="Good"' + (obs.condition === 'Good' ? ' selected' : '') + '>Good</option>' +
+        '<option value="Fair"' + (obs.condition === 'Fair' ? ' selected' : '') + '>Fair</option>' +
+        '<option value="Poor"' + (obs.condition === 'Poor' ? ' selected' : '') + '>Poor</option>' +
+        '<option value="Needs Repair"' + (obs.condition === 'Needs Repair' ? ' selected' : '') + '>Needs Repair</option>' +
+        '<option value="Completed"' + (obs.condition === 'Completed' ? ' selected' : '') + '>Completed</option>' +
+      '</select>' +
+      '<label style="font-size:.65rem;font-weight:600;color:var(--muted);display:block;margin-bottom:3px;">Notes</label>' +
+      '<textarea rows="2" data-obs-field="notes" data-obs-idx="' + i + '" placeholder="Describe what you see...">' + esc(obs.notes || '') + '</textarea>' +
+      '<div class="rpt-photo-grid">';
+    var photos = obs.photos || [];
+    for (var j = 0; j < photos.length; j++) {
+      html += '<img class="rpt-photo-thumb" src="' + photos[j] + '" data-obs-idx="' + i + '" data-photo-idx="' + j + '">';
+    }
+    html += '<label class="rpt-add-photo" title="Add photo">' +
+      '+<input type="file" accept="image/*" capture="environment" data-obs-idx="' + i + '" style="display:none;">' +
+      '</label>';
+    html += '</div></div>';
+  }
+  wrap.innerHTML = html;
+}
+
+// Event delegation for report list
+document.getElementById('docs-report-list').addEventListener('click', function(e) {
+  var card = e.target.closest('[data-report-id]');
+  if (card) openReport(parseInt(card.getAttribute('data-report-id')));
+});
+
+document.getElementById('btnNewReport').addEventListener('click', function() {
+  ensureReports();
+  var id = D.nextReportId++;
+  var report = {
+    id: id,
+    title: '',
+    date: todayStr(),
+    inspector: D.project.pm || '',
+    status: 'On Track',
+    notes: '',
+    items: [],
+    created: new Date().toISOString(),
+    lastModified: new Date().toISOString()
+  };
+  D.siteReports.push(report);
+  scheduleSave();
+  openReport(id);
+});
+
+document.getElementById('btnBackToReports').addEventListener('click', function() {
+  syncReportFields();
+  scheduleSave();
+  saveReportToFirestore();
+  document.getElementById('docs-edit-view').classList.add('hidden');
+  document.getElementById('docs-list-view').classList.remove('hidden');
+  editingReportId = null;
+  renderReportList();
+});
+
+document.getElementById('btnAddObservation').addEventListener('click', function() {
+  var report = getEditingReport();
+  if (!report) return;
+  syncReportFields();
+  report.items.push({ area: '', condition: 'Good', notes: '', photos: [] });
+  renderObservations(report);
+  scheduleSave();
+});
+
+// Event delegation for observations
+document.getElementById('rpt-items').addEventListener('click', function(e) {
+  var del = e.target.closest('[data-action="del-obs"]');
+  if (del) {
+    var idx = parseInt(del.getAttribute('data-obs-idx'));
+    var report = getEditingReport();
+    if (report && report.items[idx] !== undefined) {
+      report.items.splice(idx, 1);
+      renderObservations(report);
+      scheduleSave();
+    }
+  }
+});
+
+document.getElementById('rpt-items').addEventListener('change', function(e) {
+  var report = getEditingReport();
+  if (!report) return;
+
+  // Photo upload
+  if (e.target.type === 'file' && e.target.files && e.target.files[0]) {
+    var obsIdx = parseInt(e.target.getAttribute('data-obs-idx'));
+    var file = e.target.files[0];
+    var reader = new FileReader();
+    reader.onload = function(ev) {
+      // Compress image
+      var img = new Image();
+      img.onload = function() {
+        var maxW = 1200;
+        var w = img.width, h = img.height;
+        if (w > maxW) { h = h * (maxW / w); w = maxW; }
+        var canvas = document.createElement('canvas');
+        canvas.width = w; canvas.height = h;
+        canvas.getContext('2d').drawImage(img, 0, 0, w, h);
+        var dataUrl = canvas.toDataURL('image/jpeg', 0.7);
+        if (!report.items[obsIdx].photos) report.items[obsIdx].photos = [];
+        report.items[obsIdx].photos.push(dataUrl);
+        renderObservations(report);
+        scheduleSave();
+      };
+      img.src = ev.target.result;
+    };
+    reader.readAsDataURL(file);
+    e.target.value = '';
+    return;
+  }
+
+  // Field updates
+  var field = e.target.getAttribute('data-obs-field');
+  var idx = parseInt(e.target.getAttribute('data-obs-idx'));
+  if (field && report.items[idx] !== undefined) {
+    report.items[idx][field] = e.target.value;
+    scheduleSave();
+  }
+});
+
+document.getElementById('rpt-items').addEventListener('input', function(e) {
+  var field = e.target.getAttribute('data-obs-field');
+  var idx = parseInt(e.target.getAttribute('data-obs-idx'));
+  if (field && idx >= 0) {
+    var report = getEditingReport();
+    if (report && report.items[idx]) {
+      report.items[idx][field] = e.target.value;
+    }
+  }
+});
+
+// Auto-save report fields on blur
+['rpt-title', 'rpt-date', 'rpt-inspector', 'rpt-status', 'rpt-notes'].forEach(function(id) {
+  document.getElementById(id).addEventListener('change', function() {
+    syncReportFields(); scheduleSave();
+  });
+});
+
+/* ── Save report to Firestore ── */
+function saveReportToFirestore() {
+  if (!fbReady || !currentProjectId) return;
+  syncProjectFields();
+  try { localStorage.setItem('bndr-project-' + currentProjectId, JSON.stringify(D)); } catch(e) {}
+  cloudSaveProject(currentProjectId, D);
+}
+
+/* ── Build report PDF preview HTML ── */
+function buildReportPreviewHTML(report) {
+  var p = D.project;
+  var html = '<div style="font-family:-apple-system,system-ui,sans-serif;color:#222;padding:20px;">' +
+    '<div style="border-bottom:2px solid #222;padding-bottom:10px;margin-bottom:12px;display:flex;align-items:center;gap:12px;">' +
+      '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 292.77 77.05" style="width:100px;height:auto;">' +
+        '<g><g>' +
+          '<path d="M41.15,0H.03l-.03,53.05v2.91h2.78l2.05-2.05,2.08-2.05,5.87-5.87V13.11h28.36c5.62,0,10.2,4.58,10.2,10.2,0,2.72-1.07,5.27-3,7.2l-.47.51-1.45,1.42-1.45,1.45-2.24,2.24,4.26,3.44c.22.13.41.28.85.54,1.45.92,2.84,1.8,4.17,2.78l1.42,1.07,2.24-2.24,1.45-1.45.51-.51c4.39-4.39,6.82-10.23,6.82-16.45,0-12.85-10.45-23.31-23.3-23.31Z"/>' +
+          '<polygon points="34.89 18.03 12.79 40.17 10.74 42.22 8.65 44.3 4.1 48.85 2.05 50.9 .6 52.36 0 53.05 0 55.96 15.5 55.96 34.89 36.57 53.08 54.76 53.08 63.95 .76 63.95 .76 77.05 66.19 77.05 66.19 49.33 34.89 18.03"/>' +
+        '</g>' +
+        '<path d="M142.9,76.91h-15.23l-34.5-52.13v52.13h-15.24V.83h15.24l34.5,52.24V.83h15.23v76.08Z"/>' +
+        '<path d="M205.54,5.62c6.06,3.12,10.74,7.56,14.04,13.33,3.3,5.77,4.95,12.46,4.95,20.08s-1.65,14.28-4.95,19.97c-3.3,5.7-7.98,10.1-14.04,13.22-6.06,3.12-13.08,4.68-21.06,4.68h-26.56V.94h26.56c7.98,0,15,1.56,21.06,4.68Z"/>' +
+        '<path d="M275.14,76.91l-16.76-29.6h-7.18v29.6h-15.24V.94h28.52c5.87,0,10.88,1.03,15.02,3.1s7.24,4.86,9.3,8.38c2.07,3.52,3.1,7.46,3.1,11.81,0,5.01-1.45,9.52-4.35,13.55-2.9,4.03-7.22,6.8-12.95,8.33l18.18,30.8h-17.63Z"/>' +
+      '</g></svg>' +
+      '<div style="color:#888;font-size:.65rem;">9229 Ward Pkwy, Ste 380 | Kansas City, MO 64114 | (913) 219-8906</div>' +
+    '</div>';
+
+  html += '<div style="text-align:center;font-weight:800;font-size:1rem;letter-spacing:2px;margin-bottom:12px;color:#2D2D2D;">SITE INSPECTION REPORT</div>';
+
+  // Report info
+  html += '<div style="display:grid;grid-template-columns:1fr 1fr;gap:4px 16px;font-size:.78rem;margin-bottom:14px;">' +
+    '<div><strong>Property:</strong> ' + esc(p.address) + '</div>' +
+    '<div><strong>Date:</strong> ' + esc(report.date) + '</div>' +
+    '<div><strong>Inspector:</strong> ' + esc(report.inspector) + '</div>' +
+    '<div><strong>Status:</strong> ' + esc(report.status) + '</div>' +
+    '<div style="grid-column:1/-1;"><strong>Report:</strong> ' + esc(report.title) + '</div>' +
+  '</div>';
+
+  // Summary
+  if (report.notes) {
+    html += '<div style="font-weight:700;font-size:.82rem;margin-bottom:4px;color:#6B7A59;">Summary</div>' +
+      '<div style="font-size:.78rem;margin-bottom:14px;white-space:pre-wrap;">' + esc(report.notes) + '</div>';
+  }
+
+  // Observations with photos
+  if (report.items && report.items.length > 0) {
+    html += '<div style="font-weight:700;font-size:.82rem;margin-bottom:8px;color:#6B7A59;">Observations</div>';
+    for (var i = 0; i < report.items.length; i++) {
+      var obs = report.items[i];
+      var condColor = '#222';
+      if (obs.condition === 'Poor' || obs.condition === 'Needs Repair') condColor = '#dc2626';
+      else if (obs.condition === 'Good' || obs.condition === 'Completed') condColor = '#6B7A59';
+
+      html += '<div style="border:1px solid #ddd;border-radius:8px;padding:10px;margin-bottom:10px;page-break-inside:avoid;">' +
+        '<div style="display:flex;justify-content:space-between;margin-bottom:4px;">' +
+          '<span style="font-weight:700;font-size:.82rem;">' + esc(obs.area || 'Observation ' + (i + 1)) + '</span>' +
+          '<span style="font-size:.72rem;font-weight:700;color:' + condColor + ';">' + esc(obs.condition || '') + '</span>' +
+        '</div>';
+
+      if (obs.notes) {
+        html += '<div style="font-size:.75rem;margin-bottom:6px;white-space:pre-wrap;">' + esc(obs.notes) + '</div>';
+      }
+
+      // Photos - include them in the PDF
+      var photos = obs.photos || [];
+      if (photos.length > 0) {
+        html += '<div style="display:flex;flex-wrap:wrap;gap:6px;margin-top:6px;">';
+        for (var j = 0; j < photos.length; j++) {
+          html += '<img src="' + photos[j] + '" style="width:200px;height:150px;object-fit:cover;border-radius:6px;border:1px solid #ddd;">';
+        }
+        html += '</div>';
+      }
+
+      html += '</div>';
+    }
+  }
+
+  html += '</div>';
+  return html;
+}
+
+/* ── Export report as PDF (with photos) ── */
+document.getElementById('btnReportPDF').addEventListener('click', function() {
+  var report = getEditingReport();
+  if (!report) return;
+  syncReportFields();
+  saveReportToFirestore();
+
+  var btn = this;
+  btn.disabled = true;
+  btn.textContent = 'Generating PDF...';
+  var statusEl = document.getElementById('rpt-export-status');
+
+  // Create a temporary visible element for html2canvas
+  // html2canvas cannot render off-screen or hidden elements
+  var previewEl = document.createElement('div');
+  previewEl.style.cssText = 'position:fixed;top:0;left:0;width:700px;background:#fff;z-index:9999;overflow:auto;max-height:100vh;';
+  previewEl.innerHTML = buildReportPreviewHTML(report);
+  document.body.appendChild(previewEl);
+
+  function cleanupPreview() {
+    if (previewEl.parentNode) previewEl.parentNode.removeChild(previewEl);
+  }
+
+  function resetBtn() {
+    btn.disabled = false;
+    btn.innerHTML = '<svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" style="width:16px;height:16px;vertical-align:middle;"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg> Share PDF';
+  }
+
+  // Wait for all images to load before generating PDF
+  var images = previewEl.querySelectorAll('img');
+  var loaded = 0;
+  var total = images.length;
+
+  function generatePDF() {
+    var p = D.project;
+    var filename = 'BNDR-SiteReport-' + (p.address || 'report').replace(/[^a-zA-Z0-9]/g, '-').substring(0, 30) +
+      '-' + (report.date || '').replace(/\//g, '-') + '.pdf';
+
+    var opt = {
+      margin: [0.3, 0.4, 0.3, 0.4],
+      filename: filename,
+      image: { type: 'jpeg', quality: 0.92 },
+      html2canvas: { scale: 2, useCORS: true, logging: false, allowTaint: true },
+      jsPDF: { unit: 'in', format: 'letter', orientation: 'portrait' },
+      pagebreak: { mode: ['avoid-all', 'css', 'legacy'] }
+    };
+
+    html2pdf().set(opt).from(previewEl).outputPdf('blob').then(function(pdfBlob) {
+      cleanupPreview();
+      var pdfFile = new File([pdfBlob], filename, { type: 'application/pdf' });
+
+      if (navigator.canShare && navigator.canShare({ files: [pdfFile] })) {
+        navigator.share({
+          title: 'Site Report — ' + (report.title || p.address),
+          files: [pdfFile]
+        }).catch(function() {});
+      } else {
+        var url = URL.createObjectURL(pdfBlob);
+        var a = document.createElement('a');
+        a.href = url;
+        a.download = filename;
+        a.click();
+        URL.revokeObjectURL(url);
+      }
+
+      resetBtn();
+      statusEl.innerHTML = '<span style="color:var(--green);">PDF generated successfully!</span>';
+    }).catch(function(err) {
+      cleanupPreview();
+      resetBtn();
+      statusEl.innerHTML = '<span style="color:var(--red);">PDF generation failed: ' + esc(err.message) + '</span>';
+    });
+  }
+
+  if (total === 0) {
+    // Small delay to let the DOM render
+    setTimeout(generatePDF, 100);
+  } else {
+    function onImageReady() {
+      loaded++;
+      if (loaded >= total) setTimeout(generatePDF, 100);
+    }
+    for (var i = 0; i < images.length; i++) {
+      if (images[i].complete) {
+        onImageReady();
+      } else {
+        images[i].addEventListener('load', onImageReady);
+        images[i].addEventListener('error', onImageReady);
+      }
+    }
+  }
+});
+
+/* ── Send report via text — generates PDF and opens share sheet ── */
+document.getElementById('btnReportText').addEventListener('click', function() {
+  var report = getEditingReport();
+  if (!report) return;
+  syncReportFields();
+  saveReportToFirestore();
+
+  var btn = this;
+  btn.disabled = true;
+  btn.textContent = 'Generating report...';
+  var statusEl = document.getElementById('rpt-export-status');
+  var p = D.project;
+
+  // Build a visible preview for html2canvas
+  var previewEl = document.createElement('div');
+  previewEl.style.cssText = 'position:fixed;top:0;left:0;width:700px;background:#fff;z-index:9999;overflow:auto;max-height:100vh;';
+  previewEl.innerHTML = buildReportPreviewHTML(report);
+  document.body.appendChild(previewEl);
+
+  function cleanup() {
+    if (previewEl.parentNode) previewEl.parentNode.removeChild(previewEl);
+    btn.disabled = false;
+    btn.innerHTML = '<svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" style="width:16px;height:16px;vertical-align:middle;"><path d="M4 12v8a2 2 0 002 2h12a2 2 0 002-2v-8M16 6l-4-4-4 4M12 2v13"/></svg> Send via Text';
+  }
+
+  var images = previewEl.querySelectorAll('img');
+  var loaded = 0;
+  var total = images.length;
+
+  function doGenerate() {
+    var filename = 'BNDR-SiteReport-' + (p.address || 'report').replace(/[^a-zA-Z0-9]/g, '-').substring(0, 30) +
+      '-' + (report.date || '').replace(/\//g, '-') + '.pdf';
+
+    var opt = {
+      margin: [0.3, 0.4, 0.3, 0.4],
+      filename: filename,
+      image: { type: 'jpeg', quality: 0.92 },
+      html2canvas: { scale: 2, useCORS: true, logging: false, allowTaint: true },
+      jsPDF: { unit: 'in', format: 'letter', orientation: 'portrait' },
+      pagebreak: { mode: ['avoid-all', 'css', 'legacy'] }
+    };
+
+    html2pdf().set(opt).from(previewEl).outputPdf('blob').then(function(pdfBlob) {
+      cleanup();
+      var pdfFile = new File([pdfBlob], filename, { type: 'application/pdf' });
+      var title = (report.title || 'Site Report') + ' — ' + (p.address || '');
+
+      // Use native share (iMessage, SMS, WhatsApp, etc.) with the PDF attached
+      if (navigator.canShare && navigator.canShare({ files: [pdfFile] })) {
+        navigator.share({
+          title: title,
+          text: 'BNDR Capital — ' + title,
+          files: [pdfFile]
+        }).catch(function() {});
+        statusEl.innerHTML = '<span style="color:var(--green);">PDF report ready to send!</span>';
+      } else {
+        // Fallback: download PDF then open SMS with summary text
+        var url = URL.createObjectURL(pdfBlob);
+        var a = document.createElement('a');
+        a.href = url;
+        a.download = filename;
+        a.click();
+        URL.revokeObjectURL(url);
+
+        var smsBody = 'BNDR Capital - ' + title + '\nDate: ' + (report.date || 'N/A') + ' | Status: ' + (report.status || 'N/A');
+        var phone = prompt('PDF downloaded. Enter phone number to text a summary:');
+        if (phone) {
+          phone = phone.replace(/[^0-9+]/g, '');
+          window.location.href = 'sms:' + phone + '?body=' + encodeURIComponent(smsBody);
+        }
+        statusEl.innerHTML = '<span style="color:var(--green);">PDF downloaded. Share the file via your messaging app.</span>';
+      }
+    }).catch(function(err) {
+      cleanup();
+      statusEl.innerHTML = '<span style="color:var(--red);">Failed to generate report: ' + esc(err.message) + '</span>';
+    });
+  }
+
+  if (total === 0) {
+    setTimeout(doGenerate, 100);
+  } else {
+    function onReady() {
+      loaded++;
+      if (loaded >= total) setTimeout(doGenerate, 100);
+    }
+    for (var i = 0; i < images.length; i++) {
+      if (images[i].complete) { onReady(); }
+      else {
+        images[i].addEventListener('load', onReady);
+        images[i].addEventListener('error', onReady);
+      }
+    }
+  }
+});
+
+/* ═══════════════════════════════════════════
+   PHOTO ANNOTATION TOOL
+   ═══════════════════════════════════════════ */
+(function() {
+  var overlay = document.getElementById('ann-overlay');
+  var canvas = document.getElementById('ann-canvas');
+  var wrap = document.getElementById('ann-canvas-wrap');
+  var ctx = canvas.getContext('2d');
+
+  var bgImage = null;
+  var annotations = []; // { type: 'arrow'|'caption', ... }
+  var currentTool = 'arrow'; // 'arrow' or 'caption'
+  var drawing = false;
+  var dragStart = null;
+  var dragEnd = null;
+  var activeCaptionInput = null;
+  var targetCatId = null;
+  var targetItemId = null;
+
+  var ARROW_COLOR = '#FF3B30';
+  var ARROW_WIDTH = 3;
+  var CAPTION_COLOR = '#FFFFFF';
+  var CAPTION_BG = 'rgba(0,0,0,.7)';
+  var CAPTION_FONT = 'bold 14px -apple-system, system-ui, sans-serif';
+
+  // Tool buttons
+  document.getElementById('ann-tool-arrow').addEventListener('click', function() { setTool('arrow'); });
+  document.getElementById('ann-tool-caption').addEventListener('click', function() { setTool('caption'); });
+  document.getElementById('ann-tool-add-arrow').addEventListener('click', function() { setTool('arrow'); });
+  document.getElementById('ann-undo').addEventListener('click', function() {
+    annotations.pop();
+    redraw();
+  });
+
+  function setTool(tool) {
+    currentTool = tool;
+    document.getElementById('ann-tool-arrow').classList.toggle('active', tool === 'arrow');
+    document.getElementById('ann-tool-caption').classList.toggle('active', tool === 'caption');
+    document.getElementById('ann-tool-add-arrow').classList.toggle('active', false);
+    if (tool === 'arrow') {
+      document.getElementById('ann-tool-add-arrow').classList.add('active');
+    }
+  }
+
+  function getCanvasPos(e) {
+    var rect = canvas.getBoundingClientRect();
+    var touch = e.touches ? e.touches[0] : e;
+    var scaleX = canvas.width / rect.width;
+    var scaleY = canvas.height / rect.height;
+    return {
+      x: (touch.clientX - rect.left) * scaleX,
+      y: (touch.clientY - rect.top) * scaleY
+    };
+  }
+
+  // Drawing events
+  canvas.addEventListener('touchstart', onStart, { passive: false });
+  canvas.addEventListener('mousedown', onStart);
+  canvas.addEventListener('touchmove', onMove, { passive: false });
+  canvas.addEventListener('mousemove', onMove);
+  canvas.addEventListener('touchend', onEnd);
+  canvas.addEventListener('mouseup', onEnd);
+
+  function onStart(e) {
+    e.preventDefault();
+    removeActiveCaptionInput();
+    var pos = getCanvasPos(e);
+    if (currentTool === 'arrow') {
+      drawing = true;
+      dragStart = pos;
+      dragEnd = pos;
+    } else if (currentTool === 'caption') {
+      showCaptionInput(pos, e);
+    }
+  }
+
+  function onMove(e) {
+    if (!drawing) return;
+    e.preventDefault();
+    dragEnd = getCanvasPos(e);
+    redraw();
+    drawArrow(ctx, dragStart.x, dragStart.y, dragEnd.x, dragEnd.y, ARROW_COLOR, ARROW_WIDTH);
+  }
+
+  function onEnd(e) {
+    if (!drawing) return;
+    drawing = false;
+    if (dragStart && dragEnd) {
+      var dx = dragEnd.x - dragStart.x;
+      var dy = dragEnd.y - dragStart.y;
+      if (Math.sqrt(dx * dx + dy * dy) > 10) {
+        annotations.push({
+          type: 'arrow',
+          x1: dragStart.x, y1: dragStart.y,
+          x2: dragEnd.x, y2: dragEnd.y
+        });
+      }
+    }
+    dragStart = null;
+    dragEnd = null;
+    redraw();
+  }
+
+  function showCaptionInput(pos, originalEvent) {
+    removeActiveCaptionInput();
+    var rect = canvas.getBoundingClientRect();
+    var scaleX = rect.width / canvas.width;
+    var scaleY = rect.height / canvas.height;
+    var input = document.createElement('input');
+    input.type = 'text';
+    input.className = 'ann-caption-input';
+    input.placeholder = 'Type caption...';
+    input.style.left = (pos.x * scaleX) + 'px';
+    input.style.top = (pos.y * scaleY) + 'px';
+    wrap.appendChild(input);
+    activeCaptionInput = input;
+    setTimeout(function() { input.focus(); }, 50);
+
+    input.addEventListener('keydown', function(ke) {
+      if (ke.key === 'Enter') {
+        commitCaption(input, pos);
+      }
+    });
+    input.addEventListener('blur', function() {
+      setTimeout(function() { commitCaption(input, pos); }, 150);
+    });
+  }
+
+  function commitCaption(input, pos) {
+    var text = input.value.trim();
+    if (text) {
+      annotations.push({ type: 'caption', x: pos.x, y: pos.y, text: text });
+    }
+    removeActiveCaptionInput();
+    redraw();
+  }
+
+  function removeActiveCaptionInput() {
+    if (activeCaptionInput && activeCaptionInput.parentNode) {
+      activeCaptionInput.parentNode.removeChild(activeCaptionInput);
+    }
+    activeCaptionInput = null;
+  }
+
+  function drawArrow(c, x1, y1, x2, y2, color, width) {
+    var headLen = 14;
+    var angle = Math.atan2(y2 - y1, x2 - x1);
+
+    c.save();
+    c.strokeStyle = color;
+    c.fillStyle = color;
+    c.lineWidth = width;
+    c.lineCap = 'round';
+
+    // Line
+    c.beginPath();
+    c.moveTo(x1, y1);
+    c.lineTo(x2, y2);
+    c.stroke();
+
+    // Arrowhead
+    c.beginPath();
+    c.moveTo(x2, y2);
+    c.lineTo(x2 - headLen * Math.cos(angle - Math.PI / 6), y2 - headLen * Math.sin(angle - Math.PI / 6));
+    c.lineTo(x2 - headLen * Math.cos(angle + Math.PI / 6), y2 - headLen * Math.sin(angle + Math.PI / 6));
+    c.closePath();
+    c.fill();
+    c.restore();
+  }
+
+  function drawCaption(c, x, y, text) {
+    c.save();
+    c.font = CAPTION_FONT;
+    var metrics = c.measureText(text);
+    var pad = 6;
+    var w = metrics.width + pad * 2;
+    var h = 20 + pad * 2;
+
+    c.fillStyle = CAPTION_BG;
+    c.beginPath();
+    var r = 4;
+    c.moveTo(x + r, y);
+    c.lineTo(x + w - r, y);
+    c.quadraticCurveTo(x + w, y, x + w, y + r);
+    c.lineTo(x + w, y + h - r);
+    c.quadraticCurveTo(x + w, y + h, x + w - r, y + h);
+    c.lineTo(x + r, y + h);
+    c.quadraticCurveTo(x, y + h, x, y + h - r);
+    c.lineTo(x, y + r);
+    c.quadraticCurveTo(x, y, x + r, y);
+    c.closePath();
+    c.fill();
+
+    c.fillStyle = CAPTION_COLOR;
+    c.textBaseline = 'middle';
+    c.fillText(text, x + pad, y + h / 2);
+    c.restore();
+  }
+
+  function redraw() {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    if (bgImage) {
+      ctx.drawImage(bgImage, 0, 0, canvas.width, canvas.height);
+    }
+    for (var i = 0; i < annotations.length; i++) {
+      var a = annotations[i];
+      if (a.type === 'arrow') {
+        drawArrow(ctx, a.x1, a.y1, a.x2, a.y2, ARROW_COLOR, ARROW_WIDTH);
+      } else if (a.type === 'caption') {
+        drawCaption(ctx, a.x, a.y, a.text);
+      }
+    }
+  }
+
+  // Open annotation modal
+  window.openAnnotation = function(catId, itemId) {
+    targetCatId = catId;
+    targetItemId = itemId;
+    annotations = [];
+
+    // Find item data
+    var item = findItem(catId, itemId);
+    if (!item) return;
+
+    if (item.photo) {
+      // Edit existing annotated photo
+      loadImage(item.photo);
+    } else {
+      // Upload new photo
+      var fileInput = document.createElement('input');
+      fileInput.type = 'file';
+      fileInput.accept = 'image/*';
+      fileInput.capture = 'environment';
+      fileInput.addEventListener('change', function() {
+        if (fileInput.files && fileInput.files[0]) {
+          var reader = new FileReader();
+          reader.onload = function(ev) {
+            loadImage(ev.target.result);
+          };
+          reader.readAsDataURL(fileInput.files[0]);
+        }
+      });
+      fileInput.click();
+    }
+  };
+
+  function findItem(catId, itemId) {
+    for (var c = 0; c < D.categories.length; c++) {
+      if (String(D.categories[c].id) === String(catId)) {
+        for (var i = 0; i < D.categories[c].items.length; i++) {
+          if (String(D.categories[c].items[i].id) === String(itemId)) {
+            return D.categories[c].items[i];
+          }
+        }
+      }
+    }
+    return null;
+  }
+
+  function loadImage(src) {
+    var img = new Image();
+    img.onload = function() {
+      bgImage = img;
+      var maxW = 1200;
+      var w = img.width;
+      var h = img.height;
+      if (w > maxW) { h = h * (maxW / w); w = maxW; }
+      canvas.width = w;
+      canvas.height = h;
+      redraw();
+      overlay.classList.remove('hidden');
+      setTool('arrow');
+    };
+    img.onerror = function() { alert('Could not load image.'); };
+    img.src = src;
+  }
+
+  // Cancel
+  document.getElementById('ann-cancel').addEventListener('click', function() {
+    overlay.classList.add('hidden');
+    removeActiveCaptionInput();
+    bgImage = null;
+    annotations = [];
+  });
+
+  // Save
+  document.getElementById('ann-save').addEventListener('click', function() {
+    removeActiveCaptionInput();
+    redraw();
+    var dataUrl = canvas.toDataURL('image/jpeg', 0.85);
+    var item = findItem(targetCatId, targetItemId);
+    if (item) {
+      item.photo = dataUrl;
+      scheduleSave();
+      renderBudget();
+    }
+    overlay.classList.add('hidden');
+    bgImage = null;
+    annotations = [];
+  });
+})();
+
+// Handle annotate-photo clicks via event delegation on budget tab
+document.getElementById('tab-budget').addEventListener('click', function(e) {
+  var btn = e.target.closest('[data-action="annotate-photo"]');
+  if (btn) {
+    var catId = btn.getAttribute('data-cat-id');
+    var itemId = btn.getAttribute('data-item-id');
+    if (catId && itemId) {
+      openAnnotation(catId, itemId);
+    }
+  }
 });
 
 /* ═══════════════════════════════════════════

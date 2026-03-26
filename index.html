@@ -401,7 +401,7 @@
       body { padding: 0; background: #fff; }
       .app-header, .tab-bar, .no-print { display: none !important; }
       .tab-panel { display: block !important; padding: 0; }
-      #tab-project, #tab-budget, #tab-payments, #tab-scope, #tab-imports, #tab-finance { display: none !important; }
+      #tab-project, #tab-budget, #tab-payments, #tab-scope, #tab-imports, #tab-finance, #tab-docs { display: none !important; }
       #tab-export { display: block !important; }
       .card { box-shadow: none; break-inside: avoid; }
       .print-page { display: block !important; }
@@ -514,6 +514,58 @@
     }
 
     /* Photo button on line items */
+    /* ── Site Report Items ── */
+    .rpt-item {
+      background: var(--green-bg); border-radius: 10px; padding: 12px;
+      margin-bottom: 8px; position: relative;
+    }
+    .rpt-item-del {
+      position: absolute; top: 8px; right: 8px; border: none; background: none;
+      color: var(--red); font-size: 1.1rem; cursor: pointer; padding: 0; line-height: 1;
+    }
+    .rpt-item textarea, .rpt-item input[type="text"], .rpt-item select {
+      width: 100%; border: 1.5px solid var(--border); border-radius: 6px;
+      padding: 8px 10px; font-size: 14px; font-family: inherit;
+      background: #fff; outline: none; margin-bottom: 6px;
+    }
+    .rpt-item textarea:focus, .rpt-item input[type="text"]:focus { border-color: var(--green); }
+    .rpt-photo-grid {
+      display: flex; flex-wrap: wrap; gap: 6px; margin-top: 6px;
+    }
+    .rpt-photo-thumb {
+      width: 60px; height: 60px; object-fit: cover; border-radius: 8px;
+      border: 1px solid var(--border); cursor: pointer;
+    }
+    .rpt-add-photo {
+      width: 60px; height: 60px; border: 2px dashed var(--border); border-radius: 8px;
+      display: flex; align-items: center; justify-content: center;
+      cursor: pointer; color: var(--muted); font-size: 1.5rem; background: #fff;
+    }
+    .rpt-add-photo:active { background: var(--green-light); border-color: var(--green); }
+    .rpt-report-card {
+      background: var(--card); border-radius: var(--radius); padding: 14px;
+      margin-bottom: 8px; box-shadow: 0 1px 3px rgba(0,0,0,.06);
+      cursor: pointer; display: flex; align-items: center; gap: 12px;
+    }
+    .rpt-report-card:active { background: var(--green-light); }
+    .rpt-report-card .rpt-icon {
+      width: 40px; height: 40px; border-radius: 10px; background: var(--green-light);
+      display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+    }
+    .rpt-report-card .rpt-icon svg { width: 20px; height: 20px; color: var(--green); }
+    .rpt-report-card .rpt-info { flex: 1; min-width: 0; }
+    .rpt-report-card .rpt-info h4 { font-size: .82rem; margin-bottom: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .rpt-report-card .rpt-info p { font-size: .68rem; color: var(--muted); margin: 0; }
+    .rpt-status-badge {
+      font-size: .6rem; font-weight: 700; padding: 3px 8px; border-radius: 10px;
+      white-space: nowrap;
+    }
+    .rpt-status-badge.on-track { background: #dcfce7; color: #166534; }
+    .rpt-status-badge.behind { background: #fef2f2; color: #b91c1c; }
+    .rpt-status-badge.ahead { background: #dbeafe; color: #1e40af; }
+    .rpt-status-badge.on-hold { background: #fffbeb; color: #92400e; }
+    .rpt-status-badge.complete { background: var(--green-light); color: var(--green-dark); }
+
     .li-photo-btn {
       border: none; background: var(--green-light); color: var(--green-dark);
       font-size: .6rem; font-weight: 700; padding: 3px 7px;
@@ -768,6 +820,84 @@
   <div id="fp-inputs"></div>
 </div>
 
+<!-- ══════ Tab: Docs (Site Reports) ══════ -->
+<div id="tab-docs" class="tab-panel">
+  <div id="docs-list-view">
+    <div class="card">
+      <div class="card-title">Site Reports</div>
+      <div style="font-size:.72rem;color:var(--muted);margin-bottom:10px;">Inspection reports with photos, notes, and observations.</div>
+      <button class="btn btn-green" id="btnNewReport" style="margin-bottom:12px;">
+        + New Site Report
+      </button>
+      <div id="docs-report-list"></div>
+    </div>
+  </div>
+
+  <div id="docs-edit-view" class="hidden">
+    <div class="card">
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:12px;">
+        <button class="btn btn-outline btn-sm" id="btnBackToReports" style="flex:0 0 auto;width:auto;">&larr; Back</button>
+        <div class="card-title" style="margin-bottom:0;flex:1;">Site Report</div>
+      </div>
+
+      <div style="margin-bottom:10px;">
+        <label style="font-size:.72rem;font-weight:600;color:var(--muted);display:block;margin-bottom:3px;">Report Title</label>
+        <input type="text" id="rpt-title" placeholder="e.g. Initial Inspection, Week 3 Progress..." style="width:100%;border:1.5px solid var(--border);border-radius:8px;padding:10px 12px;font-size:16px;font-family:inherit;background:#fafbfa;outline:none;">
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px;">
+        <div>
+          <label style="font-size:.72rem;font-weight:600;color:var(--muted);display:block;margin-bottom:3px;">Date</label>
+          <input type="text" id="rpt-date" placeholder="MM/DD/YYYY" style="width:100%;border:1.5px solid var(--border);border-radius:8px;padding:10px 12px;font-size:16px;font-family:inherit;background:#fafbfa;outline:none;">
+        </div>
+        <div>
+          <label style="font-size:.72rem;font-weight:600;color:var(--muted);display:block;margin-bottom:3px;">Inspector</label>
+          <input type="text" id="rpt-inspector" placeholder="Your name" style="width:100%;border:1.5px solid var(--border);border-radius:8px;padding:10px 12px;font-size:16px;font-family:inherit;background:#fafbfa;outline:none;">
+        </div>
+      </div>
+      <div style="margin-bottom:10px;">
+        <label style="font-size:.72rem;font-weight:600;color:var(--muted);display:block;margin-bottom:3px;">Overall Status</label>
+        <select id="rpt-status" style="width:100%;border:1.5px solid var(--border);border-radius:8px;padding:10px 12px;font-size:16px;font-family:inherit;background:#fafbfa;outline:none;">
+          <option value="On Track">On Track</option>
+          <option value="Behind Schedule">Behind Schedule</option>
+          <option value="Ahead of Schedule">Ahead of Schedule</option>
+          <option value="On Hold">On Hold</option>
+          <option value="Complete">Complete</option>
+        </select>
+      </div>
+      <div style="margin-bottom:10px;">
+        <label style="font-size:.72rem;font-weight:600;color:var(--muted);display:block;margin-bottom:3px;">Summary / Notes</label>
+        <textarea id="rpt-notes" rows="4" placeholder="General observations, progress notes..." style="width:100%;border:1.5px solid var(--border);border-radius:8px;padding:10px 12px;font-size:16px;font-family:inherit;background:#fafbfa;outline:none;resize:vertical;"></textarea>
+      </div>
+    </div>
+
+    <!-- Report Items (observations) -->
+    <div class="card">
+      <div class="card-title">Observations</div>
+      <div id="rpt-items"></div>
+      <button class="btn btn-outline btn-sm mt" id="btnAddObservation">+ Add Observation</button>
+    </div>
+
+    <!-- Report Actions -->
+    <div class="card">
+      <div class="card-title">Export Report</div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;">
+        <button class="btn btn-green" id="btnReportPDF" style="flex:1;">
+          <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" style="width:16px;height:16px;vertical-align:middle;"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+          Share PDF
+        </button>
+        <button class="btn btn-outline" id="btnReportText" style="flex:1;">
+          <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" style="width:16px;height:16px;vertical-align:middle;"><path d="M4 12v8a2 2 0 002 2h12a2 2 0 002-2v-8M16 6l-4-4-4 4M12 2v13"/></svg>
+          Send via Text
+        </button>
+      </div>
+      <div id="rpt-export-status" style="font-size:.72rem;margin-top:8px;color:var(--muted);"></div>
+    </div>
+
+    <!-- Hidden report preview for PDF generation -->
+    <div id="rpt-pdf-preview" style="position:absolute;left:-9999px;top:0;width:700px;"></div>
+  </div>
+</div>
+
 <!-- ══════ Tab Bar ══════ -->
 <nav class="tab-bar">
   <button class="tab-btn active" data-tab="tab-project">
@@ -793,6 +923,10 @@
   <button class="tab-btn" data-tab="tab-finance">
     <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M12 20V10M6 20V4M18 20v-6"/></svg>
     Finance
+  </button>
+  <button class="tab-btn" data-tab="tab-docs">
+    <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/><path d="M9 15h6M9 11h6"/></svg>
+    Docs
   </button>
   <button class="tab-btn" data-tab="tab-export">
     <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
@@ -874,7 +1008,9 @@ var D = {
   projections: null,
   nextCatId: 1,
   nextItemId: 1,
-  nextPayId: 1
+  nextPayId: 1,
+  siteReports: [],
+  nextReportId: 1
 };
 
 function defaultCategories() {
@@ -1350,6 +1486,8 @@ function createNewProject() {
   D.nextCatId = D.categories.length ? D.categories[D.categories.length - 1].id + 1 : 1;
   D.nextItemId = 100;
   D.nextPayId = 1;
+  D.siteReports = [];
+  D.nextReportId = 1;
   // Add to index
   var index = getProjectIndex();
   index.unshift({ id: id, name: 'Untitled Project', created: new Date().toISOString(), lastModified: new Date().toISOString() });
@@ -1434,6 +1572,8 @@ function ensureFields() {
   if (!D.deliveredMats) D.deliveredMats = DEFAULT_DELIVERED_MATS.slice();
   if (!D.customFixedRules) D.customFixedRules = [];
   if (!D.customFeeRules) D.customFeeRules = [];
+  if (!D.siteReports) D.siteReports = [];
+  if (!D.nextReportId) D.nextReportId = 1;
   for (var i = 0; i < D.categories.length; i++) {
     if (D.categories[i].contractor === undefined) D.categories[i].contractor = '';
     if (D.categories[i].phone === undefined) D.categories[i].phone = '';
@@ -1599,6 +1739,7 @@ function switchTab(tabId) {
   if (tabId === 'tab-payments') renderPayments();
   if (tabId === 'tab-imports') renderImports();
   if (tabId === 'tab-finance') renderFinance();
+  if (tabId === 'tab-docs') renderReportList();
   if (tabId === 'tab-export') { renderExportPreview(); initSyncSettings(); checkSignatures(); }
   window.scrollTo(0, 0);
 }
@@ -4061,6 +4202,7 @@ document.getElementById('btnDownloadHTML').addEventListener('click', function() 
     '  if (!D.scope) D.scope = initDefaultScope();\n' +
     '  if (!D.materials) D.materials = {};\n' +
     '  if (!D.deliveredMats) D.deliveredMats = [];\n' +
+    '  if (!D.siteReports) D.siteReports = [];\n' +
     '  populateProjectFields();\n' +
     '  renderBudget();\n' +
     '})();\n';
@@ -4101,6 +4243,7 @@ document.getElementById('btnSharePassword').addEventListener('click', function()
     '  if (!D.scope) D.scope = initDefaultScope();\n' +
     '  if (!D.materials) D.materials = {};\n' +
     '  if (!D.deliveredMats) D.deliveredMats = [];\n' +
+    '  if (!D.siteReports) D.siteReports = [];\n' +
     '  ensureFields();\n' +
     '  populateProjectFields();\n' +
     '  renderBudget();\n' +
@@ -4795,6 +4938,448 @@ function renderSignatureStatus(sigs) {
   html += '</div>';
   el.innerHTML = html;
 }
+
+/* ═══════════════════════════════════════════
+   SITE REPORTS (Docs Tab)
+   ═══════════════════════════════════════════ */
+var editingReportId = null;
+
+function ensureReports() {
+  if (!D.siteReports) D.siteReports = [];
+  if (!D.nextReportId) D.nextReportId = 1;
+}
+
+function statusBadgeClass(status) {
+  if (!status) return '';
+  var s = status.toLowerCase();
+  if (s.indexOf('on track') >= 0) return 'on-track';
+  if (s.indexOf('behind') >= 0) return 'behind';
+  if (s.indexOf('ahead') >= 0) return 'ahead';
+  if (s.indexOf('hold') >= 0) return 'on-hold';
+  if (s.indexOf('complete') >= 0) return 'complete';
+  return '';
+}
+
+function renderReportList() {
+  ensureReports();
+  var wrap = document.getElementById('docs-report-list');
+  if (D.siteReports.length === 0) {
+    wrap.innerHTML = '<div style="text-align:center;padding:20px;color:var(--muted);font-size:.82rem;">No site reports yet. Create your first one!</div>';
+    return;
+  }
+  var html = '';
+  // Show newest first
+  var sorted = D.siteReports.slice().sort(function(a, b) {
+    return (b.created || '').localeCompare(a.created || '');
+  });
+  for (var i = 0; i < sorted.length; i++) {
+    var r = sorted[i];
+    var photoCount = 0;
+    if (r.items) {
+      for (var j = 0; j < r.items.length; j++) {
+        photoCount += (r.items[j].photos || []).length;
+      }
+    }
+    html += '<div class="rpt-report-card" data-report-id="' + r.id + '">' +
+      '<div class="rpt-icon"><svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/><path d="M9 15h6M9 11h6"/></svg></div>' +
+      '<div class="rpt-info"><h4>' + esc(r.title || 'Untitled Report') + '</h4>' +
+      '<p>' + esc(r.date || '') + ' &bull; ' + (r.items ? r.items.length : 0) + ' observations &bull; ' + photoCount + ' photos</p></div>' +
+      '<span class="rpt-status-badge ' + statusBadgeClass(r.status) + '">' + esc(r.status || '') + '</span>' +
+      '</div>';
+  }
+  wrap.innerHTML = html;
+}
+
+function openReport(reportId) {
+  ensureReports();
+  editingReportId = reportId;
+  var report = null;
+  for (var i = 0; i < D.siteReports.length; i++) {
+    if (D.siteReports[i].id === reportId) { report = D.siteReports[i]; break; }
+  }
+  if (!report) return;
+
+  document.getElementById('docs-list-view').classList.add('hidden');
+  document.getElementById('docs-edit-view').classList.remove('hidden');
+
+  document.getElementById('rpt-title').value = report.title || '';
+  document.getElementById('rpt-date').value = report.date || '';
+  document.getElementById('rpt-inspector').value = report.inspector || '';
+  document.getElementById('rpt-status').value = report.status || 'On Track';
+  document.getElementById('rpt-notes').value = report.notes || '';
+
+  renderObservations(report);
+}
+
+function getEditingReport() {
+  if (!editingReportId) return null;
+  for (var i = 0; i < D.siteReports.length; i++) {
+    if (D.siteReports[i].id === editingReportId) return D.siteReports[i];
+  }
+  return null;
+}
+
+function syncReportFields() {
+  var report = getEditingReport();
+  if (!report) return;
+  report.title = document.getElementById('rpt-title').value.trim();
+  report.date = document.getElementById('rpt-date').value.trim();
+  report.inspector = document.getElementById('rpt-inspector').value.trim();
+  report.status = document.getElementById('rpt-status').value;
+  report.notes = document.getElementById('rpt-notes').value.trim();
+  report.lastModified = new Date().toISOString();
+}
+
+function renderObservations(report) {
+  if (!report.items) report.items = [];
+  var wrap = document.getElementById('rpt-items');
+  var html = '';
+  for (var i = 0; i < report.items.length; i++) {
+    var obs = report.items[i];
+    html += '<div class="rpt-item" data-obs-idx="' + i + '">' +
+      '<button class="rpt-item-del" data-action="del-obs" data-obs-idx="' + i + '">&times;</button>' +
+      '<label style="font-size:.65rem;font-weight:600;color:var(--muted);display:block;margin-bottom:3px;">Area / Location</label>' +
+      '<input type="text" value="' + escAttr(obs.area || '') + '" data-obs-field="area" data-obs-idx="' + i + '" placeholder="e.g. Kitchen, Roof, Foundation...">' +
+      '<label style="font-size:.65rem;font-weight:600;color:var(--muted);display:block;margin-bottom:3px;">Condition</label>' +
+      '<select data-obs-field="condition" data-obs-idx="' + i + '">' +
+        '<option value="Good"' + (obs.condition === 'Good' ? ' selected' : '') + '>Good</option>' +
+        '<option value="Fair"' + (obs.condition === 'Fair' ? ' selected' : '') + '>Fair</option>' +
+        '<option value="Poor"' + (obs.condition === 'Poor' ? ' selected' : '') + '>Poor</option>' +
+        '<option value="Needs Repair"' + (obs.condition === 'Needs Repair' ? ' selected' : '') + '>Needs Repair</option>' +
+        '<option value="Completed"' + (obs.condition === 'Completed' ? ' selected' : '') + '>Completed</option>' +
+      '</select>' +
+      '<label style="font-size:.65rem;font-weight:600;color:var(--muted);display:block;margin-bottom:3px;">Notes</label>' +
+      '<textarea rows="2" data-obs-field="notes" data-obs-idx="' + i + '" placeholder="Describe what you see...">' + esc(obs.notes || '') + '</textarea>' +
+      '<div class="rpt-photo-grid">';
+    var photos = obs.photos || [];
+    for (var j = 0; j < photos.length; j++) {
+      html += '<img class="rpt-photo-thumb" src="' + photos[j] + '" data-obs-idx="' + i + '" data-photo-idx="' + j + '">';
+    }
+    html += '<label class="rpt-add-photo" title="Add photo">' +
+      '+<input type="file" accept="image/*" capture="environment" data-obs-idx="' + i + '" style="display:none;">' +
+      '</label>';
+    html += '</div></div>';
+  }
+  wrap.innerHTML = html;
+}
+
+// Event delegation for report list
+document.getElementById('docs-report-list').addEventListener('click', function(e) {
+  var card = e.target.closest('[data-report-id]');
+  if (card) openReport(parseInt(card.getAttribute('data-report-id')));
+});
+
+document.getElementById('btnNewReport').addEventListener('click', function() {
+  ensureReports();
+  var id = D.nextReportId++;
+  var report = {
+    id: id,
+    title: '',
+    date: todayStr(),
+    inspector: D.project.pm || '',
+    status: 'On Track',
+    notes: '',
+    items: [],
+    created: new Date().toISOString(),
+    lastModified: new Date().toISOString()
+  };
+  D.siteReports.push(report);
+  scheduleSave();
+  openReport(id);
+});
+
+document.getElementById('btnBackToReports').addEventListener('click', function() {
+  syncReportFields();
+  scheduleSave();
+  saveReportToFirestore();
+  document.getElementById('docs-edit-view').classList.add('hidden');
+  document.getElementById('docs-list-view').classList.remove('hidden');
+  editingReportId = null;
+  renderReportList();
+});
+
+document.getElementById('btnAddObservation').addEventListener('click', function() {
+  var report = getEditingReport();
+  if (!report) return;
+  syncReportFields();
+  report.items.push({ area: '', condition: 'Good', notes: '', photos: [] });
+  renderObservations(report);
+  scheduleSave();
+});
+
+// Event delegation for observations
+document.getElementById('rpt-items').addEventListener('click', function(e) {
+  var del = e.target.closest('[data-action="del-obs"]');
+  if (del) {
+    var idx = parseInt(del.getAttribute('data-obs-idx'));
+    var report = getEditingReport();
+    if (report && report.items[idx] !== undefined) {
+      report.items.splice(idx, 1);
+      renderObservations(report);
+      scheduleSave();
+    }
+  }
+});
+
+document.getElementById('rpt-items').addEventListener('change', function(e) {
+  var report = getEditingReport();
+  if (!report) return;
+
+  // Photo upload
+  if (e.target.type === 'file' && e.target.files && e.target.files[0]) {
+    var obsIdx = parseInt(e.target.getAttribute('data-obs-idx'));
+    var file = e.target.files[0];
+    var reader = new FileReader();
+    reader.onload = function(ev) {
+      // Compress image
+      var img = new Image();
+      img.onload = function() {
+        var maxW = 1200;
+        var w = img.width, h = img.height;
+        if (w > maxW) { h = h * (maxW / w); w = maxW; }
+        var canvas = document.createElement('canvas');
+        canvas.width = w; canvas.height = h;
+        canvas.getContext('2d').drawImage(img, 0, 0, w, h);
+        var dataUrl = canvas.toDataURL('image/jpeg', 0.7);
+        if (!report.items[obsIdx].photos) report.items[obsIdx].photos = [];
+        report.items[obsIdx].photos.push(dataUrl);
+        renderObservations(report);
+        scheduleSave();
+      };
+      img.src = ev.target.result;
+    };
+    reader.readAsDataURL(file);
+    e.target.value = '';
+    return;
+  }
+
+  // Field updates
+  var field = e.target.getAttribute('data-obs-field');
+  var idx = parseInt(e.target.getAttribute('data-obs-idx'));
+  if (field && report.items[idx] !== undefined) {
+    report.items[idx][field] = e.target.value;
+    scheduleSave();
+  }
+});
+
+document.getElementById('rpt-items').addEventListener('input', function(e) {
+  var field = e.target.getAttribute('data-obs-field');
+  var idx = parseInt(e.target.getAttribute('data-obs-idx'));
+  if (field && idx >= 0) {
+    var report = getEditingReport();
+    if (report && report.items[idx]) {
+      report.items[idx][field] = e.target.value;
+    }
+  }
+});
+
+// Auto-save report fields on blur
+['rpt-title', 'rpt-date', 'rpt-inspector', 'rpt-status', 'rpt-notes'].forEach(function(id) {
+  document.getElementById(id).addEventListener('change', function() {
+    syncReportFields(); scheduleSave();
+  });
+});
+
+/* ── Save report to Firestore ── */
+function saveReportToFirestore() {
+  if (!fbReady || !currentProjectId) return;
+  syncProjectFields();
+  try { localStorage.setItem('bndr-project-' + currentProjectId, JSON.stringify(D)); } catch(e) {}
+  cloudSaveProject(currentProjectId, D);
+}
+
+/* ── Build report PDF preview HTML ── */
+function buildReportPreviewHTML(report) {
+  var p = D.project;
+  var html = '<div style="font-family:-apple-system,system-ui,sans-serif;color:#222;padding:20px;">' +
+    '<div style="border-bottom:2px solid #222;padding-bottom:10px;margin-bottom:12px;display:flex;align-items:center;gap:12px;">' +
+      '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 292.77 77.05" style="width:100px;height:auto;">' +
+        '<g><g>' +
+          '<path d="M41.15,0H.03l-.03,53.05v2.91h2.78l2.05-2.05,2.08-2.05,5.87-5.87V13.11h28.36c5.62,0,10.2,4.58,10.2,10.2,0,2.72-1.07,5.27-3,7.2l-.47.51-1.45,1.42-1.45,1.45-2.24,2.24,4.26,3.44c.22.13.41.28.85.54,1.45.92,2.84,1.8,4.17,2.78l1.42,1.07,2.24-2.24,1.45-1.45.51-.51c4.39-4.39,6.82-10.23,6.82-16.45,0-12.85-10.45-23.31-23.3-23.31Z"/>' +
+          '<polygon points="34.89 18.03 12.79 40.17 10.74 42.22 8.65 44.3 4.1 48.85 2.05 50.9 .6 52.36 0 53.05 0 55.96 15.5 55.96 34.89 36.57 53.08 54.76 53.08 63.95 .76 63.95 .76 77.05 66.19 77.05 66.19 49.33 34.89 18.03"/>' +
+        '</g>' +
+        '<path d="M142.9,76.91h-15.23l-34.5-52.13v52.13h-15.24V.83h15.24l34.5,52.24V.83h15.23v76.08Z"/>' +
+        '<path d="M205.54,5.62c6.06,3.12,10.74,7.56,14.04,13.33,3.3,5.77,4.95,12.46,4.95,20.08s-1.65,14.28-4.95,19.97c-3.3,5.7-7.98,10.1-14.04,13.22-6.06,3.12-13.08,4.68-21.06,4.68h-26.56V.94h26.56c7.98,0,15,1.56,21.06,4.68Z"/>' +
+        '<path d="M275.14,76.91l-16.76-29.6h-7.18v29.6h-15.24V.94h28.52c5.87,0,10.88,1.03,15.02,3.1s7.24,4.86,9.3,8.38c2.07,3.52,3.1,7.46,3.1,11.81,0,5.01-1.45,9.52-4.35,13.55-2.9,4.03-7.22,6.8-12.95,8.33l18.18,30.8h-17.63Z"/>' +
+      '</g></svg>' +
+      '<div style="color:#888;font-size:.65rem;">9229 Ward Pkwy, Ste 380 | Kansas City, MO 64114 | (913) 219-8906</div>' +
+    '</div>';
+
+  html += '<div style="text-align:center;font-weight:800;font-size:1rem;letter-spacing:2px;margin-bottom:12px;color:#2D2D2D;">SITE INSPECTION REPORT</div>';
+
+  // Report info
+  html += '<div style="display:grid;grid-template-columns:1fr 1fr;gap:4px 16px;font-size:.78rem;margin-bottom:14px;">' +
+    '<div><strong>Property:</strong> ' + esc(p.address) + '</div>' +
+    '<div><strong>Date:</strong> ' + esc(report.date) + '</div>' +
+    '<div><strong>Inspector:</strong> ' + esc(report.inspector) + '</div>' +
+    '<div><strong>Status:</strong> ' + esc(report.status) + '</div>' +
+    '<div style="grid-column:1/-1;"><strong>Report:</strong> ' + esc(report.title) + '</div>' +
+  '</div>';
+
+  // Summary
+  if (report.notes) {
+    html += '<div style="font-weight:700;font-size:.82rem;margin-bottom:4px;color:#6B7A59;">Summary</div>' +
+      '<div style="font-size:.78rem;margin-bottom:14px;white-space:pre-wrap;">' + esc(report.notes) + '</div>';
+  }
+
+  // Observations with photos
+  if (report.items && report.items.length > 0) {
+    html += '<div style="font-weight:700;font-size:.82rem;margin-bottom:8px;color:#6B7A59;">Observations</div>';
+    for (var i = 0; i < report.items.length; i++) {
+      var obs = report.items[i];
+      var condColor = '#222';
+      if (obs.condition === 'Poor' || obs.condition === 'Needs Repair') condColor = '#dc2626';
+      else if (obs.condition === 'Good' || obs.condition === 'Completed') condColor = '#6B7A59';
+
+      html += '<div style="border:1px solid #ddd;border-radius:8px;padding:10px;margin-bottom:10px;page-break-inside:avoid;">' +
+        '<div style="display:flex;justify-content:space-between;margin-bottom:4px;">' +
+          '<span style="font-weight:700;font-size:.82rem;">' + esc(obs.area || 'Observation ' + (i + 1)) + '</span>' +
+          '<span style="font-size:.72rem;font-weight:700;color:' + condColor + ';">' + esc(obs.condition || '') + '</span>' +
+        '</div>';
+
+      if (obs.notes) {
+        html += '<div style="font-size:.75rem;margin-bottom:6px;white-space:pre-wrap;">' + esc(obs.notes) + '</div>';
+      }
+
+      // Photos - include them in the PDF
+      var photos = obs.photos || [];
+      if (photos.length > 0) {
+        html += '<div style="display:flex;flex-wrap:wrap;gap:6px;margin-top:6px;">';
+        for (var j = 0; j < photos.length; j++) {
+          html += '<img src="' + photos[j] + '" style="width:200px;height:150px;object-fit:cover;border-radius:6px;border:1px solid #ddd;">';
+        }
+        html += '</div>';
+      }
+
+      html += '</div>';
+    }
+  }
+
+  html += '</div>';
+  return html;
+}
+
+/* ── Export report as PDF (with photos) ── */
+document.getElementById('btnReportPDF').addEventListener('click', function() {
+  var report = getEditingReport();
+  if (!report) return;
+  syncReportFields();
+  saveReportToFirestore();
+
+  var btn = this;
+  btn.disabled = true;
+  btn.textContent = 'Generating PDF...';
+  var statusEl = document.getElementById('rpt-export-status');
+
+  var previewEl = document.getElementById('rpt-pdf-preview');
+  previewEl.innerHTML = buildReportPreviewHTML(report);
+
+  // Wait for images to load
+  var images = previewEl.querySelectorAll('img');
+  var loaded = 0;
+  var total = images.length;
+
+  function generatePDF() {
+    var p = D.project;
+    var filename = 'BNDR-SiteReport-' + (p.address || 'report').replace(/[^a-zA-Z0-9]/g, '-').substring(0, 30) +
+      '-' + (report.date || '').replace(/\//g, '-') + '.pdf';
+
+    var opt = {
+      margin: [0.3, 0.4, 0.3, 0.4],
+      filename: filename,
+      image: { type: 'jpeg', quality: 0.92 },
+      html2canvas: { scale: 2, useCORS: true, logging: false, allowTaint: true },
+      jsPDF: { unit: 'in', format: 'letter', orientation: 'portrait' },
+      pagebreak: { mode: ['avoid-all', 'css', 'legacy'] }
+    };
+
+    html2pdf().set(opt).from(previewEl).outputPdf('blob').then(function(pdfBlob) {
+      var pdfFile = new File([pdfBlob], filename, { type: 'application/pdf' });
+
+      if (navigator.canShare && navigator.canShare({ files: [pdfFile] })) {
+        navigator.share({
+          title: 'Site Report — ' + (report.title || p.address),
+          files: [pdfFile]
+        }).catch(function() {});
+      } else {
+        var url = URL.createObjectURL(pdfBlob);
+        var a = document.createElement('a');
+        a.href = url;
+        a.download = filename;
+        a.click();
+        URL.revokeObjectURL(url);
+      }
+
+      btn.disabled = false;
+      btn.innerHTML = '<svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" style="width:16px;height:16px;vertical-align:middle;"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg> Share PDF';
+      statusEl.innerHTML = '<span style="color:var(--green);">PDF generated successfully!</span>';
+      previewEl.innerHTML = '';
+    }).catch(function(err) {
+      btn.disabled = false;
+      btn.innerHTML = '<svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" style="width:16px;height:16px;vertical-align:middle;"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg> Share PDF';
+      statusEl.innerHTML = '<span style="color:var(--red);">PDF generation failed: ' + esc(err.message) + '</span>';
+      previewEl.innerHTML = '';
+    });
+  }
+
+  if (total === 0) {
+    generatePDF();
+  } else {
+    for (var i = 0; i < images.length; i++) {
+      if (images[i].complete) {
+        loaded++;
+        if (loaded >= total) generatePDF();
+      } else {
+        images[i].addEventListener('load', function() {
+          loaded++;
+          if (loaded >= total) generatePDF();
+        });
+        images[i].addEventListener('error', function() {
+          loaded++;
+          if (loaded >= total) generatePDF();
+        });
+      }
+    }
+  }
+});
+
+/* ── Send report via text (SMS with PDF) ── */
+document.getElementById('btnReportText').addEventListener('click', function() {
+  var report = getEditingReport();
+  if (!report) return;
+  syncReportFields();
+  saveReportToFirestore();
+
+  var statusEl = document.getElementById('rpt-export-status');
+  var p = D.project;
+  var address = p.address || 'the property';
+  var title = report.title || 'Site Report';
+  var summary = report.notes ? '\n\n' + report.notes.substring(0, 200) : '';
+  var obsCount = (report.items || []).length;
+  var photoCount = 0;
+  if (report.items) {
+    for (var i = 0; i < report.items.length; i++) {
+      photoCount += (report.items[i].photos || []).length;
+    }
+  }
+
+  var body = 'BNDR Capital - Site Report\n' +
+    title + ' — ' + address + '\n' +
+    'Date: ' + (report.date || 'N/A') + '\n' +
+    'Status: ' + (report.status || 'N/A') + '\n' +
+    'Inspector: ' + (report.inspector || 'N/A') + '\n' +
+    obsCount + ' observations, ' + photoCount + ' photos' +
+    summary;
+
+  // Open SMS with pre-filled message
+  var phone = prompt('Enter phone number to send report to:');
+  if (!phone) return;
+  phone = phone.replace(/[^0-9+]/g, '');
+
+  var smsUrl = 'sms:' + phone + '?body=' + encodeURIComponent(body);
+  window.location.href = smsUrl;
+  statusEl.innerHTML = '<span style="color:var(--green);">Opening messaging app... For full PDF with photos, use "Share PDF" button.</span>';
+});
 
 /* ═══════════════════════════════════════════
    PHOTO ANNOTATION TOOL

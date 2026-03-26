@@ -893,8 +893,6 @@
       <div id="rpt-export-status" style="font-size:.72rem;margin-top:8px;color:var(--muted);"></div>
     </div>
 
-    <!-- Hidden report preview for PDF generation -->
-    <div id="rpt-pdf-preview" style="position:absolute;left:-9999px;top:0;width:700px;"></div>
   </div>
 </div>
 
@@ -3881,7 +3879,9 @@ function renderExportPreview() {
       if (!item.desc && !item.estimated && !item.actual) continue;
       var itemCon = (item.contractor || '').trim();
       var showItemCon = itemCon && itemCon !== (cat.contractor || '').trim();
-      html += '<tr><td style="padding:4px 8px 4px 20px;">' + esc(item.desc) + '</td>' +
+      html += '<tr><td style="padding:4px 8px 4px 20px;">' + esc(item.desc) +
+        (item.photo ? '<br><img src="' + item.photo + '" style="max-width:180px;height:auto;border-radius:4px;margin-top:4px;">' : '') +
+        '</td>' +
         '<td style="padding:4px 8px;font-size:.68rem;color:var(--green-dark);">' + (showItemCon ? esc(itemCon) : '') + '</td>' +
         '<td style="padding:4px 8px;text-align:right;">$' + fmt(item.estimated) + '</td>' +
         '<td style="padding:4px 8px;text-align:right;">$' + fmt(item.actual) + '</td></tr>';
@@ -5271,10 +5271,23 @@ document.getElementById('btnReportPDF').addEventListener('click', function() {
   btn.textContent = 'Generating PDF...';
   var statusEl = document.getElementById('rpt-export-status');
 
-  var previewEl = document.getElementById('rpt-pdf-preview');
+  // Create a temporary visible element for html2canvas
+  // html2canvas cannot render off-screen or hidden elements
+  var previewEl = document.createElement('div');
+  previewEl.style.cssText = 'position:fixed;top:0;left:0;width:700px;background:#fff;z-index:9999;overflow:auto;max-height:100vh;';
   previewEl.innerHTML = buildReportPreviewHTML(report);
+  document.body.appendChild(previewEl);
 
-  // Wait for images to load
+  function cleanupPreview() {
+    if (previewEl.parentNode) previewEl.parentNode.removeChild(previewEl);
+  }
+
+  function resetBtn() {
+    btn.disabled = false;
+    btn.innerHTML = '<svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" style="width:16px;height:16px;vertical-align:middle;"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg> Share PDF';
+  }
+
+  // Wait for all images to load before generating PDF
   var images = previewEl.querySelectorAll('img');
   var loaded = 0;
   var total = images.length;
@@ -5294,6 +5307,7 @@ document.getElementById('btnReportPDF').addEventListener('click', function() {
     };
 
     html2pdf().set(opt).from(previewEl).outputPdf('blob').then(function(pdfBlob) {
+      cleanupPreview();
       var pdfFile = new File([pdfBlob], filename, { type: 'application/pdf' });
 
       if (navigator.canShare && navigator.canShare({ files: [pdfFile] })) {
@@ -5310,75 +5324,127 @@ document.getElementById('btnReportPDF').addEventListener('click', function() {
         URL.revokeObjectURL(url);
       }
 
-      btn.disabled = false;
-      btn.innerHTML = '<svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" style="width:16px;height:16px;vertical-align:middle;"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg> Share PDF';
+      resetBtn();
       statusEl.innerHTML = '<span style="color:var(--green);">PDF generated successfully!</span>';
-      previewEl.innerHTML = '';
     }).catch(function(err) {
-      btn.disabled = false;
-      btn.innerHTML = '<svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" style="width:16px;height:16px;vertical-align:middle;"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg> Share PDF';
+      cleanupPreview();
+      resetBtn();
       statusEl.innerHTML = '<span style="color:var(--red);">PDF generation failed: ' + esc(err.message) + '</span>';
-      previewEl.innerHTML = '';
     });
   }
 
   if (total === 0) {
-    generatePDF();
+    // Small delay to let the DOM render
+    setTimeout(generatePDF, 100);
   } else {
+    function onImageReady() {
+      loaded++;
+      if (loaded >= total) setTimeout(generatePDF, 100);
+    }
     for (var i = 0; i < images.length; i++) {
       if (images[i].complete) {
-        loaded++;
-        if (loaded >= total) generatePDF();
+        onImageReady();
       } else {
-        images[i].addEventListener('load', function() {
-          loaded++;
-          if (loaded >= total) generatePDF();
-        });
-        images[i].addEventListener('error', function() {
-          loaded++;
-          if (loaded >= total) generatePDF();
-        });
+        images[i].addEventListener('load', onImageReady);
+        images[i].addEventListener('error', onImageReady);
       }
     }
   }
 });
 
-/* ── Send report via text (SMS with PDF) ── */
+/* ── Send report via text — generates PDF and opens share sheet ── */
 document.getElementById('btnReportText').addEventListener('click', function() {
   var report = getEditingReport();
   if (!report) return;
   syncReportFields();
   saveReportToFirestore();
 
+  var btn = this;
+  btn.disabled = true;
+  btn.textContent = 'Generating report...';
   var statusEl = document.getElementById('rpt-export-status');
   var p = D.project;
-  var address = p.address || 'the property';
-  var title = report.title || 'Site Report';
-  var summary = report.notes ? '\n\n' + report.notes.substring(0, 200) : '';
-  var obsCount = (report.items || []).length;
-  var photoCount = 0;
-  if (report.items) {
-    for (var i = 0; i < report.items.length; i++) {
-      photoCount += (report.items[i].photos || []).length;
-    }
+
+  // Build a visible preview for html2canvas
+  var previewEl = document.createElement('div');
+  previewEl.style.cssText = 'position:fixed;top:0;left:0;width:700px;background:#fff;z-index:9999;overflow:auto;max-height:100vh;';
+  previewEl.innerHTML = buildReportPreviewHTML(report);
+  document.body.appendChild(previewEl);
+
+  function cleanup() {
+    if (previewEl.parentNode) previewEl.parentNode.removeChild(previewEl);
+    btn.disabled = false;
+    btn.innerHTML = '<svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" style="width:16px;height:16px;vertical-align:middle;"><path d="M4 12v8a2 2 0 002 2h12a2 2 0 002-2v-8M16 6l-4-4-4 4M12 2v13"/></svg> Send via Text';
   }
 
-  var body = 'BNDR Capital - Site Report\n' +
-    title + ' — ' + address + '\n' +
-    'Date: ' + (report.date || 'N/A') + '\n' +
-    'Status: ' + (report.status || 'N/A') + '\n' +
-    'Inspector: ' + (report.inspector || 'N/A') + '\n' +
-    obsCount + ' observations, ' + photoCount + ' photos' +
-    summary;
+  var images = previewEl.querySelectorAll('img');
+  var loaded = 0;
+  var total = images.length;
 
-  // Open SMS with pre-filled message
-  var phone = prompt('Enter phone number to send report to:');
-  if (!phone) return;
-  phone = phone.replace(/[^0-9+]/g, '');
+  function doGenerate() {
+    var filename = 'BNDR-SiteReport-' + (p.address || 'report').replace(/[^a-zA-Z0-9]/g, '-').substring(0, 30) +
+      '-' + (report.date || '').replace(/\//g, '-') + '.pdf';
 
-  var smsUrl = 'sms:' + phone + '?body=' + encodeURIComponent(body);
-  window.location.href = smsUrl;
-  statusEl.innerHTML = '<span style="color:var(--green);">Opening messaging app... For full PDF with photos, use "Share PDF" button.</span>';
+    var opt = {
+      margin: [0.3, 0.4, 0.3, 0.4],
+      filename: filename,
+      image: { type: 'jpeg', quality: 0.92 },
+      html2canvas: { scale: 2, useCORS: true, logging: false, allowTaint: true },
+      jsPDF: { unit: 'in', format: 'letter', orientation: 'portrait' },
+      pagebreak: { mode: ['avoid-all', 'css', 'legacy'] }
+    };
+
+    html2pdf().set(opt).from(previewEl).outputPdf('blob').then(function(pdfBlob) {
+      cleanup();
+      var pdfFile = new File([pdfBlob], filename, { type: 'application/pdf' });
+      var title = (report.title || 'Site Report') + ' — ' + (p.address || '');
+
+      // Use native share (iMessage, SMS, WhatsApp, etc.) with the PDF attached
+      if (navigator.canShare && navigator.canShare({ files: [pdfFile] })) {
+        navigator.share({
+          title: title,
+          text: 'BNDR Capital — ' + title,
+          files: [pdfFile]
+        }).catch(function() {});
+        statusEl.innerHTML = '<span style="color:var(--green);">PDF report ready to send!</span>';
+      } else {
+        // Fallback: download PDF then open SMS with summary text
+        var url = URL.createObjectURL(pdfBlob);
+        var a = document.createElement('a');
+        a.href = url;
+        a.download = filename;
+        a.click();
+        URL.revokeObjectURL(url);
+
+        var smsBody = 'BNDR Capital - ' + title + '\nDate: ' + (report.date || 'N/A') + ' | Status: ' + (report.status || 'N/A');
+        var phone = prompt('PDF downloaded. Enter phone number to text a summary:');
+        if (phone) {
+          phone = phone.replace(/[^0-9+]/g, '');
+          window.location.href = 'sms:' + phone + '?body=' + encodeURIComponent(smsBody);
+        }
+        statusEl.innerHTML = '<span style="color:var(--green);">PDF downloaded. Share the file via your messaging app.</span>';
+      }
+    }).catch(function(err) {
+      cleanup();
+      statusEl.innerHTML = '<span style="color:var(--red);">Failed to generate report: ' + esc(err.message) + '</span>';
+    });
+  }
+
+  if (total === 0) {
+    setTimeout(doGenerate, 100);
+  } else {
+    function onReady() {
+      loaded++;
+      if (loaded >= total) setTimeout(doGenerate, 100);
+    }
+    for (var i = 0; i < images.length; i++) {
+      if (images[i].complete) { onReady(); }
+      else {
+        images[i].addEventListener('load', onReady);
+        images[i].addEventListener('error', onReady);
+      }
+    }
+  }
 });
 
 /* ═══════════════════════════════════════════

@@ -4,13 +4,13 @@
   "description": "BNDR Capital Scope of Work & Budget Tracking App",
   "start_url": "./",
   "display": "standalone",
-  "background_color": "#2D2D2D",
-  "theme_color": "#2D2D2D",
+  "background_color": "#0a0a0a",
+  "theme_color": "#0a0a0a",
   "orientation": "portrait",
   "categories": ["business", "finance", "productivity"],
   "icons": [
     {
-      "src": "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 512 512'%3E%3Crect width='512' height='512' rx='80' fill='%232D2D2D'/%3E%3Cpath d='M256 120L100 360l60 0L256 195l96 165h60Z' fill='%236B7A59'/%3E%3Ctext x='256' y='280' text-anchor='middle' font-size='200' font-weight='bold' fill='white' font-family='sans-serif'%3EB%3C/text%3E%3C/svg%3E",
+      "src": "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 512 512'%3E%3Crect width='512' height='512' rx='0' fill='%230a0a0a'/%3E%3Ctext x='256' y='320' text-anchor='middle' font-size='280' font-weight='700' fill='white' font-family='Helvetica Neue,Helvetica,Arial,sans-serif'%3EB%3C/text%3E%3C/svg%3E",
       "sizes": "512x512",
       "type": "image/svg+xml",
       "purpose": "any"

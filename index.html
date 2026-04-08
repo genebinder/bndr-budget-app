@@ -396,12 +396,34 @@
     .fp-chk-row { display:flex; align-items:center; gap:6px; font-size:.72rem; margin-bottom:4px; }
     .fp-chk-row input[type=checkbox] { width:16px; height:16px; }
 
+    /* ── Site Reports ── */
+    .sr-photo-grid { display:grid; gap:12px; }
+    .sr-report-card { background:var(--card); border-radius:var(--radius); overflow:hidden; box-shadow:0 1px 3px rgba(0,0,0,.06); }
+    .sr-report-card img { width:100%; display:block; }
+    .sr-report-meta { padding:10px 14px; font-size:.72rem; color:var(--muted); display:flex; justify-content:space-between; align-items:center; }
+    .sr-comment-list { padding:0 14px 12px; }
+    .sr-comment-item { font-size:.75rem; color:var(--text); padding:4px 0; border-bottom:1px solid var(--border); display:flex; gap:6px; align-items:baseline; }
+    .sr-comment-item:last-child { border-bottom:none; }
+    .sr-comment-num { font-weight:700; color:var(--green); min-width:18px; }
+    .sr-editor-wrap { background:var(--card); border-radius:var(--radius); overflow:hidden; box-shadow:0 1px 3px rgba(0,0,0,.06); margin-bottom:12px; }
+    .sr-canvas-wrap { position:relative; width:100%; touch-action:none; overflow:hidden; background:#f5f5f5; }
+    .sr-canvas-wrap canvas { display:block; width:100%; }
+    .sr-toolbar { display:flex; gap:6px; padding:10px 14px; align-items:center; flex-wrap:wrap; border-top:1px solid var(--border); }
+    .sr-tool-btn { border:1.5px solid var(--border); background:var(--card); border-radius:8px; padding:6px 12px; font-size:.7rem; font-weight:600; cursor:pointer; font-family:inherit; color:var(--text); display:flex; align-items:center; gap:4px; }
+    .sr-tool-btn.active { border-color:var(--green); background:var(--green-light); color:var(--green-dark); }
+    .sr-tool-btn svg { width:14px; height:14px; }
+    .sr-comment-input-wrap { padding:8px 14px; border-top:1px solid var(--border); display:none; }
+    .sr-comment-input-wrap.visible { display:flex; gap:6px; align-items:center; }
+    .sr-comment-input { flex:1; border:1.5px solid var(--border); border-radius:8px; padding:8px 10px; font-size:.75rem; font-family:inherit; outline:none; }
+    .sr-comment-input:focus { border-color:var(--green); }
+    .sr-arrow-marker { position:absolute; width:22px; height:22px; border-radius:50%; background:var(--green); color:#fff; font-size:.65rem; font-weight:700; display:flex; align-items:center; justify-content:center; pointer-events:none; transform:translate(-50%,-50%); box-shadow:0 1px 3px rgba(0,0,0,.3); }
+
     /* ── Print styles ── */
     @media print {
       body { padding: 0; background: #fff; }
       .app-header, .tab-bar, .no-print { display: none !important; }
       .tab-panel { display: block !important; padding: 0; }
-      #tab-project, #tab-budget, #tab-payments, #tab-scope, #tab-imports, #tab-finance { display: none !important; }
+      #tab-project, #tab-budget, #tab-payments, #tab-scope, #tab-imports, #tab-finance, #tab-reports { display: none !important; }
       #tab-export { display: block !important; }
       .card { box-shadow: none; break-inside: avoid; }
       .print-page { display: block !important; }
@@ -605,6 +627,19 @@
   <div id="pay-list"></div>
 </div>
 
+<!-- ══════ Tab: Site Reports ══════ -->
+<div id="tab-reports" class="tab-panel">
+  <div class="no-print" style="display:flex;gap:8px;margin-bottom:12px;">
+    <label class="btn btn-green" style="flex:1;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:4px;">
+      <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" style="width:16px;height:16px;"><path d="M23 19a2 2 0 01-2 2H3a2 2 0 01-2-2V8a2 2 0 012-2h4l2-3h6l2 3h4a2 2 0 012 2z"/><circle cx="12" cy="13" r="4"/></svg>
+      + Add Photo
+      <input type="file" id="sr-file-input" accept="image/*" capture="environment" style="display:none;">
+    </label>
+  </div>
+  <div id="sr-editor-area"></div>
+  <div id="sr-report-list" class="sr-photo-grid"></div>
+</div>
+
 <!-- ══════ Tab: Export ══════ -->
 <div id="tab-export" class="tab-panel">
   <div class="card">
@@ -711,6 +746,10 @@
     <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M12 20V10M6 20V4M18 20v-6"/></svg>
     Finance
   </button>
+  <button class="tab-btn" data-tab="tab-reports">
+    <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M23 19a2 2 0 01-2 2H3a2 2 0 01-2-2V8a2 2 0 012-2h4l2-3h6l2 3h4a2 2 0 012 2z"/><circle cx="12" cy="13" r="4"/></svg>
+    Reports
+  </button>
   <button class="tab-btn" data-tab="tab-export">
     <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
     Export
@@ -759,9 +798,11 @@ var D = {
   customFixedRules: [],
   customFeeRules: [],
   projections: null,
+  siteReports: [],
   nextCatId: 1,
   nextItemId: 1,
-  nextPayId: 1
+  nextPayId: 1,
+  nextReportId: 1
 };
 
 function defaultCategories() {
@@ -1234,9 +1275,11 @@ function createNewProject() {
   D.deliveredMats = DEFAULT_DELIVERED_MATS.slice();
   D.customFixedRules = [];
   D.customFeeRules = [];
+  D.siteReports = [];
   D.nextCatId = D.categories.length ? D.categories[D.categories.length - 1].id + 1 : 1;
   D.nextItemId = 100;
   D.nextPayId = 1;
+  D.nextReportId = 1;
   // Add to index
   var index = getProjectIndex();
   index.unshift({ id: id, name: 'Untitled Project', created: new Date().toISOString(), lastModified: new Date().toISOString() });
@@ -1321,6 +1364,8 @@ function ensureFields() {
   if (!D.deliveredMats) D.deliveredMats = DEFAULT_DELIVERED_MATS.slice();
   if (!D.customFixedRules) D.customFixedRules = [];
   if (!D.customFeeRules) D.customFeeRules = [];
+  if (!D.siteReports) D.siteReports = [];
+  if (!D.nextReportId) D.nextReportId = 1;
   for (var i = 0; i < D.categories.length; i++) {
     if (D.categories[i].contractor === undefined) D.categories[i].contractor = '';
     if (D.categories[i].phone === undefined) D.categories[i].phone = '';
@@ -1486,6 +1531,7 @@ function switchTab(tabId) {
   if (tabId === 'tab-payments') renderPayments();
   if (tabId === 'tab-imports') renderImports();
   if (tabId === 'tab-finance') renderFinance();
+  if (tabId === 'tab-reports') renderSiteReports();
   if (tabId === 'tab-export') { renderExportPreview(); initSyncSettings(); }
   window.scrollTo(0, 0);
 }
@@ -4070,6 +4116,322 @@ document.getElementById('btnSharePassword').addEventListener('click', function()
   .catch(function(err) {
     alert('Encryption error: ' + err.message);
   });
+});
+
+/* ═══════════════════════════════════════════
+   SITE REPORTS — Picture Comments
+   ═══════════════════════════════════════════ */
+var srEditorState = null; // current editor session
+
+function srCompressImage(file, maxW, quality, cb) {
+  var reader = new FileReader();
+  reader.onload = function(e) {
+    var img = new Image();
+    img.onload = function() {
+      var w = img.width, h = img.height;
+      if (w > maxW) { h = Math.round(h * maxW / w); w = maxW; }
+      var c = document.createElement('canvas'); c.width = w; c.height = h;
+      c.getContext('2d').drawImage(img, 0, 0, w, h);
+      var dataUrl = c.toDataURL('image/jpeg', quality);
+      if (dataUrl.length > 800000) dataUrl = c.toDataURL('image/jpeg', 0.4);
+      cb(dataUrl, w, h);
+    };
+    img.src = e.target.result;
+  };
+  reader.readAsDataURL(file);
+}
+
+function srOpenEditor(dataUrl, imgW, imgH) {
+  srEditorState = { imgSrc: dataUrl, imgW: imgW, imgH: imgH, arrows: [], activeTool: null };
+  var area = document.getElementById('sr-editor-area');
+  area.innerHTML =
+    '<div class="sr-editor-wrap">' +
+      '<div class="sr-canvas-wrap" id="sr-canvas-wrap">' +
+        '<canvas id="sr-canvas"></canvas>' +
+      '</div>' +
+      '<div class="sr-comment-input-wrap" id="sr-comment-input-wrap">' +
+        '<span class="sr-comment-num" id="sr-comment-num"></span>' +
+        '<input class="sr-comment-input" id="sr-comment-input" type="text" placeholder="Add comment for this arrow...">' +
+        '<button class="btn btn-green btn-sm" id="sr-comment-ok" style="white-space:nowrap;">OK</button>' +
+      '</div>' +
+      '<div class="sr-toolbar" id="sr-toolbar">' +
+        '<button class="sr-tool-btn" id="sr-btn-arrow" title="Draw Arrow">' +
+          '<svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M5 12h14M12 5l7 7-7 7"/></svg>' +
+          'Arrow' +
+        '</button>' +
+        '<button class="sr-tool-btn" id="sr-btn-undo" title="Undo last arrow">' +
+          '<svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M1 4v6h6M3.51 15a9 9 0 102.13-9.36L1 10"/></svg>' +
+          'Undo' +
+        '</button>' +
+        '<div style="flex:1;"></div>' +
+        '<button class="btn btn-outline btn-sm" id="sr-btn-cancel">Cancel</button>' +
+        '<button class="btn btn-green btn-sm" id="sr-btn-save">Save</button>' +
+      '</div>' +
+    '</div>';
+
+  var canvas = document.getElementById('sr-canvas');
+  var wrap = document.getElementById('sr-canvas-wrap');
+  var img = new Image();
+  img.onload = function() {
+    var dispW = wrap.clientWidth;
+    var scale = dispW / imgW;
+    var dispH = Math.round(imgH * scale);
+    canvas.width = imgW;
+    canvas.height = imgH;
+    canvas.style.width = dispW + 'px';
+    canvas.style.height = dispH + 'px';
+    srEditorState.scale = scale;
+    srRedrawCanvas();
+  };
+  img.src = dataUrl;
+  srEditorState.img = img;
+
+  // Arrow tool toggle
+  document.getElementById('sr-btn-arrow').addEventListener('click', function() {
+    if (srEditorState.activeTool === 'arrow') {
+      srEditorState.activeTool = null;
+      this.classList.remove('active');
+    } else {
+      srEditorState.activeTool = 'arrow';
+      this.classList.add('active');
+    }
+    srEditorState.drawStart = null;
+  });
+
+  // Canvas pointer events for arrow drawing
+  var drawing = false;
+  canvas.addEventListener('pointerdown', function(e) {
+    if (srEditorState.activeTool !== 'arrow') return;
+    e.preventDefault();
+    var rect = canvas.getBoundingClientRect();
+    var scaleX = canvas.width / rect.width;
+    var scaleY = canvas.height / rect.height;
+    srEditorState.drawStart = { x: (e.clientX - rect.left) * scaleX, y: (e.clientY - rect.top) * scaleY };
+    drawing = true;
+  });
+  canvas.addEventListener('pointermove', function(e) {
+    if (!drawing || !srEditorState.drawStart) return;
+    e.preventDefault();
+    var rect = canvas.getBoundingClientRect();
+    var scaleX = canvas.width / rect.width;
+    var scaleY = canvas.height / rect.height;
+    var endX = (e.clientX - rect.left) * scaleX;
+    var endY = (e.clientY - rect.top) * scaleY;
+    srRedrawCanvas();
+    // Draw preview arrow
+    var ctx = canvas.getContext('2d');
+    srDrawArrow(ctx, srEditorState.drawStart.x, srEditorState.drawStart.y, endX, endY, '#6B7A59', 3);
+  });
+  canvas.addEventListener('pointerup', function(e) {
+    if (!drawing || !srEditorState.drawStart) return;
+    drawing = false;
+    e.preventDefault();
+    var rect = canvas.getBoundingClientRect();
+    var scaleX = canvas.width / rect.width;
+    var scaleY = canvas.height / rect.height;
+    var endX = (e.clientX - rect.left) * scaleX;
+    var endY = (e.clientY - rect.top) * scaleY;
+    var dx = endX - srEditorState.drawStart.x;
+    var dy = endY - srEditorState.drawStart.y;
+    // Only add arrow if there was meaningful drag
+    if (Math.sqrt(dx * dx + dy * dy) > 15) {
+      var num = srEditorState.arrows.length + 1;
+      srEditorState.arrows.push({
+        x1: srEditorState.drawStart.x, y1: srEditorState.drawStart.y,
+        x2: endX, y2: endY, num: num, text: ''
+      });
+      srRedrawCanvas();
+      srShowCommentInput(num);
+    }
+    srEditorState.drawStart = null;
+    // Deactivate arrow tool after placing
+    srEditorState.activeTool = null;
+    var arrowBtn = document.getElementById('sr-btn-arrow');
+    if (arrowBtn) arrowBtn.classList.remove('active');
+  });
+
+  // Comment input handlers
+  document.getElementById('sr-comment-ok').addEventListener('click', srSaveComment);
+  document.getElementById('sr-comment-input').addEventListener('keydown', function(e) {
+    if (e.key === 'Enter') srSaveComment();
+  });
+
+  // Undo
+  document.getElementById('sr-btn-undo').addEventListener('click', function() {
+    if (srEditorState.arrows.length > 0) {
+      srEditorState.arrows.pop();
+      srRedrawCanvas();
+      // Renumber
+      for (var i = 0; i < srEditorState.arrows.length; i++) srEditorState.arrows[i].num = i + 1;
+      srRedrawCanvas();
+    }
+    var ciw = document.getElementById('sr-comment-input-wrap');
+    if (ciw) ciw.classList.remove('visible');
+  });
+
+  // Cancel
+  document.getElementById('sr-btn-cancel').addEventListener('click', function() {
+    srEditorState = null;
+    document.getElementById('sr-editor-area').innerHTML = '';
+  });
+
+  // Save
+  document.getElementById('sr-btn-save').addEventListener('click', srSaveReport);
+}
+
+function srShowCommentInput(num) {
+  var wrap = document.getElementById('sr-comment-input-wrap');
+  var numEl = document.getElementById('sr-comment-num');
+  var input = document.getElementById('sr-comment-input');
+  numEl.textContent = num;
+  input.value = '';
+  wrap.classList.add('visible');
+  setTimeout(function() { input.focus(); }, 100);
+}
+
+function srSaveComment() {
+  var input = document.getElementById('sr-comment-input');
+  var numEl = document.getElementById('sr-comment-num');
+  var num = parseInt(numEl.textContent);
+  var text = input.value.trim();
+  for (var i = 0; i < srEditorState.arrows.length; i++) {
+    if (srEditorState.arrows[i].num === num) {
+      srEditorState.arrows[i].text = text;
+      break;
+    }
+  }
+  document.getElementById('sr-comment-input-wrap').classList.remove('visible');
+  srRedrawCanvas();
+}
+
+function srDrawArrow(ctx, x1, y1, x2, y2, color, lineW) {
+  var headLen = Math.max(14, lineW * 5);
+  var angle = Math.atan2(y2 - y1, x2 - x1);
+  ctx.strokeStyle = color;
+  ctx.fillStyle = color;
+  ctx.lineWidth = lineW;
+  ctx.lineCap = 'round';
+  ctx.beginPath();
+  ctx.moveTo(x1, y1);
+  ctx.lineTo(x2, y2);
+  ctx.stroke();
+  // Arrowhead
+  ctx.beginPath();
+  ctx.moveTo(x2, y2);
+  ctx.lineTo(x2 - headLen * Math.cos(angle - Math.PI / 6), y2 - headLen * Math.sin(angle - Math.PI / 6));
+  ctx.lineTo(x2 - headLen * Math.cos(angle + Math.PI / 6), y2 - headLen * Math.sin(angle + Math.PI / 6));
+  ctx.closePath();
+  ctx.fill();
+}
+
+function srDrawNumberBadge(ctx, x, y, num) {
+  var r = 14;
+  ctx.fillStyle = '#6B7A59';
+  ctx.beginPath();
+  ctx.arc(x, y, r, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.fillStyle = '#fff';
+  ctx.font = 'bold 14px -apple-system, system-ui, sans-serif';
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  ctx.fillText(num, x, y + 1);
+}
+
+function srRedrawCanvas() {
+  if (!srEditorState) return;
+  var canvas = document.getElementById('sr-canvas');
+  if (!canvas) return;
+  var ctx = canvas.getContext('2d');
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+  ctx.drawImage(srEditorState.img, 0, 0, canvas.width, canvas.height);
+  // Draw all arrows
+  for (var i = 0; i < srEditorState.arrows.length; i++) {
+    var a = srEditorState.arrows[i];
+    srDrawArrow(ctx, a.x1, a.y1, a.x2, a.y2, '#6B7A59', 3);
+    // Draw number badge at the arrow start
+    srDrawNumberBadge(ctx, a.x1, a.y1, a.num);
+  }
+}
+
+function srSaveReport() {
+  if (!srEditorState) return;
+  // Flatten canvas to a single image with annotations baked in
+  srRedrawCanvas();
+  var canvas = document.getElementById('sr-canvas');
+  var flatImage = canvas.toDataURL('image/jpeg', 0.8);
+  if (flatImage.length > 800000) flatImage = canvas.toDataURL('image/jpeg', 0.5);
+  var comments = [];
+  for (var i = 0; i < srEditorState.arrows.length; i++) {
+    comments.push({ num: srEditorState.arrows[i].num, text: srEditorState.arrows[i].text || '' });
+  }
+  var report = {
+    id: D.nextReportId++,
+    image: flatImage,
+    comments: comments,
+    date: new Date().toISOString()
+  };
+  D.siteReports.unshift(report);
+  srEditorState = null;
+  document.getElementById('sr-editor-area').innerHTML = '';
+  scheduleSave();
+  renderSiteReports();
+}
+
+function renderSiteReports() {
+  var list = document.getElementById('sr-report-list');
+  if (!D.siteReports || D.siteReports.length === 0) {
+    list.innerHTML = '<div class="empty-msg">No site report photos yet. Tap + Add Photo to start.</div>';
+    return;
+  }
+  var html = '';
+  for (var i = 0; i < D.siteReports.length; i++) {
+    var r = D.siteReports[i];
+    var dateStr = '';
+    if (r.date) {
+      var d = new Date(r.date);
+      dateStr = (d.getMonth() + 1) + '/' + d.getDate() + '/' + d.getFullYear();
+    }
+    html += '<div class="sr-report-card" data-report-id="' + r.id + '">';
+    html += '<img src="' + r.image + '" alt="Site Report">';
+    html += '<div class="sr-report-meta"><span>' + dateStr + '</span>';
+    html += '<button class="btn btn-sm" style="font-size:.65rem;color:var(--red);border:1px solid var(--red);background:none;padding:2px 8px;" data-sr-delete="' + r.id + '">Delete</button>';
+    html += '</div>';
+    if (r.comments && r.comments.length > 0) {
+      html += '<div class="sr-comment-list">';
+      for (var j = 0; j < r.comments.length; j++) {
+        var c = r.comments[j];
+        if (c.text) {
+          html += '<div class="sr-comment-item"><span class="sr-comment-num">' + c.num + '</span><span>' + esc(c.text) + '</span></div>';
+        }
+      }
+      html += '</div>';
+    }
+    html += '</div>';
+  }
+  list.innerHTML = html;
+}
+
+// File input handler
+document.getElementById('sr-file-input').addEventListener('change', function(e) {
+  var file = e.target.files[0];
+  if (!file) return;
+  srCompressImage(file, 1400, 0.7, function(dataUrl, w, h) {
+    srOpenEditor(dataUrl, w, h);
+  });
+  e.target.value = '';
+});
+
+// Delegate delete clicks on report list
+document.getElementById('sr-report-list').addEventListener('click', function(e) {
+  var delBtn = e.target.closest('[data-sr-delete]');
+  if (delBtn) {
+    var rid = parseInt(delBtn.getAttribute('data-sr-delete'));
+    if (confirm('Delete this photo?')) {
+      D.siteReports = D.siteReports.filter(function(r) { return r.id !== rid; });
+      scheduleSave();
+      renderSiteReports();
+    }
+  }
 });
 
 /* ═══════════════════════════════════════════

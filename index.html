@@ -1298,7 +1298,35 @@ function switchToProject(projectId) {
     return true;
   }
 
-  return false;
+  // Both localStorage and Firebase unavailable — wait for auth then retry
+  setSyncDot('loading');
+  auth.onAuthStateChanged(function(user) {
+    if (user) {
+      fbReady = true;
+      setSyncDot('syncing');
+      cloudLoadProject(projectId).then(function(projData) {
+        if (projData && projData.project) {
+          D = projData;
+          currentProjectId = projectId;
+          try { localStorage.setItem('bndr-project-' + projectId, JSON.stringify(D)); } catch(e) {}
+          ensureFields();
+          populateProjectFields();
+          renderBudget();
+          renderScope();
+          renderPayments();
+          updateProjectSelector();
+          setSyncDot('synced');
+        } else {
+          alert('Could not load project. Please check your connection and try again.');
+          setSyncDot('error');
+        }
+      });
+    } else {
+      alert('Could not load project. Firebase is not connected.');
+      setSyncDot('error');
+    }
+  });
+  return true;
 }
 
 function updateProjectSelector() {
@@ -4445,6 +4473,10 @@ function backgroundCloudRefresh() {
     }
 
     // Reload current project from updated localStorage
+    // If currentProjectId is null (failed earlier load), pick the first cloud project
+    if (!currentProjectId && cloudIndex.length > 0) {
+      currentProjectId = cloudIndex[0].id;
+    }
     if (currentProjectId && cloudData.projects[currentProjectId]) {
       D = cloudData.projects[currentProjectId];
       ensureFields();
@@ -4601,11 +4633,20 @@ if (typeof caches !== 'undefined') {
 
   var localIndex = getProjectIndex();
 
+  // Try to load a project from localStorage (fast path)
+  var fastLoaded = false;
   if (localIndex.length > 0) {
-    // === FAST PATH: localStorage has data — load instantly, background refresh ===
-    if (migratedId) { loadProject(migratedId); }
-    else { loadProject(localIndex[0].id); }
+    // Try the migrated project first, then each project in the index
+    if (migratedId && loadProject(migratedId)) { fastLoaded = true; }
+    if (!fastLoaded) {
+      for (var li = 0; li < localIndex.length; li++) {
+        if (loadProject(localIndex[li].id)) { fastLoaded = true; break; }
+      }
+    }
+  }
 
+  if (fastLoaded) {
+    // === FAST PATH: localStorage has data — load instantly, background refresh ===
     loadImportQueue();
     ensureFields();
     populateProjectFields();
@@ -4621,86 +4662,72 @@ if (typeof caches !== 'undefined') {
     }
 
   } else {
-    // === CLOUD/FRESH PATH: localStorage empty — try Firebase first ===
+    // === CLOUD/FRESH PATH: localStorage empty or data missing — try Firebase first ===
     document.body.insertAdjacentHTML('afterbegin',
       '<div id="cloud-loading-overlay" style="position:fixed;inset:0;background:rgba(255,255,255,.95);z-index:9999;display:flex;align-items:center;justify-content:center;flex-direction:column;">' +
-      '<div style="font-size:1.1rem;color:#6B7A59;font-weight:600;margin-bottom:12px;">Loading from Firebase...</div>' +
+      '<div id="cloud-loading-msg" style="font-size:1.1rem;color:#6B7A59;font-weight:600;margin-bottom:12px;">Loading from Firebase...</div>' +
       '<div style="width:28px;height:28px;border:3px solid #e0e0e0;border-top-color:#6B7A59;border-radius:50%;animation:spin .6s linear infinite;"></div>' +
       '<style>@keyframes spin{to{transform:rotate(360deg)}}</style></div>'
     );
 
+    var cloudInitDone = false;
+
+    function finishInit(projectLoaded) {
+      if (cloudInitDone) return;
+      cloudInitDone = true;
+      var overlay = document.getElementById('cloud-loading-overlay');
+      if (overlay) overlay.remove();
+      if (!projectLoaded) {
+        if (migratedId) { loadProject(migratedId); }
+        else { createNewProject(); }
+      }
+      loadImportQueue();
+      ensureFields();
+      populateProjectFields();
+      updateProjectSelector();
+      renderBudget();
+      renderScope();
+      renderPayments();
+    }
+
+    // Wrap cloudLoadAll with a timeout so it can't hang forever on mobile
+    function cloudLoadAllWithTimeout(ms) {
+      return new Promise(function(resolve) {
+        var settled = false;
+        setTimeout(function() { if (!settled) { settled = true; resolve(null); } }, ms);
+        cloudLoadAll().then(function(data) { if (!settled) { settled = true; resolve(data); } })
+          .catch(function() { if (!settled) { settled = true; resolve(null); } });
+      });
+    }
+
     // Wait for Firebase auth, then load
     function loadFromFirebase() {
-      cloudLoadAll().then(function(cloudData) {
-        var overlay = document.getElementById('cloud-loading-overlay');
-        if (overlay) overlay.remove();
-
+      if (cloudInitDone) return;
+      cloudLoadAllWithTimeout(10000).then(function(cloudData) {
+        if (cloudInitDone) return;
         if (cloudData && cloudData.index && cloudData.index.length > 0) {
           saveProjectIndex(cloudData.index);
           for (var pid in cloudData.projects) {
             try { localStorage.setItem('bndr-project-' + pid, JSON.stringify(cloudData.projects[pid])); } catch(e) {}
           }
           loadProject(cloudData.index[0].id);
-          loadImportQueue();
-          ensureFields();
-          populateProjectFields();
-          updateProjectSelector();
-          renderBudget();
-          renderScope();
-          renderPayments();
+          finishInit(true);
           setSyncDot('synced');
         } else {
-          if (migratedId) { loadProject(migratedId); }
-          else { createNewProject(); }
-          loadImportQueue();
-          ensureFields();
-          populateProjectFields();
-          updateProjectSelector();
-          renderBudget();
+          finishInit(false);
         }
-      }).catch(function() {
-        var overlay = document.getElementById('cloud-loading-overlay');
-        if (overlay) overlay.remove();
-        if (migratedId) { loadProject(migratedId); }
-        else { createNewProject(); }
-        loadImportQueue();
-        ensureFields();
-        populateProjectFields();
-        updateProjectSelector();
-        renderBudget();
       });
     }
 
     if (fbReady) { loadFromFirebase(); }
     else {
       auth.onAuthStateChanged(function(user) {
+        if (cloudInitDone) return;
         if (user) { fbReady = true; loadFromFirebase(); }
-        else {
-          var overlay = document.getElementById('cloud-loading-overlay');
-          if (overlay) overlay.remove();
-          if (migratedId) { loadProject(migratedId); }
-          else { createNewProject(); }
-          loadImportQueue();
-          ensureFields();
-          populateProjectFields();
-          updateProjectSelector();
-          renderBudget();
-        }
+        else { finishInit(false); }
       });
-      // Timeout fallback in case auth takes too long
-      setTimeout(function() {
-        var overlay = document.getElementById('cloud-loading-overlay');
-        if (overlay) {
-          overlay.remove();
-          if (migratedId) { loadProject(migratedId); }
-          else { createNewProject(); }
-          loadImportQueue();
-          ensureFields();
-          populateProjectFields();
-          updateProjectSelector();
-          renderBudget();
-        }
-      }, 5000);
+      // Timeout fallback in case auth or Firestore takes too long
+      setTimeout(function() { finishInit(false); }, 8000);
     }
   }
 })();

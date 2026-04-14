@@ -1,0 +1,372 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <meta name="theme-color" content="#222226">
+  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+  <title>BNDR Capital — Report Archive</title>
+  <link rel="apple-touch-icon" href="apple-touch-icon.png">
+  <link rel="icon" type="image/png" sizes="512x512" href="bndr-icon-512.png">
+  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
+  <style>
+    :root {
+      --green:#6B7A59; --green-dark:#5a6a4a; --green-light:#e8ede4; --green-bg:#f4f6f2;
+      --dark:#222226; --text:#222; --muted:#888; --light-text:#aaa;
+      --border:#e0e0e0; --card:#fff; --cream:#f8f7f4;
+      --blue:#5a7eb8; --blue-light:rgba(90,126,184,.08);
+      --amber:#c49424; --amber-light:rgba(196,148,36,.08);
+      --red:#dc2626; --red-light:#fef2f2;
+      --radius:12px;
+    }
+    *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
+    body{font-family:-apple-system,'SF Pro Text',system-ui,sans-serif;background:var(--cream);color:var(--text);-webkit-font-smoothing:antialiased;min-height:100vh;}
+
+    /* Header */
+    .header{background:var(--dark);padding:16px 20px;display:flex;align-items:center;gap:12px;}
+    .header svg{width:120px;height:auto;}
+    .header svg path,.header svg polygon{fill:#fff;}
+    .header .sub{font-size:.6rem;color:rgba(255,255,255,.5);letter-spacing:1px;font-weight:600;}
+    .header .back-btn{background:none;border:1px solid rgba(255,255,255,.2);color:rgba(255,255,255,.7);font-size:.65rem;font-weight:600;padding:5px 12px;border-radius:8px;cursor:pointer;font-family:inherit;margin-left:auto;text-decoration:none;}
+    .header .back-btn:hover{border-color:rgba(255,255,255,.5);color:#fff;}
+
+    .container{max-width:600px;margin:0 auto;padding:16px;}
+
+    /* Password Gate */
+    .pw-gate{display:flex;align-items:center;justify-content:center;min-height:70vh;}
+    .pw-box{background:var(--card);border-radius:var(--radius);padding:40px 28px;max-width:360px;width:100%;text-align:center;box-shadow:0 2px 12px rgba(0,0,0,.06);}
+    .pw-box svg{width:140px;margin-bottom:16px;}
+    .pw-box h2{font-size:.85rem;font-weight:700;letter-spacing:2px;color:var(--dark);margin-bottom:4px;}
+    .pw-box .pw-sub{font-size:.7rem;color:var(--muted);margin-bottom:20px;}
+    .pw-box input{width:100%;border:2px solid var(--border);border-radius:10px;padding:12px;font-size:16px;text-align:center;outline:none;font-family:inherit;-webkit-appearance:none;}
+    .pw-box input:focus{border-color:var(--green);}
+    .pw-box button{width:100%;padding:13px;border:none;border-radius:10px;background:var(--green);color:#fff;font-size:.85rem;font-weight:700;cursor:pointer;margin-top:12px;font-family:inherit;}
+    .pw-box button:active{background:var(--green-dark);}
+    .pw-error{color:var(--red);font-size:.75rem;margin-top:10px;display:none;}
+
+    /* Archive content */
+    .archive-content{display:none;}
+    .section-title{font-size:.72rem;font-weight:700;color:var(--green);text-transform:uppercase;letter-spacing:1px;margin-bottom:8px;}
+    .stats-bar{display:flex;gap:8px;margin-bottom:16px;}
+    .stat-card{flex:1;background:var(--card);border-radius:var(--radius);padding:14px;text-align:center;box-shadow:0 1px 3px rgba(0,0,0,.06);}
+    .stat-num{font-size:1.3rem;font-weight:800;color:var(--dark);}
+    .stat-label{font-size:.6rem;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;margin-top:2px;}
+
+    .filter-bar{display:flex;gap:6px;margin-bottom:12px;flex-wrap:wrap;}
+    .filter-btn{font-size:.65rem;padding:5px 12px;border-radius:20px;border:1px solid var(--border);background:var(--card);color:var(--muted);cursor:pointer;font-family:inherit;font-weight:600;}
+    .filter-btn.active{background:var(--green);color:#fff;border-color:var(--green);}
+
+    .report-card{background:var(--card);border-radius:var(--radius);padding:14px 16px;margin-bottom:8px;box-shadow:0 1px 3px rgba(0,0,0,.06);border-left:4px solid var(--border);}
+    .report-card.site-report{border-left-color:var(--blue);}
+    .report-card.site-report-measurements{border-left-color:var(--green);}
+    .report-card.materials-request{border-left-color:var(--amber);}
+    .rc-top{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:4px;}
+    .rc-date{font-size:.72rem;color:var(--muted);font-weight:600;}
+    .rc-type{font-size:.58rem;font-weight:700;padding:2px 8px;border-radius:10px;text-transform:uppercase;letter-spacing:.5px;}
+    .rc-type.site-report{background:var(--blue-light);color:var(--blue);}
+    .rc-type.site-report-measurements{background:rgba(107,122,89,.1);color:var(--green);}
+    .rc-type.materials-request{background:var(--amber-light);color:var(--amber);}
+    .rc-project{font-size:.85rem;font-weight:700;color:var(--dark);margin-bottom:2px;}
+    .rc-contractor{font-size:.72rem;color:var(--green);font-weight:600;margin-bottom:4px;}
+    .rc-desc{font-size:.75rem;color:var(--muted);line-height:1.4;margin-bottom:8px;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;}
+    .rc-actions{display:flex;gap:6px;}
+    .rc-btn{font-size:.62rem;font-weight:700;padding:5px 12px;border-radius:6px;border:none;cursor:pointer;font-family:inherit;display:flex;align-items:center;gap:4px;}
+    .rc-btn-pdf{background:var(--blue-light);color:var(--blue);}
+    .rc-btn-pdf:active{background:rgba(90,126,184,.2);}
+    .rc-btn-email{background:var(--green-light);color:var(--green);}
+    .rc-btn-email:active{background:#d4ddd0;}
+    .rc-btn svg{width:12px;height:12px;}
+
+    .empty-msg{text-align:center;padding:40px 20px;color:var(--muted);font-size:.85rem;}
+    .loading{text-align:center;padding:40px;color:var(--muted);font-size:.85rem;}
+    .spinner{display:inline-block;width:20px;height:20px;border:2.5px solid var(--border);border-top-color:var(--green);border-radius:50%;animation:spin .6s linear infinite;margin-right:8px;vertical-align:middle;}
+    @keyframes spin{to{transform:rotate(360deg)}}
+
+    .toast{position:fixed;top:0;left:0;right:0;padding:14px 16px;font-size:.82rem;font-weight:600;text-align:center;z-index:200;transform:translateY(-100%);transition:transform .3s ease;}
+    .toast.show{transform:translateY(0);}
+    .toast.success{background:#dcfce7;color:#166534;border-bottom:1px solid #86efac;}
+    .toast.error{background:var(--red-light);color:#b91c1c;border-bottom:1px solid #fca5a5;}
+  </style>
+</head>
+<body>
+
+<header class="header">
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 292.77 77.05">
+    <g><g>
+      <path d="M41.15,0H.03l-.03,53.05v2.91h2.78l2.05-2.05,2.08-2.05,5.87-5.87V13.11h28.36c5.62,0,10.2,4.58,10.2,10.2,0,2.72-1.07,5.27-3,7.2l-.47.51-1.45,1.42-1.45,1.45-2.24,2.24,4.26,3.44c.22.13.41.28.85.54,1.45.92,2.84,1.8,4.17,2.78l1.42,1.07,2.24-2.24,1.45-1.45.51-.51c4.39-4.39,6.82-10.23,6.82-16.45,0-12.85-10.45-23.31-23.3-23.31Z"/>
+      <polygon points="34.89 18.03 12.79 40.17 10.74 42.22 8.65 44.3 4.1 48.85 2.05 50.9 .6 52.36 0 53.05 0 55.96 15.5 55.96 34.89 36.57 53.08 54.76 53.08 63.95 .76 63.95 .76 77.05 66.19 77.05 66.19 49.33 34.89 18.03"/>
+    </g>
+    <path d="M142.9,76.91h-15.23l-34.5-52.13v52.13h-15.24V.83h15.24l34.5,52.24V.83h15.23v76.08Z"/>
+    <path d="M205.54,5.62c6.06,3.12,10.74,7.56,14.04,13.33,3.3,5.77,4.95,12.46,4.95,20.08s-1.65,14.28-4.95,19.97c-3.3,5.7-7.98,10.1-14.04,13.22-6.06,3.12-13.08,4.68-21.06,4.68h-26.56V.94h26.56c7.98,0,15,1.56,21.06,4.68ZM202.44,57.43c4.35-4.35,6.53-10.48,6.53-18.39s-2.18-14.09-6.53-18.56c-4.35-4.46-10.52-6.69-18.5-6.69h-10.77v50.17h10.77c7.98,0,14.15-2.18,18.5-6.53Z"/>
+    <path d="M275.14,76.91l-16.76-29.6h-7.18v29.6h-15.24V.94h28.52c5.87,0,10.88,1.03,15.02,3.1s7.24,4.86,9.3,8.38c2.07,3.52,3.1,7.46,3.1,11.81,0,5.01-1.45,9.52-4.35,13.55-2.9,4.03-7.22,6.8-12.95,8.33l18.18,30.8h-17.63ZM251.2,35.88h12.73c4.14,0,7.22-1,9.25-2.99,2.03-2,3.05-4.77,3.05-8.33s-1.02-6.18-3.05-8.11c-2.03-1.92-5.12-2.88-9.25-2.88h-12.73v22.31Z"/>
+    </g>
+  </svg>
+  <div>
+    <div class="sub">Report Archive</div>
+  </div>
+  <a href="/" class="back-btn">&larr; Portal</a>
+</header>
+
+<div id="toast" class="toast"></div>
+
+<div class="container">
+  <!-- Password Gate -->
+  <div id="pw-gate" class="pw-gate">
+    <div class="pw-box">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 292.77 77.05">
+        <g><g>
+          <path d="M41.15,0H.03l-.03,53.05v2.91h2.78l2.05-2.05,2.08-2.05,5.87-5.87V13.11h28.36c5.62,0,10.2,4.58,10.2,10.2,0,2.72-1.07,5.27-3,7.2l-.47.51-1.45,1.42-1.45,1.45-2.24,2.24,4.26,3.44c.22.13.41.28.85.54,1.45.92,2.84,1.8,4.17,2.78l1.42,1.07,2.24-2.24,1.45-1.45.51-.51c4.39-4.39,6.82-10.23,6.82-16.45,0-12.85-10.45-23.31-23.3-23.31Z"/>
+          <polygon points="34.89 18.03 12.79 40.17 10.74 42.22 8.65 44.3 4.1 48.85 2.05 50.9 .6 52.36 0 53.05 0 55.96 15.5 55.96 34.89 36.57 53.08 54.76 53.08 63.95 .76 63.95 .76 77.05 66.19 77.05 66.19 49.33 34.89 18.03"/>
+        </g>
+        <path d="M142.9,76.91h-15.23l-34.5-52.13v52.13h-15.24V.83h15.24l34.5,52.24V.83h15.23v76.08Z"/>
+        <path d="M205.54,5.62c6.06,3.12,10.74,7.56,14.04,13.33,3.3,5.77,4.95,12.46,4.95,20.08s-1.65,14.28-4.95,19.97c-3.3,5.7-7.98,10.1-14.04,13.22-6.06,3.12-13.08,4.68-21.06,4.68h-26.56V.94h26.56c7.98,0,15,1.56,21.06,4.68ZM202.44,57.43c4.35-4.35,6.53-10.48,6.53-18.39s-2.18-14.09-6.53-18.56c-4.35-4.46-10.52-6.69-18.5-6.69h-10.77v50.17h10.77c7.98,0,14.15-2.18,18.5-6.53Z"/>
+        <path d="M275.14,76.91l-16.76-29.6h-7.18v29.6h-15.24V.94h28.52c5.87,0,10.88,1.03,15.02,3.1s7.24,4.86,9.3,8.38c2.07,3.52,3.1,7.46,3.1,11.81,0,5.01-1.45,9.52-4.35,13.55-2.9,4.03-7.22,6.8-12.95,8.33l18.18,30.8h-17.63ZM251.2,35.88h12.73c4.14,0,7.22-1,9.25-2.99,2.03-2,3.05-4.77,3.05-8.33s-1.02-6.18-3.05-8.11c-2.03-1.92-5.12-2.88-9.25-2.88h-12.73v22.31Z"/>
+        </g>
+      </svg>
+      <h2>REPORT ARCHIVE</h2>
+      <div class="pw-sub">Password required to view submissions</div>
+      <input type="password" id="pw-input" placeholder="Enter password..." autofocus>
+      <button id="pw-btn">Unlock</button>
+      <div class="pw-error" id="pw-error">Incorrect password. Try again.</div>
+    </div>
+  </div>
+
+  <!-- Archive Content (hidden until password) -->
+  <div id="archive-content" class="archive-content">
+    <div id="stats-bar" class="stats-bar"></div>
+    <div class="filter-bar" id="filter-bar"></div>
+    <div id="report-list">
+      <div class="loading"><span class="spinner"></span> Loading submissions...</div>
+    </div>
+  </div>
+</div>
+
+<script>
+/* Firebase Init */
+var firebaseConfig = {
+  apiKey: "AIzaSyDK5nAO8vUX2BTN2sdoFkARgqxRGNq3uXg",
+  authDomain: "bndr-budget.firebaseapp.com",
+  projectId: "bndr-budget",
+  storageBucket: "bndr-budget.firebasestorage.app",
+  messagingSenderId: "362898964688",
+  appId: "1:362898964688:web:2bbf36b8a1db445fb15ed5"
+};
+firebase.initializeApp(firebaseConfig);
+var db = firebase.firestore();
+var auth = firebase.auth();
+
+/* EmailJS Config */
+var EMAILJS_PUBLIC_KEY = 'twK6tijUsjsNLaic6';
+var EMAILJS_SERVICE_ID = 'service_a6rvtzq';
+var EMAILJS_TEMPLATE_ID = 'template_sijttxj';
+var EMAILJS_NOTIFY_TO = 'genebinder@bndrcapital.com';
+if (typeof emailjs !== 'undefined') emailjs.init(EMAILJS_PUBLIC_KEY);
+
+/* State */
+var submissions = [];
+var projectMap = {};
+var activeFilter = 'all';
+var ARCHIVE_PW = 'bndr2024';
+
+/* Utils */
+function esc(s) { var d = document.createElement('div'); d.textContent = s; return d.innerHTML; }
+function fmtDate(d) {
+  if (!d) return '';
+  var dt = d.toDate ? d.toDate() : new Date(d);
+  if (isNaN(dt.getTime())) return String(d);
+  return (dt.getMonth()+1)+'/'+dt.getDate()+'/'+dt.getFullYear();
+}
+function typeLabel(t) {
+  if (t === 'site-report') return 'Site Report';
+  if (t === 'site-report-measurements') return 'Measurements';
+  if (t === 'materials-request') return 'Materials';
+  return t || 'Unknown';
+}
+function showToast(msg, type) {
+  var t = document.getElementById('toast');
+  t.textContent = msg; t.className = 'toast ' + type + ' show';
+  setTimeout(function() { t.classList.remove('show'); }, 3500);
+}
+
+/* Password Gate */
+function checkPw() {
+  var pw = document.getElementById('pw-input').value;
+  if (pw === ARCHIVE_PW) {
+    document.getElementById('pw-gate').style.display = 'none';
+    document.getElementById('archive-content').style.display = 'block';
+    sessionStorage.setItem('archive-auth', '1');
+    loadData();
+  } else {
+    document.getElementById('pw-error').style.display = 'block';
+    document.getElementById('pw-input').value = '';
+    document.getElementById('pw-input').focus();
+  }
+}
+document.getElementById('pw-btn').addEventListener('click', checkPw);
+document.getElementById('pw-input').addEventListener('keydown', function(e) { if (e.key === 'Enter') checkPw(); });
+
+/* Auto-unlock if already authenticated this session */
+if (sessionStorage.getItem('archive-auth') === '1') {
+  document.getElementById('pw-gate').style.display = 'none';
+  document.getElementById('archive-content').style.display = 'block';
+}
+
+/* Load Data */
+function loadData() {
+  auth.signInAnonymously().then(function() {
+    return Promise.all([
+      db.collection('submissions').orderBy('createdAt', 'desc').limit(200).get(),
+      db.collection('meta').doc('projectIndex').get()
+    ]);
+  }).then(function(results) {
+    var subSnap = results[0];
+    var indexDoc = results[1];
+
+    /* Build project name map */
+    if (indexDoc.exists && indexDoc.data().index) {
+      try {
+        var idx = JSON.parse(indexDoc.data().index);
+        for (var i = 0; i < idx.length; i++) projectMap[idx[i].id] = idx[i].name;
+      } catch(e) {}
+    }
+
+    submissions = [];
+    subSnap.forEach(function(doc) {
+      var d = doc.data();
+      d._id = doc.id;
+      submissions.push(d);
+    });
+
+    renderStats();
+    renderFilters();
+    renderList();
+  }).catch(function(err) {
+    document.getElementById('report-list').innerHTML =
+      '<div class="empty-msg">Failed to load: ' + esc(err.message) + '</div>';
+  });
+}
+
+/* Render Stats */
+function renderStats() {
+  var reports = 0, measurements = 0, materials = 0;
+  for (var i = 0; i < submissions.length; i++) {
+    var t = submissions[i].type;
+    if (t === 'site-report') reports++;
+    else if (t === 'site-report-measurements') measurements++;
+    else if (t === 'materials-request') materials++;
+  }
+  document.getElementById('stats-bar').innerHTML =
+    '<div class="stat-card"><div class="stat-num">' + submissions.length + '</div><div class="stat-label">Total</div></div>' +
+    '<div class="stat-card"><div class="stat-num" style="color:var(--blue)">' + reports + '</div><div class="stat-label">Reports</div></div>' +
+    '<div class="stat-card"><div class="stat-num" style="color:var(--green)">' + measurements + '</div><div class="stat-label">Measurements</div></div>' +
+    '<div class="stat-card"><div class="stat-num" style="color:var(--amber)">' + materials + '</div><div class="stat-label">Materials</div></div>';
+}
+
+/* Render Filters */
+function renderFilters() {
+  var types = ['all','site-report','site-report-measurements','materials-request'];
+  var labels = ['All','Reports','Measurements','Materials'];
+  var html = '';
+  for (var i = 0; i < types.length; i++) {
+    html += '<button class="filter-btn' + (activeFilter === types[i] ? ' active' : '') + '" data-filter="' + types[i] + '">' + labels[i] + '</button>';
+  }
+  document.getElementById('filter-bar').innerHTML = html;
+}
+
+document.getElementById('filter-bar').addEventListener('click', function(e) {
+  if (e.target.classList.contains('filter-btn')) {
+    activeFilter = e.target.getAttribute('data-filter');
+    renderFilters();
+    renderList();
+  }
+});
+
+/* Render List */
+function renderList() {
+  var filtered = submissions;
+  if (activeFilter !== 'all') {
+    filtered = submissions.filter(function(s) { return s.type === activeFilter; });
+  }
+
+  if (filtered.length === 0) {
+    document.getElementById('report-list').innerHTML = '<div class="empty-msg">No submissions found.</div>';
+    return;
+  }
+
+  var html = '';
+  for (var i = 0; i < filtered.length; i++) {
+    var s = filtered[i];
+    var type = s.type || 'site-report';
+    var projName = s.projectName || projectMap[s.projectId] || s.projectId || 'Unknown Project';
+    var date = fmtDate(s.createdAt || s.date || s.timestamp);
+    var contractor = s.contractor || s.contractorName || '';
+    var desc = s.workDescription || s.description || s.notes || '';
+    if (desc.length > 120) desc = desc.substring(0, 117) + '...';
+
+    html += '<div class="report-card ' + esc(type) + '" data-id="' + esc(s._id) + '">' +
+      '<div class="rc-top">' +
+        '<span class="rc-date">' + esc(date) + '</span>' +
+        '<span class="rc-type ' + esc(type) + '">' + esc(typeLabel(type)) + '</span>' +
+      '</div>' +
+      '<div class="rc-project">' + esc(projName) + '</div>' +
+      (contractor ? '<div class="rc-contractor">' + esc(contractor) + '</div>' : '') +
+      (desc ? '<div class="rc-desc">' + esc(desc) + '</div>' : '') +
+      '<div class="rc-actions">' +
+        '<button class="rc-btn rc-btn-email" data-action="email" data-idx="' + i + '">' +
+          '<svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>' +
+          'Re-send Email</button>' +
+      '</div>' +
+    '</div>';
+  }
+  document.getElementById('report-list').innerHTML = html;
+}
+
+/* Actions */
+document.getElementById('report-list').addEventListener('click', function(e) {
+  var btn = e.target.closest('[data-action]');
+  if (!btn) return;
+  var action = btn.getAttribute('data-action');
+  var idx = parseInt(btn.getAttribute('data-idx'));
+  var filtered = activeFilter === 'all' ? submissions : submissions.filter(function(s) { return s.type === activeFilter; });
+  var sub = filtered[idx];
+  if (!sub) return;
+
+  if (action === 'email') {
+    resendEmail(sub, btn);
+  }
+});
+
+function resendEmail(sub, btn) {
+  if (typeof emailjs === 'undefined') { showToast('EmailJS not loaded.', 'error'); return; }
+  btn.disabled = true;
+  btn.textContent = 'Sending...';
+
+  var projName = sub.projectName || projectMap[sub.projectId] || sub.projectId || '';
+  var params = {
+    to_email: EMAILJS_NOTIFY_TO,
+    project_name: projName,
+    contractor: sub.contractor || sub.contractorName || 'N/A',
+    date: fmtDate(sub.createdAt || sub.date),
+    description: sub.workDescription || sub.description || sub.notes || 'No description',
+    type: typeLabel(sub.type)
+  };
+
+  emailjs.send(EMAILJS_SERVICE_ID, EMAILJS_TEMPLATE_ID, params).then(function() {
+    showToast('Email sent successfully!', 'success');
+    btn.disabled = false;
+    btn.innerHTML = '<svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>Re-send Email';
+  }).catch(function(err) {
+    showToast('Email failed: ' + (err.text || err.message || 'Unknown error'), 'error');
+    btn.disabled = false;
+    btn.innerHTML = '<svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>Re-send Email';
+  });
+}
+
+/* Init — auto-load if already unlocked */
+if (sessionStorage.getItem('archive-auth') === '1') loadData();
+</script>
+</body>
+</html>

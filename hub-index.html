@@ -1,0 +1,56 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+    <meta name="theme-color" content="#222226" />
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
+    <title>BNDR Capital — Contractor Portal</title>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="BNDR Capital — Contractor Portal" />
+    <meta property="og:description" content="BNDR Capital contractor portal — reports, measurements, and materials requests" />
+    <meta property="og:image" content="https://bndr-reports.web.app/og-image.png" />
+    <meta property="og:url" content="https://bndr-reports.web.app/" />
+    <meta name="twitter:card" content="summary_large_image" />
+    <link rel="apple-touch-icon" href="https://bndr-reports.web.app/apple-touch-icon.png" />
+    <link rel="icon" type="image/png" sizes="512x512" href="https://bndr-reports.web.app/bndr-icon-512.png" />
+    <script type="module" crossorigin src="/assets/index-Dt4XPq_s.js"></script>
+    <link rel="stylesheet" crossorigin href="/assets/style-iOut81LU.css">
+  </head>
+  <body>
+    <div id="root"></div>
+    <script>
+      /* Inject Archive card into hub after React renders */
+      (function injectArchiveCard() {
+        var maxTries = 40, tries = 0;
+        var iv = setInterval(function() {
+          tries++;
+          /* Find the card grid on the hub page (only on root path) */
+          var loc = window.location.hash || window.location.pathname;
+          if (loc !== '' && loc !== '/' && loc !== '#/' && loc !== '#') { clearInterval(iv); return; }
+          var cards = document.querySelectorAll('a[href*="/reports"], a[href*="/measurements"], a[href*="/materials"]');
+          if (cards.length >= 3) {
+            clearInterval(iv);
+            var parent = cards[0].parentElement;
+            if (!parent || document.getElementById('archive-card-injected')) return;
+            var a = document.createElement('a');
+            a.id = 'archive-card-injected';
+            a.href = '/archive.html';
+            a.style.cssText = 'display:flex;align-items:center;gap:14px;padding:18px 16px;border-radius:12px;background:#fff;box-shadow:0 1px 3px rgba(0,0,0,.06);text-decoration:none;color:inherit;border:1px solid #e0e0e0;margin-top:4px;';
+            a.innerHTML =
+              '<div style="width:44px;height:44px;border-radius:10px;background:rgba(220,38,38,.06);display:flex;align-items:center;justify-content:center;flex-shrink:0;">' +
+                '<svg fill="none" stroke="#dc2626" stroke-width="1.8" viewBox="0 0 24 24" style="width:22px;height:22px;"><path d="M5 8h14M5 8a2 2 0 110-4h14a2 2 0 110 4M5 8v10a2 2 0 002 2h10a2 2 0 002-2V8m-9 4h4"/></svg>' +
+              '</div>' +
+              '<div>' +
+                '<div style="font-size:.88rem;font-weight:700;color:#222;">Report Archive</div>' +
+                '<div style="font-size:.72rem;color:#888;margin-top:1px;">View submitted reports, measurements, and materials requests</div>' +
+              '</div>' +
+              '<svg fill="none" stroke="#ccc" stroke-width="2" viewBox="0 0 24 24" style="width:16px;height:16px;flex-shrink:0;margin-left:auto;"><path d="M9 18l6-6-6-6"/></svg>';
+            parent.appendChild(a);
+          }
+          if (tries >= maxTries) clearInterval(iv);
+        }, 150);
+      })();
+    </script>
+  </body>
+</html>

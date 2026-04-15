@@ -62,13 +62,14 @@
       background: var(--card); border-top: 1px solid var(--border);
       display: flex; height: calc(var(--tab-h) + env(safe-area-inset-bottom, 0px));
       padding-bottom: env(safe-area-inset-bottom, 0px);
+      overflow-x: auto; -webkit-overflow-scrolling: touch;
     }
     .tab-btn {
-      flex: 1; display: flex; flex-direction: column; align-items: center;
+      flex: 1; min-width: 52px; display: flex; flex-direction: column; align-items: center;
       justify-content: center; gap: 1px; border: none; background: none;
       color: var(--muted); font-size: .5rem; font-weight: 600; cursor: pointer;
       font-family: inherit; padding: 3px 0; transition: color .15s;
-      -webkit-appearance: none;
+      -webkit-appearance: none; flex-shrink: 0;
     }
     .tab-btn.active { color: var(--green); }
     .tab-btn svg { width: 18px; height: 18px; }
@@ -401,12 +402,54 @@
       body { padding: 0; background: #fff; }
       .app-header, .tab-bar, .no-print { display: none !important; }
       .tab-panel { display: block !important; padding: 0; }
-      #tab-project, #tab-budget, #tab-payments, #tab-scope, #tab-imports, #tab-finance { display: none !important; }
+      #tab-project, #tab-budget, #tab-payments, #tab-scope, #tab-imports, #tab-finance, #tab-pictures, #tab-reports { display: none !important; }
       #tab-export { display: block !important; }
       .card { box-shadow: none; break-inside: avoid; }
       .print-page { display: block !important; }
     }
     .print-page { display: none; }
+
+    /* ── Pictures & Reports Tabs ── */
+    .photo-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; margin-top: 10px; }
+    .photo-thumb { position: relative; aspect-ratio: 1; border-radius: 8px; overflow: hidden; background: #f0f0f0; }
+    .photo-thumb img { width: 100%; height: 100%; object-fit: cover; display: block; }
+    .photo-thumb .photo-del {
+      position: absolute; top: 4px; right: 4px; width: 22px; height: 22px;
+      background: rgba(0,0,0,.55); color: #fff; border: none; border-radius: 50%;
+      font-size: .7rem; cursor: pointer; display: flex; align-items: center; justify-content: center;
+      line-height: 1;
+    }
+    .photo-thumb .photo-label {
+      position: absolute; bottom: 0; left: 0; right: 0; padding: 3px 6px;
+      background: rgba(0,0,0,.5); color: #fff; font-size: .55rem;
+      white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+    }
+    .cam-btn {
+      display: flex; align-items: center; justify-content: center; gap: 8px;
+      width: 100%; padding: 14px; border: 2px dashed var(--green); border-radius: var(--radius);
+      background: var(--green-light); color: var(--green-dark); font-size: .82rem;
+      font-weight: 700; cursor: pointer; font-family: inherit; transition: background .15s;
+    }
+    .cam-btn:active { background: #dde5d6; }
+    .cam-btn svg { width: 22px; height: 22px; flex-shrink: 0; }
+    .cam-btn input[type=file] { display: none; }
+    .photo-count { font-size: .7rem; color: var(--muted); margin-top: 6px; }
+    .report-card { background: var(--card); border-radius: var(--radius); padding: 14px 16px; margin-bottom: 10px; box-shadow: 0 1px 3px rgba(0,0,0,.06); }
+    .report-card-hdr { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
+    .report-card-title { font-size: .78rem; font-weight: 700; color: var(--text); }
+    .report-card-date { font-size: .65rem; color: var(--muted); }
+    .report-card-notes { font-size: .75rem; color: var(--text); margin-bottom: 8px; line-height: 1.5; }
+    .report-card-actions { display: flex; gap: 6px; margin-top: 8px; }
+    .report-card-actions button { font-size: .65rem; padding: 4px 10px; border-radius: 6px; border: 1px solid var(--border); background: var(--card); color: var(--text); cursor: pointer; font-family: inherit; font-weight: 600; }
+    .report-card-actions button.report-del { color: var(--red-text); border-color: var(--red); }
+    .report-form { background: var(--card); border-radius: var(--radius); padding: 16px; margin-bottom: 12px; box-shadow: 0 1px 3px rgba(0,0,0,.06); }
+    .report-form .fg { margin-bottom: 10px; }
+    .photo-uploading { opacity: .5; animation: pulse .8s infinite alternate; }
+    .photo-lightbox {
+      position: fixed; inset: 0; z-index: 9999; background: rgba(0,0,0,.92);
+      display: flex; align-items: center; justify-content: center; cursor: pointer;
+    }
+    .photo-lightbox img { max-width: 95vw; max-height: 90vh; object-fit: contain; border-radius: 4px; }
 
     /* ── Misc ── */
     .empty-msg { text-align: center; padding: 30px 20px; color: var(--muted); font-size: .85rem; }
@@ -685,6 +728,36 @@
   <div id="fp-inputs"></div>
 </div>
 
+<!-- ══════ Tab: Pictures ══════ -->
+<div id="tab-pictures" class="tab-panel">
+  <div class="card">
+    <div class="card-title">Project Photos</div>
+    <label class="cam-btn">
+      <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M23 19a2 2 0 01-2 2H3a2 2 0 01-2-2V8a2 2 0 012-2h4l2-3h6l2 3h4a2 2 0 012 2z"/><circle cx="12" cy="13" r="4"/></svg>
+      Take Photo
+      <input type="file" accept="image/*" capture="environment" id="pic-camera-input">
+    </label>
+    <div style="margin-top:8px;">
+      <label class="cam-btn" style="border-style:solid;background:var(--card);font-weight:600;font-size:.75rem;">
+        <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" style="width:18px;height:18px;"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M17 8l-5-5-5 5M12 3v12"/></svg>
+        Upload from Gallery
+        <input type="file" accept="image/*" multiple id="pic-gallery-input">
+      </label>
+    </div>
+    <div id="pic-count" class="photo-count"></div>
+    <div id="pic-grid" class="photo-grid"></div>
+  </div>
+</div>
+
+<!-- ══════ Tab: Reports ══════ -->
+<div id="tab-reports" class="tab-panel">
+  <div class="no-print" style="display:flex;gap:8px;margin-bottom:12px;">
+    <button class="btn btn-green" id="btnNewReport" style="flex:1;">+ New Site Report</button>
+  </div>
+  <div id="report-form-wrap"></div>
+  <div id="report-list"></div>
+</div>
+
 <!-- ══════ Tab Bar ══════ -->
 <nav class="tab-bar">
   <button class="tab-btn active" data-tab="tab-project">
@@ -710,6 +783,14 @@
   <button class="tab-btn" data-tab="tab-finance">
     <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M12 20V10M6 20V4M18 20v-6"/></svg>
     Finance
+  </button>
+  <button class="tab-btn" data-tab="tab-pictures">
+    <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M23 19a2 2 0 01-2 2H3a2 2 0 01-2-2V8a2 2 0 012-2h4l2-3h6l2 3h4a2 2 0 012 2z"/><circle cx="12" cy="13" r="4"/></svg>
+    Pictures
+  </button>
+  <button class="tab-btn" data-tab="tab-reports">
+    <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+    Reports
   </button>
   <button class="tab-btn" data-tab="tab-export">
     <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
@@ -759,9 +840,13 @@ var D = {
   customFixedRules: [],
   customFeeRules: [],
   projections: null,
+  pictures: [],
+  reports: [],
   nextCatId: 1,
   nextItemId: 1,
-  nextPayId: 1
+  nextPayId: 1,
+  nextPicId: 1,
+  nextReportId: 1
 };
 
 function defaultCategories() {
@@ -1234,9 +1319,13 @@ function createNewProject() {
   D.deliveredMats = DEFAULT_DELIVERED_MATS.slice();
   D.customFixedRules = [];
   D.customFeeRules = [];
+  D.pictures = [];
+  D.reports = [];
   D.nextCatId = D.categories.length ? D.categories[D.categories.length - 1].id + 1 : 1;
   D.nextItemId = 100;
   D.nextPayId = 1;
+  D.nextPicId = 1;
+  D.nextReportId = 1;
   // Add to index
   var index = getProjectIndex();
   index.unshift({ id: id, name: 'Untitled Project', created: new Date().toISOString(), lastModified: new Date().toISOString() });
@@ -1321,6 +1410,10 @@ function ensureFields() {
   if (!D.deliveredMats) D.deliveredMats = DEFAULT_DELIVERED_MATS.slice();
   if (!D.customFixedRules) D.customFixedRules = [];
   if (!D.customFeeRules) D.customFeeRules = [];
+  if (!D.pictures) D.pictures = [];
+  if (!D.reports) D.reports = [];
+  if (!D.nextPicId) D.nextPicId = (D.pictures.length > 0 ? Math.max.apply(null, D.pictures.map(function(p){return p.id||0;})) + 1 : 1);
+  if (!D.nextReportId) D.nextReportId = (D.reports.length > 0 ? Math.max.apply(null, D.reports.map(function(r){return r.id||0;})) + 1 : 1);
   for (var i = 0; i < D.categories.length; i++) {
     if (D.categories[i].contractor === undefined) D.categories[i].contractor = '';
     if (D.categories[i].phone === undefined) D.categories[i].phone = '';
@@ -1486,6 +1579,8 @@ function switchTab(tabId) {
   if (tabId === 'tab-payments') renderPayments();
   if (tabId === 'tab-imports') renderImports();
   if (tabId === 'tab-finance') renderFinance();
+  if (tabId === 'tab-pictures') renderPictures();
+  if (tabId === 'tab-reports') renderReports();
   if (tabId === 'tab-export') { renderExportPreview(); initSyncSettings(); }
   window.scrollTo(0, 0);
 }
@@ -4090,6 +4185,420 @@ document.getElementById('f-arv').addEventListener('blur', function() {
 document.getElementById('f-bonus').addEventListener('blur', function() {
   var n = parseMoney(this.value);
   this.value = n > 0 ? fmt(n) : '';
+});
+
+/* ═══════════════════════════════════════════
+   PICTURES & SITE REPORTS — SHARED CAMERA
+   ═══════════════════════════════════════════ */
+var storageRef = firebase.storage().ref();
+
+function compressImage(file, maxWidth, quality, cb) {
+  var reader = new FileReader();
+  reader.onload = function(e) {
+    var img = new Image();
+    img.onload = function() {
+      var w = img.width, h = img.height;
+      if (w > maxWidth) { h = Math.round(h * maxWidth / w); w = maxWidth; }
+      var c = document.createElement('canvas'); c.width = w; c.height = h;
+      c.getContext('2d').drawImage(img, 0, 0, w, h);
+      c.toBlob(function(blob) { cb(blob); }, 'image/jpeg', quality);
+    };
+    img.src = e.target.result;
+  };
+  reader.readAsDataURL(file);
+}
+
+function uploadPhoto(file, target, extraData) {
+  // target = 'pictures' or 'reports'
+  compressImage(file, 1600, 0.75, function(blob) {
+    if (!blob) return;
+    var ts = Date.now();
+    var fname = currentProjectId + '/' + target + '/' + ts + '_' + Math.random().toString(36).substr(2, 6) + '.jpg';
+    var ref = storageRef.child(fname);
+    var task = ref.put(blob, { contentType: 'image/jpeg' });
+    // Add placeholder immediately (no waiting)
+    var picObj = {
+      id: (target === 'pictures') ? D.nextPicId++ : ts,
+      url: '',
+      storagePath: fname,
+      timestamp: new Date().toISOString(),
+      uploading: true
+    };
+    if (extraData) { for (var k in extraData) picObj[k] = extraData[k]; }
+
+    if (target === 'pictures') {
+      D.pictures.unshift(picObj);
+      renderPictures();
+    }
+    // For reports, the caller handles adding to the report's photos array
+
+    task.then(function(snapshot) {
+      return snapshot.ref.getDownloadURL();
+    }).then(function(url) {
+      picObj.url = url;
+      picObj.uploading = false;
+      if (target === 'pictures') renderPictures();
+      else renderReports();
+      scheduleSave();
+    }).catch(function(err) {
+      console.error('[Storage] Upload error:', err);
+      picObj.uploading = false;
+      picObj.url = '';
+      if (target === 'pictures') renderPictures();
+      else renderReports();
+    });
+
+    return picObj;
+  });
+}
+
+function deletePhoto(target, picId) {
+  var arr = (target === 'pictures') ? D.pictures : null;
+  if (!arr) return;
+  for (var i = 0; i < arr.length; i++) {
+    if (arr[i].id === picId) {
+      // Delete from storage if path exists
+      if (arr[i].storagePath) {
+        try { storageRef.child(arr[i].storagePath).delete(); } catch(e) {}
+      }
+      arr.splice(i, 1);
+      break;
+    }
+  }
+  scheduleSave();
+  renderPictures();
+}
+
+function deleteReportPhoto(reportId, photoIdx) {
+  for (var i = 0; i < D.reports.length; i++) {
+    if (D.reports[i].id === reportId) {
+      var photo = D.reports[i].photos[photoIdx];
+      if (photo && photo.storagePath) {
+        try { storageRef.child(photo.storagePath).delete(); } catch(e) {}
+      }
+      D.reports[i].photos.splice(photoIdx, 1);
+      break;
+    }
+  }
+  scheduleSave();
+  renderReports();
+}
+
+function showLightbox(url) {
+  var lb = document.createElement('div');
+  lb.className = 'photo-lightbox';
+  lb.innerHTML = '<img src="' + url + '">';
+  lb.onclick = function() { lb.remove(); };
+  document.body.appendChild(lb);
+}
+
+// ── Pictures camera input (rapid-fire, no confirmation) ──
+document.getElementById('pic-camera-input').addEventListener('change', function(e) {
+  var files = e.target.files;
+  for (var i = 0; i < files.length; i++) {
+    uploadPhoto(files[i], 'pictures');
+  }
+  // Reset immediately so user can take another photo right away
+  this.value = '';
+});
+
+document.getElementById('pic-gallery-input').addEventListener('change', function(e) {
+  var files = e.target.files;
+  for (var i = 0; i < files.length; i++) {
+    uploadPhoto(files[i], 'pictures');
+  }
+  this.value = '';
+});
+
+/* ── RENDER: Pictures Tab ── */
+function renderPictures() {
+  var grid = document.getElementById('pic-grid');
+  var countEl = document.getElementById('pic-count');
+  if (!grid) return;
+  var pics = D.pictures || [];
+  countEl.textContent = pics.length > 0 ? pics.length + ' photo' + (pics.length !== 1 ? 's' : '') : '';
+
+  if (pics.length === 0) {
+    grid.innerHTML = '<div class="empty-msg">No photos yet. Tap the camera button to start.</div>';
+    return;
+  }
+
+  var html = '';
+  for (var i = 0; i < pics.length; i++) {
+    var p = pics[i];
+    var src = p.url || '';
+    var cls = p.uploading ? ' photo-uploading' : '';
+    html += '<div class="photo-thumb' + cls + '" data-pic-id="' + p.id + '">';
+    if (src) {
+      html += '<img src="' + src + '" loading="lazy">';
+    } else {
+      html += '<div style="display:flex;align-items:center;justify-content:center;height:100%;font-size:.6rem;color:var(--muted);">Uploading...</div>';
+    }
+    html += '<button class="photo-del" data-del-pic="' + p.id + '">&times;</button>';
+    if (p.timestamp) {
+      var d = new Date(p.timestamp);
+      html += '<div class="photo-label">' + (d.getMonth()+1) + '/' + d.getDate() + '/' + d.getFullYear() + '</div>';
+    }
+    html += '</div>';
+  }
+  grid.innerHTML = html;
+}
+
+// Pictures grid click handler (lightbox + delete)
+document.getElementById('pic-grid').addEventListener('click', function(e) {
+  var delBtn = e.target.closest('[data-del-pic]');
+  if (delBtn) {
+    var picId = Number(delBtn.getAttribute('data-del-pic'));
+    deletePhoto('pictures', picId);
+    return;
+  }
+  var thumb = e.target.closest('.photo-thumb');
+  if (thumb) {
+    var img = thumb.querySelector('img');
+    if (img && img.src) showLightbox(img.src);
+  }
+});
+
+/* ── RENDER: Reports Tab ── */
+var editingReportId = null;
+
+function renderReports() {
+  var listEl = document.getElementById('report-list');
+  var formEl = document.getElementById('report-form-wrap');
+  if (!listEl) return;
+  var reports = D.reports || [];
+
+  // Render editing form if active
+  if (editingReportId !== null) {
+    var r = null;
+    for (var j = 0; j < reports.length; j++) { if (reports[j].id === editingReportId) { r = reports[j]; break; } }
+    if (r) {
+      formEl.innerHTML =
+        '<div class="report-form">' +
+          '<div class="card-title" style="margin-bottom:10px;">Site Report</div>' +
+          '<div class="fg"><label>Title</label><input type="text" id="rf-title" value="' + escAttr(r.title || '') + '" placeholder="e.g. Day 1 Progress"></div>' +
+          '<div class="fg"><label>Date</label><input type="text" id="rf-date" value="' + escAttr(r.date || '') + '" placeholder="' + todayStr() + '"></div>' +
+          '<div class="fg"><label>Notes</label><textarea id="rf-notes" rows="3" placeholder="Observations, issues, progress...">' + esc(r.notes || '') + '</textarea></div>' +
+          '<label class="cam-btn" style="margin-bottom:8px;">' +
+            '<svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M23 19a2 2 0 01-2 2H3a2 2 0 01-2-2V8a2 2 0 012-2h4l2-3h6l2 3h4a2 2 0 012 2z"/><circle cx="12" cy="13" r="4"/></svg>' +
+            'Take Photo' +
+            '<input type="file" accept="image/*" capture="environment" id="report-camera-input">' +
+          '</label>' +
+          '<label class="cam-btn" style="border-style:solid;background:var(--card);font-weight:600;font-size:.75rem;margin-bottom:8px;">' +
+            '<svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" style="width:18px;height:18px;"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M17 8l-5-5-5 5M12 3v12"/></svg>' +
+            'Upload from Gallery' +
+            '<input type="file" accept="image/*" multiple id="report-gallery-input">' +
+          '</label>' +
+          '<div id="report-photo-grid" class="photo-grid" style="margin-bottom:10px;"></div>' +
+          '<div style="display:flex;gap:8px;">' +
+            '<button class="btn btn-green" id="btnSaveReport" style="flex:1;">Save Report</button>' +
+            '<button class="btn btn-outline" id="btnCancelReport">Cancel</button>' +
+          '</div>' +
+        '</div>';
+
+      // Render report photos
+      var rpGrid = document.getElementById('report-photo-grid');
+      var photos = r.photos || [];
+      var ph = '';
+      for (var pi = 0; pi < photos.length; pi++) {
+        var pp = photos[pi];
+        var pcls = pp.uploading ? ' photo-uploading' : '';
+        ph += '<div class="photo-thumb' + pcls + '">';
+        if (pp.url) {
+          ph += '<img src="' + pp.url + '" loading="lazy">';
+        } else {
+          ph += '<div style="display:flex;align-items:center;justify-content:center;height:100%;font-size:.6rem;color:var(--muted);">Uploading...</div>';
+        }
+        ph += '<button class="photo-del" data-del-rphoto="' + pi + '" data-report-id="' + r.id + '">&times;</button>';
+        ph += '</div>';
+      }
+      rpGrid.innerHTML = ph;
+
+      // Wire up report camera (same rapid-fire behavior)
+      document.getElementById('report-camera-input').addEventListener('change', function(ev) {
+        var files = ev.target.files;
+        for (var fi = 0; fi < files.length; fi++) {
+          var picObj = { url: '', storagePath: '', timestamp: new Date().toISOString(), uploading: true };
+          r.photos.push(picObj);
+          (function(obj, f) {
+            compressImage(f, 1600, 0.75, function(blob) {
+              if (!blob) return;
+              var fname = currentProjectId + '/reports/' + Date.now() + '_' + Math.random().toString(36).substr(2, 6) + '.jpg';
+              obj.storagePath = fname;
+              var ref = storageRef.child(fname);
+              ref.put(blob, { contentType: 'image/jpeg' }).then(function(snapshot) {
+                return snapshot.ref.getDownloadURL();
+              }).then(function(url) {
+                obj.url = url;
+                obj.uploading = false;
+                renderReports();
+                scheduleSave();
+              }).catch(function(err) {
+                console.error('[Storage] Report upload error:', err);
+                obj.uploading = false;
+                renderReports();
+              });
+            });
+          })(picObj, files[fi]);
+        }
+        ev.target.value = '';
+        renderReports();
+      });
+
+      document.getElementById('report-gallery-input').addEventListener('change', function(ev) {
+        var files = ev.target.files;
+        for (var fi = 0; fi < files.length; fi++) {
+          var picObj = { url: '', storagePath: '', timestamp: new Date().toISOString(), uploading: true };
+          r.photos.push(picObj);
+          (function(obj, f) {
+            compressImage(f, 1600, 0.75, function(blob) {
+              if (!blob) return;
+              var fname = currentProjectId + '/reports/' + Date.now() + '_' + Math.random().toString(36).substr(2, 6) + '.jpg';
+              obj.storagePath = fname;
+              var ref = storageRef.child(fname);
+              ref.put(blob, { contentType: 'image/jpeg' }).then(function(snapshot) {
+                return snapshot.ref.getDownloadURL();
+              }).then(function(url) {
+                obj.url = url;
+                obj.uploading = false;
+                renderReports();
+                scheduleSave();
+              }).catch(function(err) {
+                obj.uploading = false;
+                renderReports();
+              });
+            });
+          })(picObj, files[fi]);
+        }
+        ev.target.value = '';
+        renderReports();
+      });
+
+      // Report photo grid click (delete + lightbox)
+      rpGrid.addEventListener('click', function(ev) {
+        var delBtn = ev.target.closest('[data-del-rphoto]');
+        if (delBtn) {
+          var idx = Number(delBtn.getAttribute('data-del-rphoto'));
+          var rid = Number(delBtn.getAttribute('data-report-id'));
+          deleteReportPhoto(rid, idx);
+          return;
+        }
+        var thumb = ev.target.closest('.photo-thumb');
+        if (thumb) {
+          var img = thumb.querySelector('img');
+          if (img && img.src) showLightbox(img.src);
+        }
+      });
+
+      // Save / Cancel
+      document.getElementById('btnSaveReport').addEventListener('click', function() {
+        r.title = document.getElementById('rf-title').value;
+        r.date = document.getElementById('rf-date').value;
+        r.notes = document.getElementById('rf-notes').value;
+        editingReportId = null;
+        scheduleSave();
+        renderReports();
+      });
+      document.getElementById('btnCancelReport').addEventListener('click', function() {
+        // If new and empty, remove it
+        if (!r.title && !r.notes && (!r.photos || r.photos.length === 0)) {
+          for (var di = 0; di < D.reports.length; di++) {
+            if (D.reports[di].id === r.id) { D.reports.splice(di, 1); break; }
+          }
+        }
+        editingReportId = null;
+        renderReports();
+      });
+
+    } else {
+      editingReportId = null;
+      formEl.innerHTML = '';
+    }
+  } else {
+    formEl.innerHTML = '';
+  }
+
+  // Render report list
+  if (reports.length === 0 && editingReportId === null) {
+    listEl.innerHTML = '<div class="empty-msg">No site reports yet. Tap + New Site Report to start.</div>';
+    return;
+  }
+
+  var html = '';
+  for (var ri = 0; ri < reports.length; ri++) {
+    var rr = reports[ri];
+    if (rr.id === editingReportId) continue; // skip the one being edited
+    html += '<div class="report-card">';
+    html += '<div class="report-card-hdr"><span class="report-card-title">' + esc(rr.title || 'Untitled Report') + '</span><span class="report-card-date">' + esc(rr.date || '') + '</span></div>';
+    if (rr.notes) html += '<div class="report-card-notes">' + esc(rr.notes).replace(/\n/g, '<br>') + '</div>';
+    // Photo thumbnails
+    if (rr.photos && rr.photos.length > 0) {
+      html += '<div class="photo-grid" style="margin-bottom:8px;">';
+      for (var rpi = 0; rpi < rr.photos.length; rpi++) {
+        var rpp = rr.photos[rpi];
+        if (rpp.url) {
+          html += '<div class="photo-thumb" data-lb-url="' + escAttr(rpp.url) + '"><img src="' + escAttr(rpp.url) + '" loading="lazy"></div>';
+        }
+      }
+      html += '</div>';
+    }
+    html += '<div class="report-card-actions">';
+    html += '<button data-edit-report="' + rr.id + '">Edit</button>';
+    html += '<button class="report-del" data-del-report="' + rr.id + '">Delete</button>';
+    html += '</div></div>';
+  }
+  listEl.innerHTML = html;
+}
+
+// Report list click handlers
+document.getElementById('report-list').addEventListener('click', function(e) {
+  var editBtn = e.target.closest('[data-edit-report]');
+  if (editBtn) {
+    editingReportId = Number(editBtn.getAttribute('data-edit-report'));
+    renderReports();
+    return;
+  }
+  var delBtn = e.target.closest('[data-del-report]');
+  if (delBtn) {
+    var rid = Number(delBtn.getAttribute('data-del-report'));
+    for (var i = 0; i < D.reports.length; i++) {
+      if (D.reports[i].id === rid) {
+        // Clean up photos from storage
+        var photos = D.reports[i].photos || [];
+        for (var pi = 0; pi < photos.length; pi++) {
+          if (photos[pi].storagePath) {
+            try { storageRef.child(photos[pi].storagePath).delete(); } catch(ex) {}
+          }
+        }
+        D.reports.splice(i, 1);
+        break;
+      }
+    }
+    scheduleSave();
+    renderReports();
+    return;
+  }
+  // Lightbox on photo click
+  var lbThumb = e.target.closest('[data-lb-url]');
+  if (lbThumb) {
+    showLightbox(lbThumb.getAttribute('data-lb-url'));
+  }
+});
+
+// New Report button
+document.getElementById('btnNewReport').addEventListener('click', function() {
+  var r = {
+    id: D.nextReportId++,
+    title: '',
+    date: todayStr(),
+    notes: '',
+    photos: [],
+    created: new Date().toISOString()
+  };
+  D.reports.unshift(r);
+  editingReportId = r.id;
+  renderReports();
+  scheduleSave();
 });
 
 /* ═══════════════════════════════════════════

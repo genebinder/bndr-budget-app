@@ -1,5 +1,13 @@
 {
   "projects": {
     "default": "bndr-budget"
+  },
+  "targets": {
+    "bndr-budget": {
+      "hosting": {
+        "budget": ["bndr-budget"],
+        "reports": ["bndr-reports"]
+      }
+    }
   }
 }

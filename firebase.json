@@ -1,48 +1,25 @@
 {
-  "hosting": [
-    {
-      "target": "budget",
-      "public": ".",
-      "ignore": [
-        "firebase.json",
-        "**/.*",
-        "node_modules/**"
-      ],
-      "rewrites": [],
-      "headers": [
-        {
-          "source": "**/*.html",
-          "headers": [
-            {
-              "key": "Cache-Control",
-              "value": "no-cache"
-            }
-          ]
-        }
-      ]
-    },
-    {
-      "target": "reports",
-      "public": ".",
-      "ignore": [
-        "firebase.json",
-        "**/.*",
-        "node_modules/**"
-      ],
-      "rewrites": [],
-      "headers": [
-        {
-          "source": "**/*.html",
-          "headers": [
-            {
-              "key": "Cache-Control",
-              "value": "no-cache"
-            }
-          ]
-        }
-      ]
-    }
-  ],
+  "hosting": {
+    "target": "reports",
+    "public": ".",
+    "ignore": [
+      "firebase.json",
+      "**/.*",
+      "node_modules/**"
+    ],
+    "rewrites": [],
+    "headers": [
+      {
+        "source": "**/*.html",
+        "headers": [
+          {
+            "key": "Cache-Control",
+            "value": "no-cache"
+          }
+        ]
+      }
+    ]
+  },
   "firestore": {
     "rules": "firestore.rules",
     "indexes": "firestore.indexes.json"

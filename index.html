@@ -136,7 +136,8 @@
     }
     .cat-totals { width: 100%; display: flex; gap: 6px; font-size: .72rem; color: var(--muted); margin-top: 2px; align-items: center; }
     .cat-totals span { white-space: nowrap; }
-    .cat-est-input { width: 70px; padding: 2px 4px; border: 1px solid var(--border); border-radius: 4px; font-size: .72rem; font-family: inherit; font-weight: 600; text-align: right; background: var(--card); }
+    .cat-est-input { width: 90px; padding: 4px 6px; border: 1.5px solid var(--border); border-radius: 6px; font-size: 16px; font-family: inherit; font-weight: 600; text-align: right; background: var(--card); outline: none; -webkit-appearance: none; appearance: none; color: var(--text); }
+    .cat-est-input:focus { border-color: var(--green); background: #fff; }
     .cat-chevron { font-size: .7rem; color: var(--muted); transition: transform .2s; margin-left: 4px; }
     .cat-chevron.open { transform: rotate(180deg); }
     .cat-body { padding: 0 14px 14px; display: none; }
@@ -153,9 +154,9 @@
     }
     .cat-contractor .cc-field input {
       width: 100%; border: 1.5px solid var(--border); border-radius: 6px;
-      padding: 7px 8px; font-size: 14px; font-family: inherit;
+      padding: 7px 8px; font-size: 16px; font-family: inherit;
       background: #fafbfa; outline: none; color: var(--text);
-      -webkit-appearance: none;
+      -webkit-appearance: none; appearance: none;
     }
     .cat-contractor .cc-field input:focus { border-color: var(--green); }
 
@@ -179,9 +180,9 @@
     }
     .li-contractor-row input {
       flex: 1; border: none; border-bottom: 1px dashed var(--border);
-      font-size: .72rem; font-family: inherit; color: var(--green-dark);
+      font-size: 16px; font-family: inherit; color: var(--green-dark);
       background: none; outline: none; padding: 2px 0; font-weight: 600;
-      -webkit-appearance: none;
+      -webkit-appearance: none; appearance: none;
     }
     .li-contractor-row input:focus { border-bottom-color: var(--green); }
     .li-contractor-row input::placeholder { color: var(--light-text); font-weight: 400; font-style: italic; }
@@ -190,9 +191,9 @@
     .li-field label { font-size: .6rem; font-weight: 600; color: var(--muted); margin-bottom: 2px; display: block; }
     .li-field input {
       width: 100%; border: 1.5px solid var(--border); border-radius: 6px;
-      padding: 7px 8px; font-size: 14px; font-family: inherit;
+      padding: 7px 8px; font-size: 16px; font-family: inherit;
       background: #fafbfa; outline: none; color: var(--text);
-      -webkit-appearance: none;
+      -webkit-appearance: none; appearance: none;
     }
     .li-field input:focus { border-color: var(--green); }
     .li-field .markup-row { display: flex; gap: 4px; margin-top: 3px; }
@@ -258,9 +259,11 @@
     }
     .pay-edit-row { display: flex; gap: 6px; margin-bottom: 6px; }
     .pay-edit-row input, .pay-edit-row select {
-      flex: 1; font-size: .75rem; padding: 5px 8px; border: 1px solid var(--border);
+      flex: 1; font-size: 16px; padding: 5px 8px; border: 1px solid var(--border);
       border-radius: 4px; font-family: inherit; background: #fff;
+      -webkit-appearance: none; appearance: none; outline: none; color: var(--text);
     }
+    .pay-edit-row input:focus, .pay-edit-row select:focus { border-color: var(--green); }
     .pay-edit-row input[type="text"].pay-inp-date { max-width: 90px; }
     .pay-edit-row input[type="text"].pay-inp-amt { max-width: 80px; text-align: right; }
     .pay-edit-row .pay-markup-btn { flex: none; align-self: center; }
@@ -325,9 +328,9 @@
     .scope-add-row { display: flex; gap: 8px; margin-top: 6px; }
     .scope-add-row input {
       flex: 1; border: 1.5px dashed var(--border); border-radius: 6px;
-      padding: 6px 8px; font-size: .82rem; font-family: inherit;
+      padding: 6px 8px; font-size: 16px; font-family: inherit;
       background: #fafbfa; outline: none; color: var(--text);
-      -webkit-appearance: none;
+      -webkit-appearance: none; appearance: none;
     }
     .scope-add-row input:focus { border-color: var(--green); }
     .scope-add-btn {
@@ -346,9 +349,9 @@
     .mat-row-item label { font-size: .72rem; font-weight: 600; color: var(--muted); }
     .mat-row-item input {
       width: 100%; border: 1.5px solid var(--border); border-radius: 6px;
-      padding: 7px 8px; font-size: 14px; font-family: inherit;
+      padding: 7px 8px; font-size: 16px; font-family: inherit;
       background: #fafbfa; outline: none; color: var(--text);
-      -webkit-appearance: none;
+      -webkit-appearance: none; appearance: none;
     }
     .mat-row-item input:focus { border-color: var(--green); }
     .mat-sub-title {
@@ -374,7 +377,8 @@
     .fp-row { display:flex; gap:8px; margin-bottom:8px; }
     .fp-row .fp-field { flex:1; }
     .fp-field label { display:block; font-size:.65rem; font-weight:600; color:var(--muted); text-transform:uppercase; margin-bottom:2px; }
-    .fp-field input, .fp-field select { width:100%; padding:7px 8px; border:1px solid var(--border); border-radius:6px; font-size:.82rem; font-family:inherit; background:var(--card); box-sizing:border-box; }
+    .fp-field input, .fp-field select { width:100%; padding:7px 8px; border:1px solid var(--border); border-radius:6px; font-size:16px; font-family:inherit; background:var(--card); box-sizing:border-box; -webkit-appearance:none; appearance:none; outline:none; color:var(--text); }
+    .fp-field input:focus, .fp-field select:focus { border-color:var(--green); }
     .fp-hint { font-size:.6rem; color:var(--muted); margin-top:1px; }
     .fp-loan-btns { display:flex; gap:4px; flex-wrap:wrap; margin-bottom:10px; }
     .fp-loan-btn { padding:5px 10px; border:1px solid var(--border); border-radius:16px; font-size:.7rem; font-weight:600; cursor:pointer; background:var(--card); color:var(--text); font-family:inherit; }
@@ -1795,7 +1799,7 @@ document.getElementById('tab-budget').addEventListener('input', function(e) {
 /* ── Format money fields on blur ── */
 document.getElementById('tab-budget').addEventListener('blur', function(e) {
   var target = e.target;
-  if (target.getAttribute('data-field') === 'estimated') {
+  if (target.getAttribute('data-field') === 'estimated' || target.classList.contains('cat-est-input')) {
     var n = parseMoney(target.value);
     target.value = n > 0 ? fmt(n) : '';
   }
@@ -1803,7 +1807,7 @@ document.getElementById('tab-budget').addEventListener('blur', function(e) {
 
 document.getElementById('tab-budget').addEventListener('focus', function(e) {
   var target = e.target;
-  if (target.getAttribute('data-field') === 'estimated') {
+  if (target.getAttribute('data-field') === 'estimated' || target.classList.contains('cat-est-input')) {
     var n = parseMoney(target.value);
     target.value = n > 0 ? n : '';
   }
@@ -4163,6 +4167,12 @@ function scheduleIndexSync() {
   indexSyncTimer = setTimeout(function() { cloudSaveIndex(); }, 15000);
 }
 
+function isUserEditingIn(tabId) {
+  var el = document.activeElement;
+  if (!el || (el.tagName !== 'INPUT' && el.tagName !== 'TEXTAREA' && el.tagName !== 'SELECT')) return false;
+  return el.closest('#' + tabId) !== null;
+}
+
 function simpleHash(str) {
   var h = 0;
   for (var i = 0; i < str.length; i++) { h = ((h << 5) - h) + str.charCodeAt(i); h |= 0; }
@@ -4193,8 +4203,8 @@ function doAutoCloudSync() {
       var changed = importPortalPayments(cloudPayments);
       if (changed) {
         scheduleSave();
-        renderPayments();
-        renderBudget();
+        if (!isUserEditingIn('tab-payments')) renderPayments();
+        if (!isUserEditingIn('tab-budget')) renderBudget();
       }
       return true;
     }).catch(function() { return false; })
@@ -4269,16 +4279,16 @@ function manualSyncNow() {
     if (loadProject(currentProjectId)) {
       ensureFields();
       populateProjectFields();
-      renderBudget();
-      renderScope();
-      renderPayments();
+      if (!isUserEditingIn('tab-budget')) renderBudget();
+      if (!isUserEditingIn('tab-scope')) renderScope();
+      if (!isUserEditingIn('tab-payments')) renderPayments();
     }
     updateProjectSelector();
 
     // Pull portal payments
     return cloudFetchPayments(currentProjectId).then(function(cloudPayments) {
       var payChanged = importPortalPayments(cloudPayments);
-      if (payChanged) { scheduleSave(); renderPayments(); renderBudget(); }
+      if (payChanged) { scheduleSave(); if (!isUserEditingIn('tab-payments')) renderPayments(); if (!isUserEditingIn('tab-budget')) renderBudget(); }
       setSyncDot('synced');
       lastFullSyncHash = currentProjectId + '-' + JSON.stringify(D).length + '-' + simpleHash(JSON.stringify(D));
     });
@@ -4449,9 +4459,9 @@ function backgroundCloudRefresh() {
       D = cloudData.projects[currentProjectId];
       ensureFields();
       populateProjectFields();
-      renderBudget();
-      renderScope();
-      renderPayments();
+      if (!isUserEditingIn('tab-budget')) renderBudget();
+      if (!isUserEditingIn('tab-scope')) renderScope();
+      if (!isUserEditingIn('tab-payments')) renderPayments();
     }
     updateProjectSelector();
 
@@ -4459,7 +4469,7 @@ function backgroundCloudRefresh() {
     if (currentProjectId) {
       cloudFetchPayments(currentProjectId).then(function(cloudPayments) {
         var payChanged = importPortalPayments(cloudPayments);
-        if (payChanged) { scheduleSave(); renderPayments(); renderBudget(); }
+        if (payChanged) { scheduleSave(); if (!isUserEditingIn('tab-payments')) renderPayments(); if (!isUserEditingIn('tab-budget')) renderBudget(); }
         setSyncDot('synced');
       }).catch(function() { setSyncDot('synced'); });
     } else {

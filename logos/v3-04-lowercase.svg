@@ -1,0 +1,62 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1000" height="400" viewBox="0 0 1000 400">
+  <rect width="1000" height="400" fill="#ffffff"/>
+
+  <!-- Typographic hero concept — no separate icon. Wordmark IS the identity. -->
+  <!-- Custom drawn lowercase bndr — all circular bowls, uniform stem, one signature cut -->
+  <g transform="translate(100 110)" fill="#0A0A0A">
+
+    <!-- b -->
+    <rect x="0" y="0" width="22" height="180" rx="2"/>
+    <circle cx="68" cy="122" r="58"/>
+    <circle cx="68" cy="122" r="32" fill="#ffffff"/>
+    <rect x="0" y="62" width="24" height="120" fill="#ffffff"/>
+    <rect x="0" y="0" width="22" height="180" rx="2"/>
+
+    <!-- n -->
+    <g transform="translate(160 0)">
+      <rect x="0" y="62" width="22" height="118" rx="2"/>
+      <circle cx="62" cy="122" r="60"/>
+      <circle cx="62" cy="122" r="34" fill="#ffffff"/>
+      <rect x="0" y="122" width="124" height="60" fill="#0A0A0A"/>
+      <rect x="0" y="62" width="22" height="118" rx="2"/>
+      <rect x="102" y="122" width="22" height="58" rx="2"/>
+    </g>
+
+    <!-- d -->
+    <g transform="translate(320 0)">
+      <circle cx="60" cy="122" r="58"/>
+      <circle cx="60" cy="122" r="32" fill="#ffffff"/>
+      <rect x="96" y="0" width="22" height="180" rx="2"/>
+      <rect x="94" y="62" width="26" height="120" fill="#ffffff"/>
+      <rect x="96" y="0" width="22" height="180" rx="2"/>
+    </g>
+
+    <!-- r — signature letter, flat-cut terminal -->
+    <g transform="translate(470 62)">
+      <rect x="0" y="0" width="22" height="118" rx="2"/>
+      <path d="M 22 0 Q 62 0, 70 38 L 48 40 Q 42 20, 22 20 Z"/>
+    </g>
+  </g>
+
+  <!-- Small CAPITAL below, centered under wordmark -->
+  <text x="400" y="340"
+        text-anchor="middle"
+        font-family="'Inter', 'SF Pro Display', 'Helvetica Neue', ui-sans-serif, system-ui"
+        font-size="14" font-weight="500" letter-spacing="14" fill="#6B6B65">CAPITAL</text>
+
+  <!-- App icon — derived 'b' glyph -->
+  <g transform="translate(860 300)">
+    <rect x="0" y="0" width="80" height="80" rx="18" fill="#0A0A0A"/>
+    <g transform="translate(16 14)" fill="#ffffff">
+      <rect x="0" y="0" width="7" height="52" rx="1"/>
+      <circle cx="22" cy="35" r="18"/>
+      <circle cx="22" cy="35" r="9" fill="#0A0A0A"/>
+      <rect x="0" y="18" width="8" height="34" fill="#0A0A0A"/>
+      <rect x="0" y="0" width="7" height="52" rx="1" fill="#ffffff"/>
+    </g>
+  </g>
+
+  <text x="900" y="280" text-anchor="middle"
+        font-family="'Inter', ui-sans-serif, system-ui"
+        font-size="9" font-weight="500" letter-spacing="2" fill="#8a8a85">APP ICON</text>
+</svg>

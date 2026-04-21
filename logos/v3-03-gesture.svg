@@ -1,0 +1,51 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1000" height="400" viewBox="0 0 1000 400">
+  <rect width="1000" height="400" fill="#ffffff"/>
+
+  <!-- Icon: a single confident gesture — one curve, variable weight, calligraphic -->
+  <g transform="translate(110 100)">
+    <!-- Main gesture — thick at bottom, tapering as it lifts -->
+    <path d="M 10 180
+             C 10 160, 40 100, 120 60
+             C 180 32, 220 32, 230 30
+             L 220 52
+             C 212 54, 172 56, 124 82
+             C 52 120, 30 170, 30 184
+             Z"
+          fill="#0A0A0A"/>
+    <!-- Small dot anchoring bottom-left — the pivot point -->
+    <circle cx="10" cy="184" r="7" fill="#0A0A0A"/>
+  </g>
+
+  <!-- Divider -->
+  <line x1="380" y1="120" x2="380" y2="280" stroke="#e6e4dd" stroke-width="1"/>
+
+  <!-- Wordmark -->
+  <g transform="translate(430 0)">
+    <text x="0" y="220"
+          font-family="'Inter', 'SF Pro Display', 'Helvetica Neue', ui-sans-serif, system-ui"
+          font-size="104" font-weight="700" letter-spacing="-1" fill="#0A0A0A">BNDR</text>
+    <text x="3" y="258"
+          font-family="'Inter', 'SF Pro Display', 'Helvetica Neue', ui-sans-serif, system-ui"
+          font-size="15" font-weight="500" letter-spacing="9" fill="#6B6B65">CAPITAL</text>
+  </g>
+
+  <!-- App icon -->
+  <g transform="translate(860 300)">
+    <rect x="0" y="0" width="80" height="80" rx="18" fill="#0A0A0A"/>
+    <g transform="translate(14 14)">
+      <path d="M 4 50
+               C 4 44, 14 26, 34 16
+               C 46 10, 56 10, 58 10
+               L 56 16
+               C 54 16, 44 18, 36 22
+               C 18 32, 12 46, 12 52
+               Z"
+            fill="#ffffff"/>
+      <circle cx="4" cy="52" r="2.5" fill="#ffffff"/>
+    </g>
+  </g>
+
+  <text x="900" y="280" text-anchor="middle"
+        font-family="'Inter', ui-sans-serif, system-ui"
+        font-size="9" font-weight="500" letter-spacing="2" fill="#8a8a85">APP ICON</text>
+</svg>

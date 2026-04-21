@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="480" height="240" viewBox="0 0 480 240">
+  <rect width="480" height="240" fill="#2D2D2D"/>
+  <g fill="#6B7A59">
+    <rect x="130" y="128" width="10" height="34" rx="5"/>
+    <rect x="156" y="114" width="10" height="48" rx="5"/>
+    <rect x="182" y="122" width="10" height="40" rx="5"/>
+    <rect x="208" y="100" width="10" height="62" rx="5"/>
+    <rect x="234" y="86"  width="10" height="76" rx="5"/>
+    <rect x="260" y="94"  width="10" height="68" rx="5"/>
+    <rect x="286" y="74"  width="10" height="88" rx="5"/>
+    <rect x="312" y="60"  width="10" height="102" rx="5"/>
+    <rect x="338" y="70"  width="10" height="92" rx="5"/>
+  </g>
+  <text x="240" y="215" text-anchor="middle" font-family="ui-sans-serif, system-ui, -apple-system, Helvetica, sans-serif" font-size="14" font-weight="600" letter-spacing="5" fill="#ffffff">BNDR  CAPITAL</text>
+</svg>

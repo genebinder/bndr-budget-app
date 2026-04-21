@@ -1,0 +1,47 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1000" height="400" viewBox="0 0 1000 400">
+  <rect width="1000" height="400" fill="#ffffff"/>
+
+  <!-- Icon: geometric B monogram - single stem + two bowls, very Stripe/Ramp -->
+  <g transform="translate(150 115)">
+    <!-- stem -->
+    <rect x="0" y="0" width="28" height="170" rx="2" fill="#0A0A0A"/>
+    <!-- upper bowl -->
+    <path d="M 28 0 L 72 0 A 42 42 0 0 1 72 85 L 28 85 Z" fill="#0A0A0A"/>
+    <!-- lower bowl (slightly wider, per typographic convention) -->
+    <path d="M 28 85 L 80 85 A 46 46 0 0 1 80 170 L 28 170 Z" fill="#0A0A0A"/>
+    <!-- upper counter (cut) -->
+    <rect x="28" y="22" width="40" height="40" fill="#ffffff"/>
+    <!-- lower counter (cut) -->
+    <rect x="28" y="108" width="44" height="40" fill="#ffffff"/>
+  </g>
+
+  <!-- Divider -->
+  <line x1="380" y1="120" x2="380" y2="280" stroke="#e6e4dd" stroke-width="1"/>
+
+  <!-- Wordmark -->
+  <g transform="translate(430 0)">
+    <text x="0" y="230"
+          font-family="'Inter', 'SF Pro Display', 'Helvetica Neue', ui-sans-serif, system-ui"
+          font-size="110" font-weight="800" letter-spacing="-2" fill="#0A0A0A">BNDR</text>
+    <text x="4" y="268"
+          font-family="'Inter', 'SF Pro Display', 'Helvetica Neue', ui-sans-serif, system-ui"
+          font-size="16" font-weight="500" letter-spacing="10" fill="#6B6B65">CAPITAL</text>
+  </g>
+
+  <!-- App icon preview -->
+  <g transform="translate(860 300)">
+    <rect x="0" y="0" width="80" height="80" rx="18" fill="#0A0A0A"/>
+    <g transform="translate(26 16)">
+      <rect x="0" y="0" width="8" height="48" rx="1" fill="#ffffff"/>
+      <path d="M 8 0 L 22 0 A 12 12 0 0 1 22 24 L 8 24 Z" fill="#ffffff"/>
+      <path d="M 8 24 L 24 24 A 13 13 0 0 1 24 48 L 8 48 Z" fill="#ffffff"/>
+      <rect x="8" y="6"  width="12" height="12" fill="#0A0A0A"/>
+      <rect x="8" y="30" width="13" height="12" fill="#0A0A0A"/>
+    </g>
+  </g>
+
+  <text x="900" y="280"
+        text-anchor="middle"
+        font-family="'Inter', ui-sans-serif, system-ui"
+        font-size="9" font-weight="500" letter-spacing="2" fill="#8a8a85">APP ICON</text>
+</svg>

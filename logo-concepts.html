@@ -1,0 +1,270 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>BNDR Capital — Logo Concepts</title>
+<style>
+  :root {
+    --ink: #1a1a1a;
+    --bg: #fafaf7;
+    --muted: #8a8a85;
+    --line: #e6e4dd;
+    --sage: #6B7A59;
+    --char: #2D2D2D;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; }
+  body {
+    font-family: "Inter", ui-sans-serif, system-ui, -apple-system, "Helvetica Neue", sans-serif;
+    background: var(--bg);
+    color: var(--ink);
+    -webkit-font-smoothing: antialiased;
+    line-height: 1.5;
+  }
+  header {
+    max-width: 1100px;
+    margin: 0 auto;
+    padding: 80px 32px 32px;
+  }
+  header .eyebrow {
+    font-size: 11px;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: 16px;
+  }
+  header h1 {
+    font-size: 32px;
+    font-weight: 500;
+    letter-spacing: -0.02em;
+    margin: 0 0 8px;
+  }
+  header p {
+    color: var(--muted);
+    margin: 0;
+    max-width: 640px;
+  }
+  main {
+    max-width: 1100px;
+    margin: 0 auto;
+    padding: 24px 32px 120px;
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 32px;
+  }
+  @media (max-width: 720px) { main { grid-template-columns: 1fr; } }
+  .card {
+    background: #fff;
+    border: 1px solid var(--line);
+    border-radius: 4px;
+    padding: 48px 40px 32px;
+    display: flex;
+    flex-direction: column;
+    gap: 32px;
+    min-height: 360px;
+  }
+  .mark {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 140px;
+  }
+  .mark svg { display: block; }
+  .wordmark {
+    text-align: center;
+    font-weight: 600;
+    letter-spacing: 0.32em;
+    font-size: 14px;
+    color: var(--ink);
+  }
+  .meta {
+    border-top: 1px solid var(--line);
+    padding-top: 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+  .meta .num {
+    font-size: 10px;
+    letter-spacing: 0.2em;
+    color: var(--muted);
+    text-transform: uppercase;
+  }
+  .meta .name {
+    font-size: 15px;
+    font-weight: 500;
+  }
+  .meta .desc {
+    font-size: 13px;
+    color: var(--muted);
+  }
+  .card.dark {
+    background: var(--char);
+    border-color: var(--char);
+  }
+  .card.dark .wordmark { color: #fff; }
+  .card.dark .meta { border-top-color: #3d3d3d; }
+  .card.dark .meta .name { color: #fff; }
+  .card.dark .meta .desc { color: #a8a8a0; }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="eyebrow">BNDR Capital</div>
+  <h1>Logo Concepts — Minimal Marks</h1>
+  <p>Eight directions. No binder references. Monochrome-first so each idea stands on its shape alone; the final color can follow.</p>
+</header>
+
+<main>
+
+  <!-- 1. BOND -->
+  <div class="card">
+    <div class="mark">
+      <svg width="160" height="88" viewBox="0 0 160 88" aria-label="Bond mark">
+        <line x1="24" y1="64" x2="136" y2="24" stroke="#1a1a1a" stroke-width="3" stroke-linecap="round"/>
+        <circle cx="24" cy="64" r="9" fill="#1a1a1a"/>
+        <circle cx="136" cy="24" r="9" fill="#1a1a1a"/>
+      </svg>
+    </div>
+    <div class="wordmark">BNDR&nbsp;&nbsp;CAPITAL</div>
+    <div class="meta">
+      <span class="num">01</span>
+      <span class="name">Bond</span>
+      <span class="desc">Two nodes, one taut line rising. Reads as a financial bond or a chemical bond — either way, connection and lift.</span>
+    </div>
+  </div>
+
+  <!-- 2. BOUNDER -->
+  <div class="card">
+    <div class="mark">
+      <svg width="160" height="88" viewBox="0 0 160 88" aria-label="Bounder mark">
+        <path d="M20 68 Q 80 8 140 68" fill="none" stroke="#1a1a1a" stroke-width="3" stroke-linecap="round"/>
+        <line x1="8" y1="78" x2="152" y2="78" stroke="#1a1a1a" stroke-width="1.5" stroke-linecap="round" opacity="0.35"/>
+      </svg>
+    </div>
+    <div class="wordmark">BNDR&nbsp;&nbsp;CAPITAL</div>
+    <div class="meta">
+      <span class="num">02</span>
+      <span class="name">Bounder</span>
+      <span class="desc">A single leap above a baseline. Trajectory, momentum, returns. Works as an app icon without the baseline.</span>
+    </div>
+  </div>
+
+  <!-- 3. YIELD CURVE -->
+  <div class="card">
+    <div class="mark">
+      <svg width="160" height="88" viewBox="0 0 160 88" aria-label="Yield curve mark">
+        <path d="M20 70 C 50 70, 70 70, 90 50 S 130 18, 145 18"
+              fill="none" stroke="#1a1a1a" stroke-width="3"
+              stroke-linecap="round" stroke-linejoin="round"/>
+        <circle cx="145" cy="18" r="3.5" fill="#1a1a1a"/>
+      </svg>
+    </div>
+    <div class="wordmark">BNDR&nbsp;&nbsp;CAPITAL</div>
+    <div class="meta">
+      <span class="num">03</span>
+      <span class="name">Yield Curve</span>
+      <span class="desc">One continuous stroke that bends into growth. Quiet, financial, confident.</span>
+    </div>
+  </div>
+
+  <!-- 4. CHEVRON / COMPASS POINT -->
+  <div class="card">
+    <div class="mark">
+      <svg width="110" height="110" viewBox="0 0 110 110" aria-label="Chevron mark">
+        <path d="M22 78 L55 26 L88 78" fill="none" stroke="#1a1a1a" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
+        <circle cx="55" cy="92" r="2.5" fill="#1a1a1a"/>
+      </svg>
+    </div>
+    <div class="wordmark">BNDR&nbsp;&nbsp;CAPITAL</div>
+    <div class="meta">
+      <span class="num">04</span>
+      <span class="name">Compass Point</span>
+      <span class="desc">A sharp chevron pointing up. Premium, directional, works at 16px.</span>
+    </div>
+  </div>
+
+  <!-- 5. HORIZON -->
+  <div class="card">
+    <div class="mark">
+      <svg width="180" height="88" viewBox="0 0 180 88" aria-label="Horizon mark">
+        <line x1="20" y1="56" x2="160" y2="56" stroke="#1a1a1a" stroke-width="2" stroke-linecap="round"/>
+        <circle cx="90" cy="32" r="6" fill="#1a1a1a"/>
+      </svg>
+    </div>
+    <div class="wordmark">BNDR&nbsp;&nbsp;CAPITAL</div>
+    <div class="meta">
+      <span class="num">05</span>
+      <span class="name">Horizon</span>
+      <span class="desc">A rising point breaking a clean horizon line. Long-term thinking, patient capital.</span>
+    </div>
+  </div>
+
+  <!-- 6. MONOGRAM (wordmark only) -->
+  <div class="card">
+    <div class="mark">
+      <svg width="220" height="80" viewBox="0 0 220 80" aria-label="BNDR wordmark">
+        <text x="110" y="54" text-anchor="middle"
+              font-family="ui-sans-serif, system-ui, -apple-system, 'Helvetica Neue', sans-serif"
+              font-size="48" font-weight="700" letter-spacing="6" fill="#1a1a1a">BNDR</text>
+      </svg>
+    </div>
+    <div class="wordmark">CAPITAL</div>
+    <div class="meta">
+      <span class="num">06</span>
+      <span class="name">Pure Wordmark</span>
+      <span class="desc">No icon. Tight geometric sans, heavy weight, generous tracking. The wordmark is the logo.</span>
+    </div>
+  </div>
+
+  <!-- 7. PRISM -->
+  <div class="card">
+    <div class="mark">
+      <svg width="160" height="96" viewBox="0 0 160 96" aria-label="Prism mark">
+        <polygon points="80,20 112,76 48,76" fill="none" stroke="#1a1a1a" stroke-width="2.5" stroke-linejoin="round"/>
+        <line x1="10" y1="48" x2="48" y2="48" stroke="#1a1a1a" stroke-width="2" stroke-linecap="round"/>
+        <line x1="112" y1="42" x2="150" y2="34" stroke="#1a1a1a" stroke-width="2" stroke-linecap="round"/>
+        <line x1="112" y1="56" x2="150" y2="56" stroke="#1a1a1a" stroke-width="2" stroke-linecap="round"/>
+        <line x1="112" y1="70" x2="150" y2="78" stroke="#1a1a1a" stroke-width="2" stroke-linecap="round"/>
+      </svg>
+    </div>
+    <div class="wordmark">BNDR&nbsp;&nbsp;CAPITAL</div>
+    <div class="meta">
+      <span class="num">07</span>
+      <span class="name">Prism</span>
+      <span class="desc">One input, diversified output. Capital split into outcomes — geometric, precise.</span>
+    </div>
+  </div>
+
+  <!-- 8. WAVEFORM — DARK TREATMENT -->
+  <div class="card dark">
+    <div class="mark">
+      <svg width="180" height="88" viewBox="0 0 180 88" aria-label="Waveform mark">
+        <g fill="#6B7A59">
+          <rect x="20"  y="54" width="6" height="20" rx="3"/>
+          <rect x="36"  y="46" width="6" height="28" rx="3"/>
+          <rect x="52"  y="50" width="6" height="24" rx="3"/>
+          <rect x="68"  y="38" width="6" height="36" rx="3"/>
+          <rect x="84"  y="30" width="6" height="44" rx="3"/>
+          <rect x="100" y="34" width="6" height="40" rx="3"/>
+          <rect x="116" y="22" width="6" height="52" rx="3"/>
+          <rect x="132" y="14" width="6" height="60" rx="3"/>
+          <rect x="148" y="20" width="6" height="54" rx="3"/>
+        </g>
+      </svg>
+    </div>
+    <div class="wordmark">BNDR&nbsp;&nbsp;CAPITAL</div>
+    <div class="meta">
+      <span class="num">08</span>
+      <span class="name">Pulse</span>
+      <span class="desc">Shown in the brand palette — sage on charcoal. Market pulse, quant energy, animatable favicon.</span>
+    </div>
+  </div>
+
+</main>
+
+</body>
+</html>

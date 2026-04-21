@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="480" height="240" viewBox="0 0 480 240">
+  <rect width="480" height="240" fill="#fafaf7"/>
+  <path d="M140 150 Q 240 40 340 150" fill="none" stroke="#1a1a1a" stroke-width="5" stroke-linecap="round"/>
+  <line x1="110" y1="168" x2="370" y2="168" stroke="#1a1a1a" stroke-width="2" stroke-linecap="round" opacity="0.3"/>
+  <text x="240" y="215" text-anchor="middle" font-family="ui-sans-serif, system-ui, -apple-system, Helvetica, sans-serif" font-size="14" font-weight="600" letter-spacing="5" fill="#1a1a1a">BNDR  CAPITAL</text>
+</svg>
